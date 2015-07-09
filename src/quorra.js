@@ -55,6 +55,8 @@
         var xlabel = "x";
         var ylabel = "y";
         var legend = true;
+        var xjitter = 0;
+        var yjitter = 0;
         var tooltip = d3.select("body").append("div")
                 .attr("id", "scatter-tooltip")
                 .attr("class", "tooltip")
@@ -71,8 +73,22 @@
             var h = (height == "auto") ? (parseInt(selection.style("height")) - margin.top - margin.bottom) : height;
             
             // configure axes
-            var xScale = d3.scale.linear().range([0, width]);
-            var yScale = d3.scale.linear().range([height, 0]);
+            if (typeof selection.data()[0][0].x == 'string') {
+                var xGroups = _.unique(_.map(selection.data()[0], function(d){ return d.x; }));
+                var xScale = d3.scale.ordinal().range([w/(xGroups.length+2), w - w/(xGroups.length+2)]);
+                xScale.domain(xGroups);
+            }else{
+                var xScale = d3.scale.linear().range([0, w]);
+                xScale.domain(d3.extent(data, x)).nice();
+            }
+            if (typeof selection.data()[0][0].y == 'string') {
+                var yGroups = _.unique(_.map(selection.data()[0], function(d){ return d.y; }));
+                var yScale = d3.scale.ordinal().range([h - h/(yGroups.length+2), h/(yGroups.length+2)]);
+                yScale.domain(yGroups);
+            }else{
+                var yScale = d3.scale.linear().range([h, 0]);
+                yScale.domain(d3.extent(data, y)).nice();
+            }
             var xAxis = d3.svg.axis().scale(xScale).orient("bottom");
             var yAxis = d3.svg.axis().scale(yScale).orient("left");
 
@@ -85,8 +101,6 @@
                 .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
             // axes
-            xScale.domain(d3.extent(data, x)).nice();
-            yScale.domain(d3.extent(data, y)).nice();
             svg.append("g")
                 .attr("class", "x axis")
                 .attr("transform", "translate(0," + h + ")")
@@ -115,8 +129,8 @@
                 .enter().append("circle")
                 .attr("class", "dot")
                 .attr("r", size)
-                .attr("cx", function(d, i) { return xScale(x(d, i)); })
-                .attr("cy", function(d, i) { return yScale(y(d, i)); })
+                .attr("cx", function(d, i) { return (Math.random()-0.5)*xjitter + xScale(x(d, i)); })
+                .attr("cy", function(d, i) { return (Math.random()-0.5)*yjitter + yScale(y(d, i)); })
                 .style("fill", function(d, i) { return color(group(d, i)); })
                 .style("opacity", 0.75)
                 .on("mouseover", function(d, i){
@@ -216,6 +230,16 @@
         go.lm = function(value) {
             if (!arguments.length) return lm;
             lm = value;
+            return go
+        }
+        go.xjitter = function(value) {
+            if (!arguments.length) return xjitter;
+            xjitter = value;
+            return go
+        }
+        go.yjitter = function(value) {
+            if (!arguments.length) return yjitter;
+            yjitter = value;
             return go
         }
         go.xlabel = function(value) {
@@ -417,6 +441,7 @@
     // density plot
     // boxplot
     // line plot
+    // venn diagram
 
     // expose internals to global namespace
     window.quorra = quorra;

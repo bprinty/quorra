@@ -14,10 +14,12 @@
         body {
             padding-top: 10px;
         }
-        #scatter {
+        #scatter,
+        #jitter {
             width: 800px;
             height: 500px;
         }
+        #jitter .plotarea,
         #scatter .plotarea {
             width: 700px;
             height: 500px;
@@ -28,6 +30,9 @@
   <body>
 
     <div id="scatter" class="container">
+        <div class="plotarea"></div>
+    </div>
+    <div id="jitter" class="container">
         <div class="plotarea"></div>
     </div>
 
@@ -45,6 +50,7 @@
         });
         label = _.range(entries).map(function(d, i) { return group[i]+i; });
         data = [];
+        data2 = [];
         for(var i=0; i<x.length; i++){
             data.push({
                 x: x[i],
@@ -52,19 +58,37 @@
                 group: group[i],
                 label: label[i]
             });
+            data2.push({
+                x: group[i],
+                y: y[i],
+                group: group[i],
+                label: label[i]
+            });
         }
         var redblue = d3.scale.ordinal().domain(['Evil', 'Good']).range(['firebrick','steelblue']);
 
-        // generate plot
+        // regular scatter
         var scatter = quorra.scatter()
-            .width(700)
-            .height(500)
+            .width(500)
+            .height(400)
             .xlabel("X Axis Label")
             .ylabel("Y Axis Label")
             .color(redblue);
 
         d3.select('#scatter .plotarea')
             .datum(data).call(scatter);
+
+        // grouped scatter with jitter
+        var scatter = quorra.scatter()
+            .width(500)
+            .height(400)
+            .xjitter(100)
+            .xlabel("Group")
+            .ylabel("Y Axis Label")
+            .color(redblue);
+
+        d3.select('#jitter .plotarea')
+            .datum(data2).call(scatter);
 
 
     </script>
