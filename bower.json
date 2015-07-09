@@ -1,0 +1,23 @@
+{
+  "name": "quorra",
+  "version": "0.0.1",
+  "authors": [
+    "Blake Printy <bprinty@asuragen.com>"
+  ],
+  "description": "A reusable visualization API built on top of d3.js",
+  "license": "MIT",
+  "private": false,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "tests"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:bprinty/quorra.git"
+  },
+  "dependencies": {
+    "d3": "3.0.2",
+    "underscore": "~1.8.2"
+  }
+}
