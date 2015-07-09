@@ -1,23 +1,34 @@
 {
   "name": "quorra",
+  "homepage": "http://bprinty.github.io/quorra",
   "version": "0.0.1",
   "authors": [
-    "Blake Printy <bprinty@asuragen.com>"
+    "Blake Printy <bprinty@gmail.com>"
   ],
   "description": "A reusable visualization API built on top of d3.js",
   "license": "MIT",
-  "private": false,
+  "keywords": [
+    "d3",
+    "visualization",
+    "plotting",
+    "charts",
+    "data",
+    "statistics"
+  ],
   "ignore": [
     "**/.*",
     "node_modules",
-    "tests"
+    "tests",
+    "src",
+    "examples",
+    "*.rst"
   ],
-  "repository": {
-    "type": "git",
-    "url": "git@github.com:bprinty/quorra.git"
-  },
+  "main": [
+    "build/quorra.js",
+    "build/quorra.css"
+  ],
   "dependencies": {
-    "d3": "3.0.2",
-    "underscore": "~1.8.2"
+    "d3": "^3.0.2",
+    "underscore": "^1.8.2"
   }
 }

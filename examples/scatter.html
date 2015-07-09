@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="author" content="bprinty@gmail.com">
+    <title>Quorra Example Page</title>
+
+    <!-- css -->
+    <link href="../src/quorra.css" rel="stylesheet">
+
+    <!-- custom styles -->
+    <style>
+        body {
+            min-height: 2000px;
+            padding-top: 70px;
+        }
+    </style>
+  </head>
+
+  <body>
+
+    <div id="scatter" class="container">
+        <h3>Scatter</h3>
+        <div class="plotarea"></div>
+    </div>
+
+    <script src="../lib/d3/d3.min.js"></script>
+    <script src="../lib/underscore/underscore-min.js"></script>
+    <script src="../src/quorra.js"></script>
+    <script>
+        // simulate data
+        dlen = 200;
+        x = _.range(dlen).map(function(d) { return Math.random() * d; });
+        y = _.range(dlen).map(function(d) { return Math.random() * d; });
+        color = _.range(dlen).map(function(d) {
+            return Math.random() > 0.5 ? 'Group 1' : 'Group 2';
+        });
+        label = _.range(dlen).map(function(d, i) { return i; });
+
+        // generate plot
+        var scatter = quorra.scatter('#scatter .plotarea')
+                            .width(700)
+                            .height(500)
+                            .labels('mouseover')
+                            .lm('smooth');
+
+    </script>
+    <script>
+        // resize event
+        window.onresize = function(event) {
+            scatter();
+        };
+    </script>
+  </body>
+</html>
