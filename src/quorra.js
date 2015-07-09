@@ -60,6 +60,8 @@
         var yjitter = 0;
         var xticks = "auto";
         var yticks = "auto";
+        var xdensity = false;
+        var ydensity = false;
         var tooltip = d3.select("body").append("div")
                 .attr("id", "scatter-tooltip")
                 .attr("class", "tooltip")
@@ -164,6 +166,33 @@
                     tooltip.style("opacity", 0);
                 });
 
+            // generating density ticks (if specified)
+            if (xdensity){
+                svg.selectAll(".xtick")
+                    .data(svg.data()[0])
+                    .enter().append("line")
+                    .attr("class", "xtick")
+                    .attr("x1", function(d, i) { return xScale(x(d, i)); })
+                    .attr("x2", function(d, i) { return xScale(x(d, i)); })
+                    .attr("y1", function(d, i) { return yScale(0)-5; })
+                    .attr("y2", function(d, i) { return yScale(0)+5; })
+                    .attr("stroke", function(d, i){ return color(group(d, i)); })
+                    .style("opacity", 0.75);
+                    // TODO: maybe include two-way selection/highlighting here?
+            }
+            if (ydensity){
+                svg.selectAll(".ytick")
+                    .data(svg.data()[0])
+                    .enter().append("line")
+                    .attr("class", "ytick")
+                    .attr("x1", function(d, i) { return xScale(0)-5; })
+                    .attr("x2", function(d, i) { return xScale(0)+5; })
+                    .attr("y1", function(d, i) { return yScale(y(d, i)); })
+                    .attr("y2", function(d, i) { return yScale(y(d, i)); })
+                    .attr("stroke", function(d, i){ return color(group(d, i)); })
+                    .style("opacity", 0.75);
+            }
+
             // generating regression line with smoothing curve (if specified)
             if (lm != false){
                 console.log("Not yet implemented!");
@@ -261,6 +290,16 @@
         go.yticks = function(value) {
             if (!arguments.length) return yticks;
             yticks = value;
+            return go
+        }
+        go.xdensity = function(value) {
+            if (!arguments.length) return xdensity;
+            xdensity = value;
+            return go
+        }
+        go.ydensity = function(value) {
+            if (!arguments.length) return ydensity;
+            ydensity = value;
             return go
         }
         go.xjitter = function(value) {
