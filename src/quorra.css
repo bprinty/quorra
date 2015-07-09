@@ -1,0 +1,25 @@
+/*
+ * Quorra stylesheet.
+ *
+ * @author Blake Printy <bprinty@gmail.com>
+ * ----------------------------------------------- */
+
+.axis path,
+.axis line {
+    fill: none;
+    stroke: #000;
+    shape-rendering: crispEdges;
+}
+.axis text,
+.legend text, 
+.tooltip {
+    font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif; 
+    font-weight: 300;
+    font-size: 12px;
+}
+.dot {
+    stroke-width: 0;
+}
+.dot:hover {
+    cursor: pointer;
+}

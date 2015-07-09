@@ -12,8 +12,15 @@
     <!-- custom styles -->
     <style>
         body {
-            min-height: 2000px;
-            padding-top: 70px;
+            padding-top: 10px;
+        }
+        .scatter {
+            width: 800px;
+            height: 500px;
+        }
+        .scatter .plotarea {
+            width: 700px;
+            height: 500px;
         }
     </style>
   </head>
@@ -21,7 +28,6 @@
   <body>
 
     <div id="scatter" class="container">
-        <h3>Scatter</h3>
         <div class="plotarea"></div>
     </div>
 
@@ -30,27 +36,37 @@
     <script src="../src/quorra.js"></script>
     <script>
         // simulate data
-        dlen = 200;
-        x = _.range(dlen).map(function(d) { return Math.random() * d; });
-        y = _.range(dlen).map(function(d) { return Math.random() * d; });
-        color = _.range(dlen).map(function(d) {
-            return Math.random() > 0.5 ? 'Group 1' : 'Group 2';
+        var entries = 200;
+        quorra.seed(123);
+        x = _.range(entries).map(function(d) { return quorra.random() * d; });
+        y = _.range(entries).map(function(d) { return quorra.random() * d; });
+        group = _.range(entries).map(function(d) {
+            return quorra.random() > 0.5 ? 'Good' : 'Evil';
         });
-        label = _.range(dlen).map(function(d, i) { return i; });
+        label = _.range(entries).map(function(d, i) { return group[i]+i; });
+        data = [];
+        for(var i=0; i<x.length; i++){
+            data.push({
+                x: x[i],
+                y: y[i],
+                group: group[i],
+                label: label[i]
+            });
+        }
+        var redblue = d3.scale.ordinal().domain(['Evil', 'Good']).range(['firebrick','steelblue']);
 
         // generate plot
-        var scatter = quorra.scatter('#scatter .plotarea')
-                            .width(700)
-                            .height(500)
-                            .labels('mouseover')
-                            .lm('smooth');
+        var scatter = quorra.scatter()
+            .width(700)
+            .height(500)
+            .xlabel("X Axis Label")
+            .ylabel("Y Axis Label")
+            .color(redblue);
 
-    </script>
-    <script>
-        // resize event
-        window.onresize = function(event) {
-            scatter();
-        };
+        d3.select('#scatter .plotarea')
+            .datum(data).call(scatter);
+
+
     </script>
   </body>
 </html>
