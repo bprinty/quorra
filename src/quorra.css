@@ -14,6 +14,11 @@
     stroke: #bbb;
     opacity: 0.5;
 }
+.line {
+    fill: none;
+    stroke: #000;
+    stroke-width: 3px;
+}
 .arc text,
 .axis text,
 .legend text, 
@@ -25,12 +30,6 @@
 .dot {
     stroke-width: 0;
 }
-.dot:hover {
-    cursor: pointer;
-}
 .arc path {
   stroke: #fff;
-}
-.arc:hover {
-    cursor: pointer;
 }

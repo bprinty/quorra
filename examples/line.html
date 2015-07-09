@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="author" content="bprinty@gmail.com">
+    <title>Quorra Example Page</title>
+
+    <!-- css -->
+    <link href="../src/quorra.css" rel="stylesheet">
+
+    <!-- custom styles -->
+    <style>
+        body {
+            padding-top: 10px;
+        }
+        #line,
+        #pointline {
+            width: 800px;
+            height: 500px;
+        }
+        #line .plotarea,
+        #pointline .plotarea {
+            width: 700px;
+            height: 500px;
+        }
+    </style>
+  </head>
+
+  <body>
+
+    <div id="line" class="container">
+        <div class="plotarea"></div>
+    </div>
+    <div id="pointline" class="container">
+        <div class="plotarea"></div>
+    </div>
+
+    <script src="../lib/d3/d3.min.js"></script>
+    <script src="../lib/underscore/underscore-min.js"></script>
+    <script src="../src/quorra.js"></script>
+    <script>
+        // simulate data
+        var entries = 50;
+        quorra.seed(123);
+        x = _.range(entries).map(function(d) { return d; });
+        y = _.range(entries).map(function(d) { return quorra.random() * d; });
+        group = _.range(entries).map(function(d) {
+            return quorra.random() > 0.5 ? 'Good' : 'Evil';
+        });
+        label = _.range(entries).map(function(d, i) { return group[i]+i; });
+        data = [];
+        for(var i=0; i<x.length; i++){
+            data.push({
+                x: x[i],
+                y: y[i],
+                group: group[i],
+                label: label[i]
+            });
+        }
+        var redblue = d3.scale.ordinal().domain(['Evil', 'Good']).range(['firebrick','steelblue']);
+
+        // regular scatter
+        var line = quorra.line()
+            .width(500)
+            .height(400)
+            .grid(true)
+            .yticks(10)
+            .xticks(10)
+            .xlabel("X Axis Label")
+            .ylabel("Y Axis Label")
+            .color(redblue);
+
+        d3.select('#line .plotarea')
+            .datum(data).call(line);
+
+        // grouped scatter with jitter
+        var pointline = quorra.line()
+            .width(500)
+            .height(400)
+            .points(5)
+            .xlabel("X Axis Label")
+            .ylabel("Y Axis Label")
+            .color(redblue);
+
+        d3.select('#pointline .plotarea')
+            .datum(data).call(pointline);
+
+
+    </script>
+  </body>
+</html>
