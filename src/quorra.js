@@ -58,6 +58,8 @@
         var legend = true;
         var xjitter = 0;
         var yjitter = 0;
+        var xticks = "auto";
+        var yticks = "auto";
         var tooltip = d3.select("body").append("div")
                 .attr("id", "scatter-tooltip")
                 .attr("class", "tooltip")
@@ -91,7 +93,13 @@
                 yScale.domain(d3.extent(data, y)).nice();
             }
             var xAxis = d3.svg.axis().scale(xScale).orient("bottom");
+            if (xticks != "auto") {
+                xAxis = xAxis.ticks(xticks);
+            }
             var yAxis = d3.svg.axis().scale(yScale).orient("left");
+            if (yticks != "auto") {
+                yAxis = yAxis.ticks(yticks);
+            }
 
             // initialize canvas
             var svg = selection.append("svg")
@@ -243,6 +251,16 @@
         go.grid = function(value) {
             if (!arguments.length) return grid;
             grid = value;
+            return go
+        }
+        go.xticks = function(value) {
+            if (!arguments.length) return xticks;
+            xticks = value;
+            return go
+        }
+        go.yticks = function(value) {
+            if (!arguments.length) return yticks;
+            yticks = value;
             return go
         }
         go.xjitter = function(value) {
