@@ -51,7 +51,7 @@
         var label = function(d, i){ return (typeof d.label == "undefined") ? i : d.label; };
         var size = function(d, i){ return (typeof d.size == "undefined") ? 5 : d.size; };
         var shape = function(d, i){ return (typeof d.shape == "undefined") ? "circle" : d.shape; };
-        var lm = "smooth";
+        var lm = false; // options are "smooth", "poly-x" (x is order), and "linear"
         var xlabel = "x";
         var ylabel = "y";
         var legend = true;
@@ -132,6 +132,11 @@
                     d3.select(this).style("opacity", 0.75);
                     tooltip.style("opacity", 0);
                 });
+
+            // generating regression line with smoothing curve (if specified)
+            if (lm != false){
+                console.log("Not yet implemented!");
+            }
 
             // legend (if specified)
             if (legend) {
