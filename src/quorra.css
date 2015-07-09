@@ -10,6 +10,7 @@
     stroke: #000;
     shape-rendering: crispEdges;
 }
+.arc text,
 .axis text,
 .legend text, 
 .tooltip {
@@ -21,5 +22,11 @@
     stroke-width: 0;
 }
 .dot:hover {
+    cursor: pointer;
+}
+.arc path {
+  stroke: #fff;
+}
+.arc:hover {
     cursor: pointer;
 }

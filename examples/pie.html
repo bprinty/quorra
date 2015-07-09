@@ -14,11 +14,13 @@
         body {
             padding-top: 10px;
         }
-        #scatter {
+        #pie, 
+        .hollowpie {
             width: 800px;
             height: 500px;
         }
-        #scatter .plotarea {
+        #pie .plotarea, 
+        #hollowpie .plotarea {
             width: 700px;
             height: 500px;
         }
@@ -27,7 +29,10 @@
 
   <body>
 
-    <div id="scatter" class="container">
+    <div id="pie" class="container">
+        <div class="plotarea"></div>
+    </div>
+    <div id="hollowpie" class="container">
         <div class="plotarea"></div>
     </div>
 
@@ -39,32 +44,43 @@
         var entries = 200;
         quorra.seed(123);
         x = _.range(entries).map(function(d) { return quorra.random() * d; });
-        y = _.range(entries).map(function(d) { return quorra.random() * d; });
         group = _.range(entries).map(function(d) {
-            return quorra.random() > 0.5 ? 'Good' : 'Evil';
+            return quorra.random() > 0.5 ? 'Good' : ( quorra.random() > 0.5 ? 'Evil' : 'Okay' );
         });
         label = _.range(entries).map(function(d, i) { return group[i]+i; });
         data = [];
         for(var i=0; i<x.length; i++){
             data.push({
                 x: x[i],
-                y: y[i],
                 group: group[i],
                 label: label[i]
             });
         }
-        var redblue = d3.scale.ordinal().domain(['Evil', 'Good']).range(['firebrick','steelblue']);
+        var colors = d3.scale.ordinal().domain(['Evil', 'Good', 'Okay']).range(['firebrick','forestgreen','steelblue']);
 
-        // generate plot
-        var scatter = quorra.scatter()
-            .width(700)
-            .height(500)
-            .xlabel("X Axis Label")
-            .ylabel("Y Axis Label")
-            .color(redblue);
+        // regular pie
+        var pie = quorra.pie()
+            .radius(200)
+            .tooltip(false)
+            .aggregate(function(x){ return(x.length); })
+            .color(colors);
 
-        d3.select('#scatter .plotarea')
-            .datum(data).call(scatter);
+        d3.select('#pie .plotarea')
+            .datum(data).call(pie);
+
+        // hollow pie
+        var hollowpie = quorra.pie()
+            .legend(false)
+            .radius(200)
+            .inner(100)
+            .color(colors);
+
+        d3.select('#pie .plotarea')
+            .datum([
+                {x: 50, group: "Good", label: "Good"},
+                {x: 150, group: "Evil", label: "Evil"},
+                {x: 20, group: "Okay", label: "Okay"}
+            ]).call(hollowpie);
 
 
     </script>
