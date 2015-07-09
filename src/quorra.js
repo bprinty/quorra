@@ -52,6 +52,7 @@
         var size = function(d, i){ return (typeof d.size == "undefined") ? 5 : d.size; };
         var shape = function(d, i){ return (typeof d.shape == "undefined") ? "circle" : d.shape; };
         var lm = false; // options are "smooth", "poly-x" (x is order), and "linear"
+        var grid = false;
         var xlabel = "x";
         var ylabel = "y";
         var legend = true;
@@ -99,6 +100,13 @@
                 .attr("height", h + margin.top + margin.bottom)
                 .append("g")
                 .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+            // gridlines (if specified)
+            if (grid){
+                console.log('Not yet implemented!');
+                xAxis = xAxis.tickSize(-h, 0, 0);
+                yAxis = yAxis.tickSize(-w, 0, 0);
+            }
 
             // axes
             svg.append("g")
@@ -230,6 +238,11 @@
         go.lm = function(value) {
             if (!arguments.length) return lm;
             lm = value;
+            return go
+        }
+        go.grid = function(value) {
+            if (!arguments.length) return grid;
+            grid = value;
             return go
         }
         go.xjitter = function(value) {

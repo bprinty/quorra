@@ -10,6 +10,10 @@
     stroke: #000;
     shape-rendering: crispEdges;
 }
+.axis .tick line {
+    stroke: #bbb;
+    opacity: 0.5;
+}
 .arc text,
 .axis text,
 .legend text, 
