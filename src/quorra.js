@@ -139,7 +139,7 @@
                 .attr("y", 6)
                 .attr("dy", ".71em")
                 .style("text-anchor", "end")
-                .text(ylabel)
+                .text(ylabel);
 
             // plotting points
             svg.selectAll(".dot")
@@ -329,6 +329,7 @@
         }
         go.tooltip = function(value) {
             if (!arguments.length) return tooltip;
+            tooltip.remove();
             tooltip = value;
             return go
         }
@@ -500,6 +501,7 @@
         }
         go.tooltip = function(value) {
             if (!arguments.length) return tooltip;
+            tooltip.remove();
             tooltip = value;
             return go
         }
@@ -534,7 +536,7 @@
         var xticks = "auto";
         var yticks = "auto";
         var tooltip = d3.select("body").append("div")
-                .attr("id", "scatter-tooltip")
+                .attr("id", "line-tooltip")
                 .attr("class", "tooltip")
                 .style("position", "absolute")
                 .style("opacity", 0);
@@ -623,7 +625,7 @@
                 .attr("y", 6)
                 .attr("dy", ".71em")
                 .style("text-anchor", "end")
-                .text(ylabel)
+                .text(ylabel);
 
             // plotting lines
             var line = d3.svg.line()
@@ -791,6 +793,7 @@
         }
         go.tooltip = function(value) {
             if (!arguments.length) return tooltip;
+            tooltip.remove();
             tooltip = value;
             return go
         }
@@ -809,6 +812,11 @@
 
         // attributes
         var resolution = 10;
+        var tooltip = d3.select("body").append("div")
+            .attr("id", "density-tooltip")
+            .attr("class", "tooltip")
+            .style("position", "absolute")
+            .style("opacity", 0);
 
         // density estimator methods
         // these were inspired from: http://bl.ocks.org/mbostock/4341954 
@@ -830,7 +838,9 @@
         }
 
         // generator
-        var go = quorra.line().transform(function(data){
+        var go = quorra.line()
+            .tooltip(tooltip)
+            .transform(function(data){
             
             // generate kde scaling function
             var format = d3.format(".04f");
@@ -865,10 +875,384 @@
         }
 
         return go;
-    }
+    };
 
-    // bar
-    // histogram
+    // bar plot
+    quorra.bar = function() {
+        /**
+        quorra.bar()
+
+        Bar plot. Code for generating this type of plot was inspired from:
+        http://bl.ocks.org/mbostock/3943967
+        */
+
+        // attributes
+        var width = "auto";
+        var height = "auto";
+        var margin = {"top": 20, "bottom": 20, "left": 40, "right": 20};
+        var color = d3.scale.category10();
+        var x = function(d, i) { return d.x; };
+        var y = function(d, i) { return d.y; };
+        var group = function(d, i){ return (typeof d.group == "undefined") ? 0 : d.group; };
+        var label = function(d, i){ return (typeof d.label == "undefined") ? i : d.label; };
+        var transform = function(d){ return d; };
+        var grid = false;
+        var xlabel = "x";
+        var ylabel = "y";
+        var legend = true;
+        var xticks = "auto";
+        var yticks = "auto";
+        var layout = "stacked";
+        var tooltip = d3.select("body").append("div")
+                .attr("id", "bar-tooltip")
+                .attr("class", "tooltip")
+                .style("position", "absolute")
+                .style("opacity", 0);
+
+        // generator
+        function go(selection){
+            // format selection
+            if (typeof selection == "string") selection = d3.select(selection);
+
+            // if height/width are auto, determine them from selection
+            var w = (width == "auto") ? (parseInt(selection.style("width")) - margin.left - margin.right) : width;
+            var h = (height == "auto") ? (parseInt(selection.style("height")) - margin.top - margin.bottom) : height;
+            
+            // transform data (if transformation function is applied)
+            // this is used for histogram plots
+            var newdata = transform(selection.data()[0]);
+
+            // configure axes
+            if (typeof newdata[0].x == 'string') {
+                var xGroups = _.unique(_.map(newdata, function(d){ return d.x; }));
+                var xScale = d3.scale.ordinal().range([w/(xGroups.length+2), w - w/(xGroups.length+2)]);
+                xScale.domain(xGroups);
+            }else{
+                var xScale = d3.scale.linear().range([0, w]);
+                // manually set the domain here because it needs to 
+                // be aware of the newdata object (histogram plots)
+                xScale.domain([
+                    _.min(_.map(newdata, function(d){ return d.x; })),
+                    _.max(_.map(newdata, function(d){ return d.x; }))
+                ]).nice();
+            }
+            if (typeof newdata[0].y == 'string') {
+                var yGroups = _.unique(_.map(newdata, function(d){ return d.y; }));
+                var yScale = d3.scale.ordinal().range([h - h/(yGroups.length+2), h/(yGroups.length+2)]);
+                yScale.domain(yGroups);
+            }else{
+                var yScale = d3.scale.linear().range([h, 0]);
+                // manually set the domain here because it needs to 
+                // be aware of the newdata object (histogram plots)
+                yScale.domain([
+                    _.min(_.map(newdata, function(d){ return d.y; })),
+                    _.max(_.map(newdata, function(d){ return d.y; }))
+                ]).nice();
+            }
+            var xAxis = d3.svg.axis().scale(xScale).orient("bottom");
+            if (xticks != "auto") {
+                xAxis = xAxis.ticks(xticks);
+            }
+            var yAxis = d3.svg.axis().scale(yScale).orient("left");
+            if (yticks != "auto") {
+                yAxis = yAxis.ticks(yticks);
+            }
+
+            // initialize canvas
+            var svg = selection.append("svg")
+                .attr("class", "quorra-bar")
+                .attr("width", w + margin.left + margin.right)
+                .attr("height", h + margin.top + margin.bottom)
+                .append("g")
+                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+            // gridlines (if specified)
+            if (grid){
+                xAxis = xAxis.tickSize(-h, 0, 0);
+                yAxis = yAxis.tickSize(-w, 0, 0);
+            }
+
+            // axes
+            svg.append("g")
+                .attr("class", "x axis")
+                .attr("transform", "translate(0," + h + ")")
+                .call(xAxis)
+            .append("text")
+                .attr("class", "label")
+                .attr("x", w)
+                .attr("y", -6)
+                .style("text-anchor", "end")
+                .text(xlabel);
+
+            svg.append("g")
+                .attr("class", "y axis")
+                .call(yAxis)
+            .append("text")
+                .attr("class", "label")
+                .attr("transform", "rotate(-90)")
+                .attr("y", 6)
+                .attr("dy", ".71em")
+                .style("text-anchor", "end")
+                .text(ylabel);
+            
+            // organizing data
+            // no interpolation should happen here because 
+            // users should be responsible for ensuring that their data
+            // is complete
+            var layers = [];
+            var ugrps = _.unique(_.map(newdata, function(d){ return d.group; }));
+            for (var grp in ugrps) {
+                var flt = _.filter(newdata, function(d){ return d.group == ugrps[grp]; });
+                flt = _.map(flt, function(d){
+                    d.layer = grp;
+                    return d;
+                });
+                layers.push(_.filter(flt, function(d){ return d.group == ugrps[grp]; }));
+            }
+            var y0 = _.map(layers[0], function(d){ return 0; });
+            for (var lay=0; lay<layers.length; lay++){
+                layers[lay] = _.map(layers[lay], function(d, i){ 
+                    d.y0 = y0[i];
+                    y0[i] = y0[i] + d.y;
+                    return d;
+                });  
+            }
+
+            // plotting bars
+            var layer = svg.selectAll(".layer")
+                .data(layers)
+                .enter().append("g")
+                .attr("class","layer");
+            
+            var rect = layer.selectAll("rect")
+                .data(function(d){ return d; })
+                .enter().append("rect")
+                .attr("x", function(d, i){
+                    if (layout == "stacked"){
+                        return xScale(x(d, i));    
+                    }else{
+                        return xScale(x(d, i)) + color.range().indexOf(color(d.group))*w/newdata.length;
+                    }
+                })
+                // NOTE: this needs to be fixed so that y0 is 
+                // parameterized before this takes place.
+                .attr("y", function(d, i){ return (layout == "stacked") ? yScale(d.y0 + d.y) : yScale(d.y); })
+                .attr("height", function(d, i){ return (layout == "stacked") ? (yScale(d.y0) - yScale(d.y0 + d.y)) : (h - yScale(d.y)); })
+                .attr("width", function(){
+                    if (layout == "stacked"){
+                        var xlim = _.max(_.map(layers, function(d){ return d.length; }));
+                        return (w-xlim)/xlim;
+                    }else{
+                        return (w-newdata.length)/newdata.length;
+                    }
+                }).attr("fill", function(d, i){ return color(d.group); })
+                .style("opacity", 0.75)
+                .on("mouseover", function(d, i){
+                    d3.select(this).style("opacity", 0.25);
+                    tooltip.html(d.label)
+                        .style("opacity", 1)
+                        .style("left", (d3.event.pageX + 5) + "px")
+                        .style("top", (d3.event.pageY - 20) + "px");
+                }).on("mousemove", function(d){
+                    tooltip
+                        .style("left", (d3.event.pageX + 5) + "px")
+                        .style("top", (d3.event.pageY - 20) + "px");
+                }).on("mouseout", function(d){
+                    d3.select(this).style("opacity", 0.75);
+                    tooltip.style("opacity", 0);
+                });
+
+            // legend (if specified)
+            if (legend) {
+                var leg = svg.selectAll(".legend")
+                    .data(color.domain())
+                    .enter().append("g")
+                    .attr("class", "legend")
+                    .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
+
+                leg.append("rect")
+                    .attr("x", w - 18)
+                    .attr("width", 18)
+                    .attr("height", 18)
+                    .style("fill", color);
+
+                leg.append("text")
+                    .attr("x", w - 24)
+                    .attr("y", 9)
+                    .attr("dy", ".35em")
+                    .style("text-anchor", "end")
+                    .text(function(d) { return d; });
+            }
+        }
+
+        // getters/setters
+        go.width = function(value) {
+            if (!arguments.length) return width;
+            width = value;
+            return go;
+        };
+        go.height = function(value) {
+            if (!arguments.length) return height;
+            height = value;
+            return go;
+        };
+        go.margin = function(value) {
+            if (!arguments.length) return margin;
+            margin = value;
+            return go;
+        };
+        go.color = function(value) {
+            if (!arguments.length) return color;
+            color = value;
+            return go
+        }
+        go.x = function(value) {
+            if (!arguments.length) return x;
+            x = value;
+            return go
+        }
+        go.y = function(value) {
+            if (!arguments.length) return y;
+            y = value;
+            return go
+        }
+        go.group = function(value) {
+            if (!arguments.length) return group;
+            group = value;
+            return go
+        }
+        go.label = function(value) {
+            if (!arguments.length) return label;
+            label = value;
+            return go
+        }
+        go.grid = function(value) {
+            if (!arguments.length) return grid;
+            grid = value;
+            return go
+        }
+        go.xticks = function(value) {
+            if (!arguments.length) return xticks;
+            xticks = value;
+            return go
+        }
+        go.yticks = function(value) {
+            if (!arguments.length) return yticks;
+            yticks = value;
+            return go
+        }
+        go.xlabel = function(value) {
+            if (!arguments.length) return xlabel;
+            xlabel = value;
+            return go
+        }
+        go.ylabel = function(value) {
+            if (!arguments.length) return ylabel;
+            ylabel = value;
+            return go
+        }
+        go.legend = function(value) {
+            if (!arguments.length) return legend;
+            legend = value;
+            return go
+        }
+        go.transform = function(value) {
+            if (!arguments.length) return transform;
+            transform = value;
+            return go
+        }
+        go.layout = function(value) {
+            if (!arguments.length) return layout;
+            layout = value;
+            return go
+        }
+        go.tooltip = function(value) {
+            if (!arguments.length) return tooltip;
+            tooltip.remove();
+            tooltip = value;
+            return go
+        }
+
+        return go;
+    };
+
+    // // histogram
+    //     // density plot
+    // quorra.density = function() {
+    //     /**
+    //     quorra.density()
+
+    //     Density plot. Code for generating this type of plot was inspired from:
+    //     http://bl.ocks.org/mbostock/3883245
+    //     */
+
+    //     // attributes
+    //     var resolution = 10;
+    //     var tooltip = d3.select("body").append("div")
+    //         .attr("id", "density-tooltip")
+    //         .attr("class", "tooltip")
+    //         .style("position", "absolute")
+    //         .style("opacity", 0);
+
+    //     // density estimator methods
+    //     // these were inspired from: http://bl.ocks.org/mbostock/4341954 
+    //     function kdeEstimator(kernel, x) {
+    //         return function(sample) {
+    //             return x.map(function(x) {
+    //                 return {
+    //                     x: x,
+    //                     y: d3.mean(sample, function(v) { return kernel(x - v); }),
+    //                 };
+    //             });
+    //         };
+    //     }
+
+    //     function epanechnikovKernel(scale) {
+    //         return function(u) {
+    //             return Math.abs(u /= scale) <= 1 ? .75 * (1 - u * u) / scale : 0;
+    //         };
+    //     }
+
+    //     // generator
+    //     var go = quorra.line()
+    //         .tooltip(tooltip)
+    //         .transform(function(data){
+            
+    //         // generate kde scaling function
+    //         var format = d3.format(".04f");
+    //         var xScale = d3.scale.linear().range([0, go.w]);
+    //         var kde = kdeEstimator(epanechnikovKernel(9), xScale.ticks(go.resolution()));
+
+    //         // rearranging data
+    //         var grps = _.unique(_.map(data, function(d){ return d.group; }));
+    //         var newdata = [];
+    //         for (var grp in grps){
+    //             var subdat = _.filter(data, function(d){ return d.group == grps[grp]; });
+    //             var newgrp = kde(_.map(subdat, function(d){ return d.x }));
+    //             newgrp = _.map(newgrp, function(d){
+    //                 return {
+    //                     x: d.x,
+    //                     y: d.y,
+    //                     group: grps[grp],
+    //                     label: format(d.y)
+    //                 };
+    //             });
+    //             newdata = newdata.concat(newgrp);
+    //         }
+
+    //         return newdata;
+    //     });
+
+    //     // getters/setters
+    //     go.resolution = function(value) {
+    //         if (!arguments.length) return resolution;
+    //         resolution = value;
+    //         return go
+    //     }
+
+    //     return go;
+    // };
+    
     // boxplot
     // venn diagram
 
