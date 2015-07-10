@@ -43,7 +43,7 @@
         // attributes
         var width = "auto";
         var height = "auto";
-        var margin = {"top": 20, "bottom": 20, "left": 30, "right": 20};
+        var margin = {"top": 20, "bottom": 20, "left": 40, "right": 20};
         var color = d3.scale.category10();
         var x = function(d, i) { return d.x; };
         var y = function(d, i) { return d.y; };
@@ -53,8 +53,8 @@
         var shape = function(d, i){ return (typeof d.shape == "undefined") ? "circle" : d.shape; };
         var lm = false; // options are "smooth", "poly-x" (x is order), and "linear"
         var grid = false;
-        var xlabel = "x";
-        var ylabel = "y";
+        var xlabel = "";
+        var ylabel = "";
         var xformat = "auto";
         var yformat = "auto";
         var legend = true;
@@ -112,8 +112,12 @@
             }
 
             // initialize canvas
-            var svg = selection.append("svg")
-                .attr("class", "quorra-scatter")
+            if (selection.select("svg")[0][0] == null){
+                var svg = selection.append("svg");
+            } else {
+                var svg = selection.select("svg");
+            }
+            svg = svg.attr("class", "quorra-scatter")
                 .attr("width", w + margin.left + margin.right)
                 .attr("height", h + margin.top + margin.bottom)
                 .append("g")
@@ -415,8 +419,12 @@
                 .sort(null)
                 .value(function(d){ return d.x; });
 
-            var svg = selection.append("svg")
-                .attr("class", "quorra-pie")
+            if (selection.select("svg")[0][0] == null){
+                var svg = selection.append("svg");
+            } else {
+                var svg = selection.select("svg");
+            }
+            svg = svg.attr("class", "quorra-pie")
                 .attr("width", w + margin.left + margin.right)
                 .attr("height", h + margin.top + margin.bottom)
                 .append("g")
@@ -547,8 +555,8 @@
         var label = function(d, i){ return (typeof d.label == "undefined") ? i : d.label; };
         var transform = function(d){ return d; };
         var grid = false;
-        var xlabel = "x";
-        var ylabel = "y";
+        var xlabel = "";
+        var ylabel = "";
         var xformat = "auto";
         var yformat = "auto";
         var legend = true;
@@ -617,8 +625,12 @@
             }
 
             // initialize canvas
-            var svg = selection.append("svg")
-                .attr("class", "quorra-line")
+            if (selection.select("svg")[0][0] == null){
+                var svg = selection.append("svg");
+            } else {
+                var svg = selection.select("svg");
+            }
+            svg = svg.attr("class", "quorra-line")
                 .attr("width", w + margin.left + margin.right)
                 .attr("height", h + margin.top + margin.bottom)
                 .append("g")
@@ -933,8 +945,8 @@
         var label = function(d, i){ return (typeof d.label == "undefined") ? i : d.label; };
         var transform = function(d){ return d; };
         var grid = false;
-        var xlabel = "x";
-        var ylabel = "y";
+        var xlabel = "";
+        var ylabel = "";
         var xformat = "auto";
         var yformat = "auto";
         var legend = true;
@@ -1009,8 +1021,12 @@
             }
 
             // initialize canvas
-            var svg = selection.append("svg")
-                .attr("class", "quorra-bar")
+            if (selection.select("svg")[0][0] == null){
+                var svg = selection.append("svg");
+            } else {
+                var svg = selection.select("svg");
+            }
+            svg = svg.attr("class", "quorra-bar")
                 .attr("width", w + margin.left + margin.right)
                 .attr("height", h + margin.top + margin.bottom)
                 .append("g")
