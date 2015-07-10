@@ -186,8 +186,8 @@
                     .attr("class", "xtick")
                     .attr("x1", function(d, i) { return xScale(x(d, i)); })
                     .attr("x2", function(d, i) { return xScale(x(d, i)); })
-                    .attr("y1", function(d, i) { return yScale(0)-5; })
-                    .attr("y2", function(d, i) { return yScale(0)+5; })
+                    .attr("y1", function(d, i) { return h-5; })
+                    .attr("y2", function(d, i) { return h+5; })
                     .attr("stroke", function(d, i){ return color(group(d, i)); })
                     .style("opacity", 0.75);
                     // TODO: maybe include two-way selection/highlighting here?
@@ -197,8 +197,8 @@
                     .data(svg.data()[0])
                     .enter().append("line")
                     .attr("class", "ytick")
-                    .attr("x1", function(d, i) { return xScale(0)-5; })
-                    .attr("x2", function(d, i) { return xScale(0)+5; })
+                    .attr("x1", function(d, i) { return -5; })
+                    .attr("x2", function(d, i) { return 5; })
                     .attr("y1", function(d, i) { return yScale(y(d, i)); })
                     .attr("y2", function(d, i) { return yScale(y(d, i)); })
                     .attr("stroke", function(d, i){ return color(group(d, i)); })

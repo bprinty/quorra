@@ -74,7 +74,6 @@
             .grid(true)
             .yticks(10)
             .xticks(10)
-            .xdensity(true)
             .xlabel("X Axis Label")
             .ylabel("Y Axis Label")
             .color(redblue);
@@ -83,7 +82,7 @@
             .datum(data).call(scatter);
 
         // grouped scatter with jitter
-        var scatter = quorra.scatter()
+        var jitter = quorra.scatter()
             .width(500)
             .height(400)
             .xjitter(100)
@@ -93,7 +92,7 @@
             .color(redblue);
 
         d3.select('#jitter .plotarea')
-            .datum(data2).call(scatter);
+            .datum(data2).call(jitter);
 
 
     </script>
