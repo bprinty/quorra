@@ -508,7 +508,7 @@
     };
     
     // line plot
-        quorra.line = function() {
+    quorra.line = function() {
         /**
         quorra.line()
 
@@ -519,12 +519,13 @@
         // attributes
         var width = "auto";
         var height = "auto";
-        var margin = {"top": 20, "bottom": 20, "left": 30, "right": 20};
+        var margin = {"top": 20, "bottom": 20, "left": 40, "right": 20};
         var color = d3.scale.category10();
         var x = function(d, i) { return d.x; };
         var y = function(d, i) { return d.y; };
         var group = function(d, i){ return (typeof d.group == "undefined") ? 0 : d.group; };
         var label = function(d, i){ return (typeof d.label == "undefined") ? i : d.label; };
+        var transform = function(d){ return d; };
         var grid = false;
         var xlabel = "x";
         var ylabel = "y";
@@ -547,22 +548,36 @@
             var w = (width == "auto") ? (parseInt(selection.style("width")) - margin.left - margin.right) : width;
             var h = (height == "auto") ? (parseInt(selection.style("height")) - margin.top - margin.bottom) : height;
             
+            // transform data (if transformation function is applied)
+            // this is used for density plots
+            var newdata = transform(selection.data()[0]);
+
             // configure axes
-            if (typeof selection.data()[0][0].x == 'string') {
-                var xGroups = _.unique(_.map(selection.data()[0], function(d){ return d.x; }));
+            if (typeof newdata[0].x == 'string') {
+                var xGroups = _.unique(_.map(newdata, function(d){ return d.x; }));
                 var xScale = d3.scale.ordinal().range([w/(xGroups.length+2), w - w/(xGroups.length+2)]);
                 xScale.domain(xGroups);
             }else{
                 var xScale = d3.scale.linear().range([0, w]);
-                xScale.domain(d3.extent(data, x)).nice();
+                // manually set the domain here because it needs to 
+                // be aware of the newdata object (density plots)
+                xScale.domain([
+                    _.min(_.map(newdata, function(d){ return d.x; })),
+                    _.max(_.map(newdata, function(d){ return d.x; }))
+                ]).nice();
             }
-            if (typeof selection.data()[0][0].y == 'string') {
-                var yGroups = _.unique(_.map(selection.data()[0], function(d){ return d.y; }));
+            if (typeof newdata[0].y == 'string') {
+                var yGroups = _.unique(_.map(newdata, function(d){ return d.y; }));
                 var yScale = d3.scale.ordinal().range([h - h/(yGroups.length+2), h/(yGroups.length+2)]);
                 yScale.domain(yGroups);
             }else{
                 var yScale = d3.scale.linear().range([h, 0]);
-                yScale.domain(d3.extent(data, y)).nice();
+                // manually set the domain here because it needs to 
+                // be aware of the newdata object (density plots)
+                yScale.domain([
+                    _.min(_.map(newdata, function(d){ return d.y; })),
+                    _.max(_.map(newdata, function(d){ return d.y; }))
+                ]).nice();
             }
             var xAxis = d3.svg.axis().scale(xScale).orient("bottom");
             if (xticks != "auto") {
@@ -615,11 +630,11 @@
                 .x(function(d, i) { return xScale(x(d, i)); })
                 .y(function(d, i) { return yScale(y(d, i)); });
             
-            var ugrps = _.unique(_.map(selection.data()[0], function(d){ return d.group; }));
+            var ugrps = _.unique(_.map(newdata, function(d){ return d.group; }));
             for (var grp in ugrps) {
                 
                 // lines
-                var subdat = _.filter(selection.data()[0], function(d){ return d.group == ugrps[grp]; });
+                var subdat = _.filter(newdata, function(d){ return d.group == ugrps[grp]; });
                 svg.append("path")
                     .datum(subdat)
                     .attr("class", "line")
@@ -646,7 +661,7 @@
             // points (if specified)
             if (points > 0){
                 svg.selectAll(".dot")
-                    .data(selection.data()[0])
+                    .data(newdata)
                     .enter().append("circle")
                     .attr("class", "dot")
                     .attr("r", points)
@@ -769,6 +784,11 @@
             legend = value;
             return go
         }
+        go.transform = function(value) {
+            if (!arguments.length) return transform;
+            transform = value;
+            return go
+        }
         go.tooltip = function(value) {
             if (!arguments.length) return tooltip;
             tooltip = value;
@@ -779,6 +799,74 @@
     };
 
     // density plot
+    quorra.density = function() {
+        /**
+        quorra.density()
+
+        Density plot. Code for generating this type of plot was inspired from:
+        http://bl.ocks.org/mbostock/3883245
+        */
+
+        // attributes
+        var resolution = 10;
+
+        // density estimator methods
+        // these were inspired from: http://bl.ocks.org/mbostock/4341954 
+        function kdeEstimator(kernel, x) {
+            return function(sample) {
+                return x.map(function(x) {
+                    return {
+                        x: x,
+                        y: d3.mean(sample, function(v) { return kernel(x - v); }),
+                    };
+                });
+            };
+        }
+
+        function epanechnikovKernel(scale) {
+            return function(u) {
+                return Math.abs(u /= scale) <= 1 ? .75 * (1 - u * u) / scale : 0;
+            };
+        }
+
+        // generator
+        var go = quorra.line().transform(function(data){
+            
+            // generate kde scaling function
+            var format = d3.format(".04f");
+            var xScale = d3.scale.linear().range([0, go.w]);
+            var kde = kdeEstimator(epanechnikovKernel(9), xScale.ticks(go.resolution()));
+
+            // rearranging data
+            var grps = _.unique(_.map(data, function(d){ return d.group; }));
+            var newdata = [];
+            for (var grp in grps){
+                var subdat = _.filter(data, function(d){ return d.group == grps[grp]; });
+                var newgrp = kde(_.map(subdat, function(d){ return d.x }));
+                newgrp = _.map(newgrp, function(d){
+                    return {
+                        x: d.x,
+                        y: d.y,
+                        group: grps[grp],
+                        label: format(d.y)
+                    };
+                });
+                newdata = newdata.concat(newgrp);
+            }
+
+            return newdata;
+        });
+
+        // getters/setters
+        go.resolution = function(value) {
+            if (!arguments.length) return resolution;
+            resolution = value;
+            return go
+        }
+
+        return go;
+    }
+
     // bar
     // histogram
     // boxplot
