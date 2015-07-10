@@ -82,16 +82,16 @@
             // configure axes
             if (typeof selection.data()[0][0].x == 'string') {
                 var xGroups = _.unique(_.map(selection.data()[0], function(d){ return d.x; }));
-                var xScale = d3.scale.ordinal().range([w/(xGroups.length+2), w - w/(xGroups.length+2)]);
-                xScale.domain(xGroups);
+                var xScale = d3.scale.ordinal().range([0, w]);
+                xScale.domain(xGroups).rangePoints(xScale.range(), 1);
             }else{
                 var xScale = d3.scale.linear().range([0, w]);
                 xScale.domain(d3.extent(data, x)).nice();
             }
             if (typeof selection.data()[0][0].y == 'string') {
                 var yGroups = _.unique(_.map(selection.data()[0], function(d){ return d.y; }));
-                var yScale = d3.scale.ordinal().range([h - h/(yGroups.length+2), h/(yGroups.length+2)]);
-                yScale.domain(yGroups);
+                var yScale = d3.scale.ordinal().range([h, 0]);
+                yScale.domain(yGroups).rangePoints(yScale.range(),1);
             }else{
                 var yScale = d3.scale.linear().range([h, 0]);
                 yScale.domain(d3.extent(data, y)).nice();
@@ -584,9 +584,9 @@
 
             // configure axes
             if (typeof newdata[0].x == 'string') {
-                var xGroups = _.unique(_.map(newdata, function(d){ return d.x; }));
-                var xScale = d3.scale.ordinal().range([w/(xGroups.length+2), w - w/(xGroups.length+2)]);
-                xScale.domain(xGroups);
+                var xGroups = _.unique(_.map(selection.data()[0], function(d){ return d.x; }));
+                var xScale = d3.scale.ordinal().range([0, w]);
+                xScale.domain(xGroups).rangePoints(xScale.range(), 1);
             }else{
                 var xScale = d3.scale.linear().range([0, w]);
                 // manually set the domain here because it needs to 
@@ -598,8 +598,8 @@
             }
             if (typeof newdata[0].y == 'string') {
                 var yGroups = _.unique(_.map(newdata, function(d){ return d.y; }));
-                var yScale = d3.scale.ordinal().range([h - h/(yGroups.length+2), h/(yGroups.length+2)]);
-                yScale.domain(yGroups);
+                var yScale = d3.scale.ordinal().range([h, 0]);
+                yScale.domain(yGroups).rangePoints(yScale.range(), 1);
             }else{
                 var yScale = d3.scale.linear().range([h, 0]);
                 // manually set the domain here because it needs to 
@@ -974,9 +974,9 @@
 
             // configure axes
             if (typeof newdata[0].x == 'string') {
-                var xGroups = _.unique(_.map(newdata, function(d){ return d.x; }));
-                var xScale = d3.scale.ordinal().range([w/(xGroups.length+2), w - w/(xGroups.length+2)]);
-                xScale.domain(xGroups);
+                var xGroups = _.unique(_.map(selection.data()[0], function(d){ return d.x; }));
+                var xScale = d3.scale.ordinal().range([0, w]);
+                xScale.domain(xGroups).rangePoints(xScale.range(), 1);
             }else{
                 var xScale = d3.scale.linear().range([0, w]);
                 // manually set the domain here because it needs to 
@@ -994,8 +994,8 @@
             }
             if (typeof newdata[0].y == 'string') {
                 var yGroups = _.unique(_.map(newdata, function(d){ return d.y; }));
-                var yScale = d3.scale.ordinal().range([h - h/(yGroups.length+2), h/(yGroups.length+2)]);
-                yScale.domain(yGroups);
+                var yScale = d3.scale.ordinal().range([h, 0]);
+                yScale.domain(yGroups).rangePoints(yScale.range(), 1);
             }else{
                 var yScale = d3.scale.linear().range([h, 0]);
                 // manually set the domain here because it needs to 
