@@ -55,6 +55,8 @@
         var grid = false;
         var xlabel = "x";
         var ylabel = "y";
+        var xformat = "auto";
+        var yformat = "auto";
         var legend = true;
         var xjitter = 0;
         var yjitter = 0;
@@ -101,6 +103,12 @@
             var yAxis = d3.svg.axis().scale(yScale).orient("left");
             if (yticks != "auto") {
                 yAxis = yAxis.ticks(yticks);
+            }
+            if (xformat != "auto"){
+                xAxis = xAxis.tickFormat(xformat);
+            }
+            if (yformat != "auto"){
+                yAxis = yAxis.tickFormat(yformat);
             }
 
             // initialize canvas
@@ -290,6 +298,16 @@
         go.yticks = function(value) {
             if (!arguments.length) return yticks;
             yticks = value;
+            return go
+        }
+        go.xformat = function(value) {
+            if (!arguments.length) return xformat;
+            xformat = value;
+            return go
+        }
+        go.yformat = function(value) {
+            if (!arguments.length) return yformat;
+            yformat = value;
             return go
         }
         go.xdensity = function(value) {
@@ -531,6 +549,8 @@
         var grid = false;
         var xlabel = "x";
         var ylabel = "y";
+        var xformat = "auto";
+        var yformat = "auto";
         var legend = true;
         var points = 0;
         var xticks = "auto";
@@ -588,6 +608,12 @@
             var yAxis = d3.svg.axis().scale(yScale).orient("left");
             if (yticks != "auto") {
                 yAxis = yAxis.ticks(yticks);
+            }
+            if (xformat != "auto"){
+                xAxis = xAxis.tickFormat(xformat);
+            }
+            if (yformat != "auto"){
+                yAxis = yAxis.tickFormat(yformat);
             }
 
             // initialize canvas
@@ -771,6 +797,16 @@
             yticks = value;
             return go
         }
+        go.xformat = function(value) {
+            if (!arguments.length) return xformat;
+            xformat = value;
+            return go
+        }
+        go.yformat = function(value) {
+            if (!arguments.length) return yformat;
+            yformat = value;
+            return go
+        }
         go.xlabel = function(value) {
             if (!arguments.length) return xlabel;
             xlabel = value;
@@ -899,6 +935,8 @@
         var grid = false;
         var xlabel = "x";
         var ylabel = "y";
+        var xformat = "auto";
+        var yformat = "auto";
         var legend = true;
         var xticks = "auto";
         var yticks = "auto";
@@ -931,9 +969,15 @@
                 var xScale = d3.scale.linear().range([0, w]);
                 // manually set the domain here because it needs to 
                 // be aware of the newdata object (histogram plots)
+                // and x axis tweaks for histogram objects
+                if (typeof go.bins == "function") {
+                    var xmax = _.max(xScale.ticks(go.bins()));
+                } else {
+                    var xmax = _.max(_.map(newdata, function(d){ return d.x; }));
+                }
                 xScale.domain([
                     _.min(_.map(newdata, function(d){ return d.x; })),
-                    _.max(_.map(newdata, function(d){ return d.x; }))
+                    xmax
                 ]).nice();
             }
             if (typeof newdata[0].y == 'string') {
@@ -956,6 +1000,12 @@
             var yAxis = d3.svg.axis().scale(yScale).orient("left");
             if (yticks != "auto") {
                 yAxis = yAxis.ticks(yticks);
+            }
+            if (xformat != "auto"){
+                xAxis = xAxis.tickFormat(xformat);
+            }
+            if (yformat != "auto"){
+                yAxis = yAxis.tickFormat(yformat);
             }
 
             // initialize canvas
@@ -1141,6 +1191,16 @@
             yticks = value;
             return go
         }
+        go.xformat = function(value) {
+            if (!arguments.length) return xformat;
+            xformat = value;
+            return go
+        }
+        go.yformat = function(value) {
+            if (!arguments.length) return yformat;
+            yformat = value;
+            return go
+        }
         go.xlabel = function(value) {
             if (!arguments.length) return xlabel;
             xlabel = value;
@@ -1176,82 +1236,86 @@
         return go;
     };
 
-    // // histogram
-    //     // density plot
-    // quorra.density = function() {
-    //     /**
-    //     quorra.density()
+    // histogram
+    quorra.histogram = function() {
+        /**
+        quorra.histogram()
 
-    //     Density plot. Code for generating this type of plot was inspired from:
-    //     http://bl.ocks.org/mbostock/3883245
-    //     */
+        Histogram. Code for generating this type of plot was inspired from:
+        http://bl.ocks.org/mbostock/3883245
+        */
 
-    //     // attributes
-    //     var resolution = 10;
-    //     var tooltip = d3.select("body").append("div")
-    //         .attr("id", "density-tooltip")
-    //         .attr("class", "tooltip")
-    //         .style("position", "absolute")
-    //         .style("opacity", 0);
+        // attributes
+        var bins = 10;
+        var display = 'counts'; // fraction, percent, counts
+        var tooltip = d3.select("body").append("div")
+            .attr("id", "histogram-tooltip")
+            .attr("class", "tooltip")
+            .style("position", "absolute")
+            .style("opacity", 0);
 
-    //     // density estimator methods
-    //     // these were inspired from: http://bl.ocks.org/mbostock/4341954 
-    //     function kdeEstimator(kernel, x) {
-    //         return function(sample) {
-    //             return x.map(function(x) {
-    //                 return {
-    //                     x: x,
-    //                     y: d3.mean(sample, function(v) { return kernel(x - v); }),
-    //                 };
-    //             });
-    //         };
-    //     }
-
-    //     function epanechnikovKernel(scale) {
-    //         return function(u) {
-    //             return Math.abs(u /= scale) <= 1 ? .75 * (1 - u * u) / scale : 0;
-    //         };
-    //     }
-
-    //     // generator
-    //     var go = quorra.line()
-    //         .tooltip(tooltip)
-    //         .transform(function(data){
+        // generator
+        var go = quorra.bar()
+            .tooltip(tooltip)
+            .transform(function(data){
             
-    //         // generate kde scaling function
-    //         var format = d3.format(".04f");
-    //         var xScale = d3.scale.linear().range([0, go.w]);
-    //         var kde = kdeEstimator(epanechnikovKernel(9), xScale.ticks(go.resolution()));
+            // formatters
+            var format = d3.format(".04f");
+            var xScale = d3.scale.linear().range([0, go.w]);
 
-    //         // rearranging data
-    //         var grps = _.unique(_.map(data, function(d){ return d.group; }));
-    //         var newdata = [];
-    //         for (var grp in grps){
-    //             var subdat = _.filter(data, function(d){ return d.group == grps[grp]; });
-    //             var newgrp = kde(_.map(subdat, function(d){ return d.x }));
-    //             newgrp = _.map(newgrp, function(d){
-    //                 return {
-    //                     x: d.x,
-    //                     y: d.y,
-    //                     group: grps[grp],
-    //                     label: format(d.y)
-    //                 };
-    //             });
-    //             newdata = newdata.concat(newgrp);
-    //         }
+            // generate histogram binning
+            var histogram = d3.layout.histogram()
+                .frequency(false)
+                .bins(xScale.ticks(go.bins()));
 
-    //         return newdata;
-    //     });
+            // rearranging data
+            var grps = _.unique(_.map(data, function(d){ return d.group; }));
+            var newdata = [];
+            for (var grp in grps){
+                var subdat = _.filter(data, function(d){ return d.group == grps[grp]; });
+                var newgrp = histogram(_.map(subdat, function(d){ return d.x }));
+                newgrp = _.map(newgrp, function(d){
+                    if (go.display() == 'counts'){
+                        d.y = d.y*subdat.length;
+                    } else if (display == 'percent'){
+                        d.y = d.y*100;
+                    }
+                    return {
+                        x: d.x,
+                        y: d.y,
+                        group: grps[grp],
+                        label: format(d.y)
+                    };
+                });
+                newdata = newdata.concat(newgrp);
+            }
 
-    //     // getters/setters
-    //     go.resolution = function(value) {
-    //         if (!arguments.length) return resolution;
-    //         resolution = value;
-    //         return go
-    //     }
+            return newdata;
+        });
 
-    //     return go;
-    // };
+        // config display
+        if (display == "percent") {
+            go = go.yformat(d3.format("%"));
+        } else if (display == "counts") {
+            go = go.yformat(d3.format(".0f"));
+        } else if (display == "fraction"){
+            go = go.yformat(d3.format(".02f"));
+        }
+
+        // getters/setters
+        go.bins = function(value) {
+            if (!arguments.length) return bins;
+            bins = value;
+            return go
+        }
+        go.display = function(value) {
+            if (!arguments.length) return display;
+            display = value;
+            return go
+        }
+
+        return go;
+    };
     
     // boxplot
     // venn diagram
