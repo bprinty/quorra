@@ -1,0 +1,40 @@
+/* quorra version 0.0.1 (http://bprinty.github.io/quorra) 2015-07-12 */
+/*
+ * Quorra stylesheet.
+ *
+ * @author Blake Printy <bprinty@gmail.com>
+ * ----------------------------------------------- */
+
+.axis path,
+.axis line {
+    fill: none;
+    stroke: #000;
+    shape-rendering: crispEdges;
+}
+.axis .tick line {
+    stroke: #bbb;
+    opacity: 0.5;
+}
+.xtick, 
+.ytick {
+    stroke-width: 1.5px;
+}
+.line {
+    fill: none;
+    stroke: #000;
+    stroke-width: 3px;
+}
+.arc text,
+.axis text,
+.legend text, 
+.tooltip {
+    font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif; 
+    font-weight: 300;
+    font-size: 12px;
+}
+.dot {
+    stroke-width: 0;
+}
+.arc path {
+  stroke: #fff;
+}

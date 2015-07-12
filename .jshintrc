@@ -1,0 +1,9 @@
+{
+    "bitwise": true,
+    "eqeqeq": true,
+    "freeze": true,
+    "latedef": "nofunc",
+    "strict": true,
+    "undef": true,
+    "unused": "strict"
+}

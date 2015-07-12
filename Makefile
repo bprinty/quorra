@@ -4,20 +4,21 @@
 # @author <bprinty@gmail.com>
 # ------------------------------------------------------
 
-BUILD_PATH = build
+BUILD_PATH = dist
 
 default: build
 	@true
 
 deps:
 	bower install
+	npm install
 
 build:
-	# minify javascript files
+	grunt
 
 test:
 	# run javascript-based tests
 
 clean:
-	rm -rf build
+	rm -rf build node_modules lib
 
