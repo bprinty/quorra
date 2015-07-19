@@ -24,7 +24,8 @@ Or, if you don't want to use bower, you could alternatively find them [here (d3.
 
 Documentation:
 -------------
-See the 
+
+Coming soon ...
 
 
 Browser/Platform Support:
