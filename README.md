@@ -1,5 +1,5 @@
 ===============================
-quorra - A reusable visualization API built on top of d3.js
+quorra - An Interactive Visualization Library
 ===============================
 
 
