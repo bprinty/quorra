@@ -1,6 +1,8 @@
 ===============================
-quorra - An Interactive Visualization Library
+quorra.js
 ===============================
+
+An interactive visualization library, focused on creating reusable visualizations on top of d3.js.
 
 
 Usage:
