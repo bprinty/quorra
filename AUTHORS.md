@@ -5,7 +5,7 @@ Credits
 Development Lead
 ----------------
 
-* Blake Printy <bprinty@asuragen.com>
+* [bprinty](http://github.com/bprinty)
 
 Contributors
 ------------
