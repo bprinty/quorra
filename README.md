@@ -39,7 +39,7 @@ Quorra wil work with any browser that supports d3.js. For more details, see the 
 Extensions:
 ----------
 
-The idea of being able to intereact with data should be commonplace across all languages used in analyzing datasets. Several extensions have been built for using this library with popular programming languages used in statistical analyses (i.e. R, python), and more are on the way. If you are interested in developing an extension, contact [bprinty](http://github.com/bprinty). Here are the set of language extensions that have been built so far:
+Data interactivity should be a fundamental component of any data-driven investigation, and thus should be available to all languages commonly used for data analysis. To this end, quorra extensions are being developed for using this library with popular programming languages used in statistical analyses (i.e. R, python), and more are on the way. If you are interested in developing an extension, contact [bprinty](http://github.com/bprinty). Here are the set of extensions that are currently in development:
 
 * R: [quorra-r](http://github.com/bprinty/quorra-r).
 * python: [quorra-python](http://github.com/bprinty/quorra-python).
@@ -60,6 +60,6 @@ See the [contributing](https://github.com/bprinty/quorra/blob/master/CONTRIBUTIN
 Other Links:
 -----------
 
-* [d3.js](https://github.com/mbostock/d3).
-* [underscore.js](https://github.com/jashkenas/underscore).
+* [d3.js](https://github.com/mbostock/d3)
+* [underscore.js](https://github.com/jashkenas/underscore)
 
