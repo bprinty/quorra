@@ -5,8 +5,7 @@ quorra.js
 An interactive visualization library, focused on creating reusable visualizations on top of d3.js.
 
 
-Usage:
-------
+## Usage:
 
 Add the d3.js and underscore.js assets into your project and include the quorra javascript and css assets in your HTML document via:
 
@@ -24,20 +23,17 @@ bower install
 Or, if you don't want to use bower, you could alternatively find them [here (d3.js)](https://raw.githubusercontent.com/mbostock/d3/master/d3.min.js) and [here (underscore.js)](https://raw.githubusercontent.com/jashkenas/underscore/master/underscore-min.js).
 
 
-Documentation:
--------------
+## Documentation:
 
 Coming soon ...
 
 
-Browser/Platform Support:
---------
+## Browser/Platform Support:
 
 Quorra wil work with any browser that supports d3.js. For more details, see the d3 [wiki](https://github.com/mbostock/d3/wiki#user-content-browser--platform-support>).
 
 
-Extensions:
-----------
+## Extensions:
 
 Data interactivity should be a fundamental component of any data-driven investigation, and thus should be available to all languages commonly used for data analysis. To this end, quorra extensions are being developed for using this library with popular programming languages used in statistical analyses (i.e. R, python), and more are on the way. If you are interested in developing an extension, contact [bprinty](http://github.com/bprinty). Here are the set of extensions that are currently in development:
 
