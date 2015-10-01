@@ -14,11 +14,13 @@
         body {
             padding-top: 10px;
         }
+        /*#mapped,*/
         #grouped,
         #stacked {
             width: 800px;
             height: 500px;
         }
+        /*#mapped .plotarea,*/
         #grouped .plotarea,
         #stacked .plotarea {
             width: 700px;
@@ -29,6 +31,9 @@
 
   <body>
 
+<!--     <div id="mapped" class="container">
+        <div class="plotarea"></div>
+    </div> -->
     <div id="grouped" class="container">
         <div class="plotarea"></div>
     </div>
@@ -76,6 +81,21 @@
             }));
         }
         var redblue = d3.scale.ordinal().domain(['Evil', 'Good']).range(['firebrick','steelblue']);
+
+        // bar with map
+        // var grouped = quorra.bar()
+        //     .width(500)
+        //     .height(400)
+        //     .grid(true)
+        //     .layout('mapped')
+        //     .xlabel("X Axis Label")
+        //     .ylabel("Y Axis Label")
+        //     .color(redblue)
+        //     .map(true)
+        //     .legend(false);
+
+        // d3.select('#mapped .plotarea')
+        //     .datum(data).call(grouped);
 
         // grouped bar
         var grouped = quorra.bar()
