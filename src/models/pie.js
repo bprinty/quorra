@@ -34,7 +34,7 @@ quorra.pie = function() {
         // if height/width are auto, determine them from selection
         var w = (width == "auto") ? (parseInt(selection.style("width")) - margin.left - margin.right) : width;
         var h = (height == "auto") ? (parseInt(selection.style("height")) - margin.top - margin.bottom) : height;
-        var r = (radius == "auto") ? (Math.min(w, h)) : radius;
+        var r = (radius == "auto") ? (Math.min(w, h) / 2) : radius;
         var ir = (inner == "auto") ? 0 : inner;
 
         // aggregate data
