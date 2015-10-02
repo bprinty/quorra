@@ -87,6 +87,9 @@ quorra.multiline = function() {
             .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
         // axes
+        // for some reason (haven't been able to look into it yet)
+        // all of the axes are using the same scale when they should
+        // have different scaling relative to the input data
         var xScale = d3.scale.linear().range([0, w]);
         xScale.domain([0, groups.length]).nice();
         for(i=0; i<groups.length; i++){
