@@ -1,4 +1,4 @@
-/* quorra version 0.0.1 (http://bprinty.github.io/quorra) 2015-10-02 */
+/* quorra version 0.0.1 (http://bprinty.github.io/quorra) 2015-10-06 */
 (function(){
 function quorra() {
     /**
@@ -939,6 +939,9 @@ function epanechnikovKernel(scale) {
             .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
         // axes
+        // for some reason (haven't been able to look into it yet)
+        // all of the axes are using the same scale when they should
+        // have different scaling relative to the input data
         var xScale = d3.scale.linear().range([0, w]);
         xScale.domain([0, groups.length]).nice();
         for(i=0; i<groups.length; i++){
@@ -1170,7 +1173,7 @@ function epanechnikovKernel(scale) {
                 .attr("transform", function(d) { return "translate(" + arc.centroid(d) + ")"; })
                 .attr("dy", ".35em")
                 .style("text-anchor", "middle")
-                .text(function(d) { return label(d.data, i); });
+                .text(function(d) { return group(d.data, i); });
         }
     }
 
