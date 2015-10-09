@@ -1,4 +1,4 @@
-quorra.histogram = function() {
+quorra.histogram = function(attributes) {
     /**
     quorra.histogram()
 
@@ -8,9 +8,7 @@ quorra.histogram = function() {
     @author <bprinty@gmail.com>
     */
 
-    // attributes
-    var bins = 10;
-    var display = 'counts'; // fraction, percent, counts
+    // tooltip
     var tooltip = d3.select("body").append("div")
         .attr("id", "histogram-tooltip")
         .attr("class", "tooltip")
@@ -18,64 +16,56 @@ quorra.histogram = function() {
         .style("opacity", 0);
 
     // generator
-    var go = quorra.bar()
+    var go = quorra.bar({
+            bins: 10,
+            display: 'counts'  // fraction, percent, counts
+        })
+        .id('histogram')
         .tooltip(tooltip)
         .transform(function(data){
         
-        // formatters
-        var format = d3.format(".04f");
-        var xScale = d3.scale.linear().range([0, go.w]);
+            // formatters
+            var format = d3.format(".04f");
+            var xScale = d3.scale.linear().range([0, go.innerWidth]);
 
-        // generate histogram binning
-        var histogram = d3.layout.histogram()
-            .frequency(false)
-            .bins(xScale.ticks(go.bins()));
+            // generate histogram binning
+            var histogram = d3.layout.histogram()
+                .frequency(false)
+                .bins(xScale.ticks(go.bins()));
 
-        // rearranging data
-        var grps = _.unique(_.map(data, function(d){ return d.group; }));
-        var newdata = [];
-        for (var grp in grps){
-            var subdat = _.filter(data, function(d){ return d.group == grps[grp]; });
-            var newgrp = histogram(_.map(subdat, function(d){ return d.x }));
-            newgrp = _.map(newgrp, function(d){
-                if (go.display() == 'counts'){
-                    d.y = d.y*subdat.length;
-                } else if (display == 'percent'){
-                    d.y = d.y*100;
-                }
-                return {
-                    x: d.x,
-                    y: d.y,
-                    group: grps[grp],
-                    label: format(d.y)
-                };
-            });
-            newdata = newdata.concat(newgrp);
-        }
+            // rearranging data
+            var grps = _.unique(_.map(data, function(d){ return d.group; }));
+            var newdata = [];
+            for (var grp in grps){
+                var subdat = _.filter(data, function(d){ return d.group == grps[grp]; });
+                var newgrp = histogram(_.map(subdat, function(d){ return d.x }));
+                newgrp = _.map(newgrp, function(d){
+                    if (go.display() == 'counts'){
+                        d.y = d.y*subdat.length;
+                    } else if (go.display() == 'percent'){
+                        d.y = d.y*100;
+                    }
+                    return {
+                        x: d.x,
+                        y: d.y,
+                        group: grps[grp],
+                        label: format(d.y)
+                    };
+                });
+                newdata = newdata.concat(newgrp);
+            }
 
-        return newdata;
-    });
+            return newdata;
+        });
 
     // config display
-    if (display == "percent") {
+    if (go.display() == "percent") {
         go = go.yformat(d3.format("%"));
-    } else if (display == "counts") {
+    } else if (go.display() == "counts") {
         go = go.yformat(d3.format(".0f"));
-    } else if (display == "fraction"){
+    } else if (go.display() == "fraction"){
         go = go.yformat(d3.format(".02f"));
     }
-
-    // getters/setters
-    go.bins = function(value) {
-        if (!arguments.length) return bins;
-        bins = value;
-        return go;
-    };
-    go.display = function(value) {
-        if (!arguments.length) return display;
-        display = value;
-        return go;
-    };
 
     return go;
 };

@@ -9,7 +9,6 @@ quorra.density = function() {
     */
 
     // attributes
-    var resolution = 10;
     var tooltip = d3.select("body").append("div")
         .attr("id", "density-tooltip")
         .attr("class", "tooltip")
@@ -17,13 +16,16 @@ quorra.density = function() {
         .style("opacity", 0);
 
     // generator
-    var go = quorra.line()
+    var go = quorra.line({
+            resolution: 10
+        })
+        .id('density')
         .tooltip(tooltip)
         .transform(function(data){
         
         // generate kde scaling function
         var format = d3.format(".04f");
-        var xScale = d3.scale.linear().range([0, go.w]);
+        var xScale = d3.scale.linear().range([0, go.innerWidth]);
         var kde = kdeEstimator(epanechnikovKernel(9), xScale.ticks(go.resolution()));
 
         // rearranging data
@@ -45,13 +47,6 @@ quorra.density = function() {
 
         return newdata;
     });
-
-    // getters/setters
-    go.resolution = function(value) {
-        if (!arguments.length) return resolution;
-        resolution = value;
-        return go;
-    };
 
     return go;
 };
