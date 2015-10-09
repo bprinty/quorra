@@ -8,22 +8,24 @@
 
     <!-- css -->
     <link href="../dist/quorra.css" rel="stylesheet">
+    <link href="./css/common.css" rel="stylesheet">
+
+    <!-- js -->
+    <script src="./js/ace.js"></script>
+    <script src="./js/common.js"></script>
 
     <!-- custom styles -->
     <style>
-        body {
-            padding-top: 10px;
-        }
-        /*#mapped,*/
         #grouped,
         #stacked {
-            width: 800px;
+            width: 600px;
             height: 500px;
+            margin-left: auto;
+            margin-right: auto;
         }
-        /*#mapped .plotarea,*/
         #grouped .plotarea,
         #stacked .plotarea {
-            width: 700px;
+            width: 600px;
             height: 500px;
         }
     </style>
@@ -31,15 +33,54 @@
 
   <body>
 
-<!--     <div id="mapped" class="container">
-        <div class="plotarea"></div>
-    </div> -->
-    <div id="grouped" class="container">
-        <div class="plotarea"></div>
+    <div id="header">
+        <h1>Bar Plot</h1>
     </div>
-    <div id="stacked" class="container">
-        <div class="plotarea"></div>
-    </div>
+
+    <div id="plots">
+        <div id="config-editor" class="editor" style="height: 75px;"> 
+var redblue = d3.scale.ordinal().domain(['Evil', 'Good']).range(['firebrick','steelblue']);
+        </div>
+        <p class="pre-editor">Hit Cmd+Enter for changes to take effect.</p>
+
+        <div id="grouped" class="container">
+            <div class="plotarea"></div>
+        </div>
+
+        <div id="grouped-editor" class="editor">
+// grouped bar
+var grouped = quorra.bar()
+    .width(500)
+    .height(400)
+    .grid(true)
+    .layout('grouped')
+    .xlabel("X Axis Label")
+    .ylabel("Y Axis Label")
+    .color(redblue);
+
+d3.select('#grouped .plotarea')
+    .datum(data).call(grouped);
+        </div>
+        <p class="pre-editor">Hit Cmd+Enter for changes to take effect.</p>
+
+        <div id="stacked" class="container">
+            <div class="plotarea"></div>
+        </div>
+
+        <div id="stacked-editor" class="editor">
+// stacked bar
+var stacked = quorra.bar()
+    .width(500)
+    .height(400)
+    .layout('stacked')
+    .xlabel("X Axis Label")
+    .ylabel("Y Axis Label")
+    .color(redblue);
+
+d3.select('#stacked .plotarea')
+    .datum(data).call(stacked);
+        </div>
+        <p class="pre-editor">Hit Cmd+Enter for changes to take effect.</p>
 
     <script src="../lib/d3/d3.min.js"></script>
     <script src="../lib/underscore/underscore-min.js"></script>
@@ -80,48 +121,13 @@
                 };
             }));
         }
-        var redblue = d3.scale.ordinal().domain(['Evil', 'Good']).range(['firebrick','steelblue']);
+    </script>
 
-        // bar with map
-        // var grouped = quorra.bar()
-        //     .width(500)
-        //     .height(400)
-        //     .grid(true)
-        //     .layout('mapped')
-        //     .xlabel("X Axis Label")
-        //     .ylabel("Y Axis Label")
-        //     .color(redblue)
-        //     .map(true)
-        //     .legend(false);
-
-        // d3.select('#mapped .plotarea')
-        //     .datum(data).call(grouped);
-
-        // grouped bar
-        var grouped = quorra.bar()
-            .width(500)
-            .height(400)
-            .grid(true)
-            .layout('grouped')
-            .xlabel("X Axis Label")
-            .ylabel("Y Axis Label")
-            .color(redblue);
-
-        d3.select('#grouped .plotarea')
-            .datum(data).call(grouped);
-
-        // stacked bar
-        var stacked = quorra.bar()
-            .width(500)
-            .height(400)
-            .layout('stacked')
-            .xlabel("X Axis Label")
-            .ylabel("Y Axis Label")
-            .color(redblue);
-
-        d3.select('#stacked .plotarea')
-            .datum(data).call(stacked);
-
+    <script>
+        eval(parameterizeEditor('config-editor'));
+        eval(parameterizeEditor('grouped-editor', '#grouped .plotarea svg'));
+        eval(parameterizeEditor('stacked-editor', '#stacked .plotarea svg'));
+    </script>
 
     </script>
   </body>

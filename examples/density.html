@@ -8,20 +8,24 @@
 
     <!-- css -->
     <link href="../dist/quorra.css" rel="stylesheet">
+    <link href="./css/common.css" rel="stylesheet">
+
+    <!-- js -->
+    <script src="./js/ace.js"></script>
+    <script src="./js/common.js"></script>
 
     <!-- custom styles -->
     <style>
-        body {
-            padding-top: 10px;
-        }
         #density, 
         #lowdensity {
-            width: 800px;
+            width: 600px;
             height: 500px;
+            margin-left: auto;
+            margin-right: auto;
         }
         #density .plotarea,
         #lowdensity .plotarea {
-            width: 700px;
+            width: 600px;
             height: 500px;
         }
     </style>
@@ -29,17 +33,66 @@
 
   <body>
 
-    <div id="density" class="container">
-        <div class="plotarea"></div>
+    <div id="header">
+        <h1>Density Plot</h1>
     </div>
-    <div id="lowdensity" class="container">
-        <div class="plotarea"></div>
+
+    <div id="plots">
+    
+        <div id="config-editor" class="editor" style="height: 75px;"> 
+var redblue = d3.scale.ordinal().domain(['Evil', 'Good']).range(['firebrick','steelblue']);
+        </div>
+        <p class="pre-editor">Hit Cmd+Enter for changes to take effect.</p>
+
+        <div id="density" class="container">
+            <div class="plotarea"></div>
+        </div>
+
+        <div id="density-editor" class="editor"> 
+// regular scatter
+var density = quorra.density()
+    .width(500).height(400)
+    .margin({"top": 20, "bottom": 20, "left": 50, "right": 20})
+    .grid(true)
+    .yticks(10).xticks(10)
+    .resolution(20)
+    .xlabel("X Axis Label")
+    .ylabel("Density")
+    .color(redblue);
+
+d3.select('#density .plotarea')
+    .datum(data).call(density);
+        </div>
+        <p class="pre-editor">Hit Cmd+Enter for changes to take effect.</p>
+        
+        <div id="lowdensity" class="container">
+            <div class="plotarea"></div>
+        </div>
+
+        <div id="lowdensity-editor" class="editor"> 
+// regular scatter
+var lowdensity = quorra.density()
+    .width(500)
+    .height(400)
+    .margin({"top": 20, "bottom": 20, "left": 60, "right": 20})
+    .resolution(5)
+    .points(5)
+    .xlabel("X Axis Label")
+    .ylabel("Density")
+    .color(redblue);
+
+d3.select('#lowdensity .plotarea')
+    .datum(data).call(lowdensity);
+        </div>
+        <p class="pre-editor">Hit Cmd+Enter for changes to take effect.</p>
+    
     </div>
 
     <script src="../lib/d3/d3.min.js"></script>
     <script src="../lib/underscore/underscore-min.js"></script>
     <script src="../dist/quorra.js"></script>
     <script>
+
         // simulate data
         var entries = 200;
         quorra.seed(123);
@@ -56,39 +109,14 @@
                 label: label[i]
             });
         }
-        var redblue = d3.scale.ordinal().domain(['Evil', 'Good']).range(['firebrick','steelblue']);
-
-        // regular scatter
-        var density = quorra.density()
-            .width(500)
-            .height(400)
-            .margin({"top": 20, "bottom": 20, "left": 50, "right": 20})
-            .grid(true)
-            .yticks(10)
-            .xticks(10)
-            .resolution(20)
-            .xlabel("X Axis Label")
-            .ylabel("Density")
-            .color(redblue);
-
-        d3.select('#density .plotarea')
-            .datum(data).call(density);
-
-        // regular scatter
-        var lowdensity = quorra.density()
-            .width(500)
-            .height(400)
-            .margin({"top": 20, "bottom": 20, "left": 60, "right": 20})
-            .resolution(5)
-            .points(5)
-            .xlabel("X Axis Label")
-            .ylabel("Density")
-            .color(redblue);
-
-        d3.select('#lowdensity .plotarea')
-            .datum(data).call(lowdensity);
-
 
     </script>
+
+    <script>
+        eval(parameterizeEditor('config-editor'));
+        eval(parameterizeEditor('density-editor', '#density .plotarea svg'));
+        eval(parameterizeEditor('lowdensity-editor', '#lowdensity .plotarea svg'));
+    </script>
+
   </body>
 </html>

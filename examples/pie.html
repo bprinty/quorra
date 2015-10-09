@@ -8,20 +8,24 @@
 
     <!-- css -->
     <link href="../dist/quorra.css" rel="stylesheet">
+    <link href="./css/common.css" rel="stylesheet">
+
+    <!-- js -->
+    <script src="./js/ace.js"></script>
+    <script src="./js/common.js"></script>
 
     <!-- custom styles -->
     <style>
-        body {
-            padding-top: 10px;
-        }
         #pie, 
-        .hollowpie {
-            width: 800px;
+        #hollowpie {
+            width: 900px;
             height: 500px;
+            margin-left: auto;
+            margin-right: auto;
         }
         #pie .plotarea, 
         #hollowpie .plotarea {
-            width: 700px;
+            width: 900px;
             height: 500px;
         }
     </style>
@@ -29,11 +33,52 @@
 
   <body>
 
-    <div id="pie" class="container">
-        <div class="plotarea"></div>
+    <div id="header">
+        <h1>Pie Chart</h1>
     </div>
-    <div id="hollowpie" class="container">
-        <div class="plotarea"></div>
+
+    <div id="plots">
+        <div id="config-editor" class="editor" style="height: 75px;"> 
+var colors = d3.scale.ordinal().domain(['Evil', 'Good', 'Okay']).range(['firebrick','forestgreen','steelblue']);
+        </div>
+        <p class="pre-editor">Hit Cmd+Enter for changes to take effect.</p>
+
+        <div id="pie" class="container">
+            <div class="plotarea"></div>
+        </div>
+        <div id="pie-editor" class="editor">        
+// regular pie
+var pie = quorra.pie()
+    .radius(200)
+    .tooltip(false)
+    .color(colors)
+    .aggregate(function(x){ return(x.length); });
+
+d3.select('#pie .plotarea')
+    .datum(data).call(pie);
+        </div>
+        <p class="pre-editor">Hit Cmd+Enter for changes to take effect.</p>
+
+        <div id="hollowpie" class="container">
+            <div class="plotarea"></div>
+        </div>
+
+        <div id="hollowpie-editor" class="editor"> 
+// hollow pie
+var hollowpie = quorra.pie()
+    .legend(false)
+    .radius(200)
+    .inner(100)
+    .color(colors);
+
+d3.select('#hollowpie .plotarea')
+    .datum([
+        {x: 50, group: "Good", label: "Good"},
+        {x: 150, group: "Evil", label: "Evil"},
+        {x: 20, group: "Okay", label: "Okay"}
+    ]).call(hollowpie);
+        </div>
+        <p class="pre-editor">Hit Cmd+Enter for changes to take effect.</p>
     </div>
 
     <script src="../lib/d3/d3.min.js"></script>
@@ -56,33 +101,14 @@
                 label: label[i]
             });
         }
-        var colors = d3.scale.ordinal().domain(['Evil', 'Good', 'Okay']).range(['firebrick','forestgreen','steelblue']);
-
-        // regular pie
-        var pie = quorra.pie()
-            .radius(200)
-            .tooltip(false)
-            .aggregate(function(x){ return(x.length); })
-            .color(colors);
-
-        d3.select('#pie .plotarea')
-            .datum(data).call(pie);
-
-        // hollow pie
-        var hollowpie = quorra.pie()
-            .legend(false)
-            .radius(200)
-            .inner(100)
-            .color(colors);
-
-        d3.select('#hollowpie .plotarea')
-            .datum([
-                {x: 50, group: "Good", label: "Good"},
-                {x: 150, group: "Evil", label: "Evil"},
-                {x: 20, group: "Okay", label: "Okay"}
-            ]).call(hollowpie);
-
 
     </script>
+
+    <script>
+        eval(parameterizeEditor('config-editor'));
+        eval(parameterizeEditor('pie-editor', '#pie .plotarea svg'));
+        eval(parameterizeEditor('hollowpie-editor', '#hollowpie .plotarea svg'));
+    </script>
+
   </body>
 </html>

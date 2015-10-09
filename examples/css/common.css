@@ -1,0 +1,43 @@
+
+body {
+    padding-top: 10px;
+    width: 100%;
+    height: 100%;
+}
+
+h1 {
+    font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue";
+    font-weight: 100;
+}
+
+#header {
+    width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+}
+
+#plots {
+    width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.editor { 
+    width: 600px;
+    height: 250px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+p.pre-editor {
+    font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue";
+    width: 600px;
+    font-weight: 100;
+    font-size: 12px;
+    padding: 0px;
+    margin-top: 0px;
+    margin-bottom: 0px;
+    margin-left: auto;
+    margin-right: auto;
+}

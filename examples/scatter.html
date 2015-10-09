@@ -8,20 +8,24 @@
 
     <!-- css -->
     <link href="../dist/quorra.css" rel="stylesheet">
+    <link href="./css/common.css" rel="stylesheet">
+
+    <!-- js -->
+    <script src="./js/ace.js"></script>
+    <script src="./js/common.js"></script>
 
     <!-- custom styles -->
     <style>
-        body {
-            padding-top: 10px;
-        }
         #scatter,
         #jitter {
-            width: 800px;
+            width: 600px;
             height: 500px;
+            margin-left: auto;
+            margin-right: auto;
         }
         #jitter .plotarea,
         #scatter .plotarea {
-            width: 700px;
+            width: 600px;
             height: 500px;
         }
     </style>
@@ -29,17 +33,64 @@
 
   <body>
 
-    <div id="scatter" class="container">
-        <div class="plotarea"></div>
+    <div id="header">
+        <h1>Scatter Chart</h1>
     </div>
-    <div id="jitter" class="container">
-        <div class="plotarea"></div>
+
+    <div id="plots">
+        <div id="config-editor" class="editor" style="height: 75px;">
+var redblue = d3.scale.ordinal().domain(['Evil', 'Good']).range(['firebrick','steelblue']);
+        </div>
+        <p class="pre-editor">Hit Cmd+Enter for changes to take effect.</p>
+
+        <div id="scatter" class="container">
+            <div class="plotarea"></div>
+        </div>
+
+        <div id="scatter-editor" class="editor">
+// regular scatter
+var scatter = quorra.scatter()
+    .width(500)
+    .height(400)
+    .grid(true)
+    .yticks(10)
+    .xticks(10)
+    .xlabel("X Axis Label")
+    .ylabel("Y Axis Label")
+    .color(redblue);
+
+d3.select('#scatter .plotarea')
+    .datum(data).call(scatter);
+        </div>
+        <p class="pre-editor">Hit Cmd+Enter for changes to take effect.</p>
+
+        <div id="jitter" class="container">
+            <div class="plotarea"></div>
+        </div>
+
+        <div id="jitter-editor" class="editor">
+// grouped scatter with jitter
+var jitter = quorra.scatter()
+    .width(500)
+    .height(400)
+    .xjitter(100)
+    .ydensity(true)
+    .xlabel("Group")
+    .ylabel("Y Axis Label")
+    .color(redblue);
+
+d3.select('#jitter .plotarea')
+    .datum(data2).call(jitter);
+        </div>
+        <p class="pre-editor">Hit Cmd+Enter for changes to take effect.</p>
+        
     </div>
 
     <script src="../lib/d3/d3.min.js"></script>
     <script src="../lib/underscore/underscore-min.js"></script>
     <script src="../dist/quorra.js"></script>
     <script>
+        
         // simulate data
         var entries = 200;
         quorra.seed(123);
@@ -65,36 +116,14 @@
                 label: label[i]
             });
         }
-        var redblue = d3.scale.ordinal().domain(['Evil', 'Good']).range(['firebrick','steelblue']);
-
-        // regular scatter
-        var scatter = quorra.scatter()
-            .width(500)
-            .height(400)
-            .grid(true)
-            .yticks(10)
-            .xticks(10)
-            .xlabel("X Axis Label")
-            .ylabel("Y Axis Label")
-            .color(redblue);
-
-        d3.select('#scatter .plotarea')
-            .datum(data).call(scatter);
-
-        // grouped scatter with jitter
-        var jitter = quorra.scatter()
-            .width(500)
-            .height(400)
-            .xjitter(100)
-            .ydensity(true)
-            .xlabel("Group")
-            .ylabel("Y Axis Label")
-            .color(redblue);
-
-        d3.select('#jitter .plotarea')
-            .datum(data2).call(jitter);
-
 
     </script>
+
+    <script>
+        eval(parameterizeEditor('config-editor'));
+        eval(parameterizeEditor('scatter-editor', '#scatter .plotarea svg'));
+        eval(parameterizeEditor('jitter-editor', '#jitter .plotarea svg'));
+    </script>
+
   </body>
 </html>
