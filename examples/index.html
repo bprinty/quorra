@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="author" content="bprinty@gmail.com">
+    <title>Quorra Examples</title>
+
+    <!-- css -->
+    <link href="../dist/quorra.css" rel="stylesheet">
+    <link href="./css/common.css" rel="stylesheet">
+
+    <!-- js -->
+    <script src="./js/ace.js"></script>
+    <script src="./js/common.js"></script>
+
+    <!-- custom styles -->
+    <style>
+        .plot {
+            width: 250px;
+            height: 250px;
+            margin-left: 10px;
+            margin-right: 10px;
+            display: inline-block;
+        }
+    </style>
+  </head>
+
+  <body>
+
+    <div id="header">
+        <h1>Quorra Examples</h1>
+    </div>
+
+    <div id="thumbnails">
+        <div id="bar-grouped" class="plot"></div>
+        <div id="bar-stacked" class="plot"></div>
+    </div>
+
+    <script src="../lib/d3/d3.min.js"></script>
+    <script src="../lib/underscore/underscore-min.js"></script>
+    <script src="../dist/quorra.js"></script>
+    <script>
+        // simulate data
+        quorra.seed(678);
+        function layerup(n, o) {
+            function bump(a) {
+                var x = 1 / (.1 + quorra.random()),
+                    y = 2 * quorra.random() - .5,
+                    z = 10 / (.1 + quorra.random());
+                for (var i = 0; i < n; i++) {
+                    var w = (i / n - y) * z;
+                    a[i] += x * Math.exp(-w * w);
+                }
+            }
+            var a = [], i;
+            for (i = 0; i < n; ++i) a[i] = o + o * quorra.random();
+            for (i = 0; i < 5; ++i) bump(a);
+            return a.map(function(d, i) { return {
+                x: i,
+                y: Math.max(0, d),
+            }; });
+        }
+        var groups = 2;
+        var samples = 20;
+        var stack = d3.layout.stack();
+        var layerdata = stack(d3.range(groups).map(function() { return layerup(samples, 0.1); }));
+        var data = [];
+        for (var layer in layerdata) {
+            data = data.concat(_.map(layerdata[layer], function(d, i){
+                return {
+                    x: d.x,
+                    y: d.y,
+                    group: (layer == 1) ? 'Good': 'Evil',
+                    label: (layer == 1) ? ('Good' + i): ('Evil' + i)
+                };
+            }));
+        }
+
+        //
+        var redblue = d3.scale.ordinal().domain(['Evil', 'Good']).range(['firebrick','steelblue']);
+
+        // grouped bar
+        var grouped = quorra.bar()
+            .width(200)
+            .height(200)
+            .grid(true)
+            .legend(false)
+            .layout('grouped')
+            .xlabel("")
+            .ylabel("")
+            .tooltip(false)
+            .color(redblue);
+
+        d3.select('#bar-grouped')
+            .datum(data).call(grouped);
+
+        // stacked bar
+        var stacked = quorra.bar()
+            .width(200)
+            .height(200)
+            .grid(false)
+            .legend(false)
+            .layout('stacked')
+            .xlabel("")
+            .ylabel("")
+            .tooltip(false)
+            .color(redblue);
+
+        d3.select('#bar-stacked')
+            .datum(data).call(stacked);
+
+    </script>
+  </body>
+</html>
