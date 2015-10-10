@@ -18,25 +18,24 @@ quorra.bar = function(attributes) {
         // format selection
         if (typeof selection === 'string') selection = d3.select(selection);
 
-        // if height/width are auto, determine them from selection
-        var w = (attr.width == "auto") ? (parseInt(selection.style("width")) - attr.margin.left - attr.margin.right) : attr.width;
-        var h = (attr.height == "auto") ? (parseInt(selection.style("height")) - attr.margin.top - attr.margin.bottom) : attr.height;
-        
         // transform data (if transformation function is applied)
         // this is used for histogram plots
         var newdata = attr.transform(selection.data()[0]);
 
         // canvas
-        var svg = initializeCanvas(selection, attr, w, h);
+        var svg = initializeCanvas(selection, attr);
+
+        // determine inner dimensions for plot
+        var dim = parameterizeInnerDimensions(selection, attr);
 
         // configure axes
-        var axes = parameterizeAxes(selection, newdata, attr, w, h);
+        var axes = parameterizeAxes(selection, newdata, attr, dim.innerWidth, dim.innerHeight);
 
         // axes
-        drawAxes(svg, attr, axes.xAxis, axes.yAxis, w, h);
+        drawAxes(svg, attr, axes.xAxis, axes.yAxis, dim.innerWidth, dim.innerHeight);
         
         // construct legend
-        var legend = legendConstructor(svg, attr, w, h);
+        var legend = legendConstructor(svg, attr, dim.innerWidth, dim.innerHeight);
 
         // organizing data
         // no interpolation should happen here because 
@@ -77,19 +76,19 @@ quorra.bar = function(attributes) {
                 if (attr.layout == "stacked"){
                     return axes.xScale(attr.x(d, i));    
                 }else{
-                    return axes.xScale(attr.x(d, i)) + attr.color.range().indexOf(attr.color(d.group))*w/newdata.length;
+                    return axes.xScale(attr.x(d, i)) + attr.color.range().indexOf(attr.color(d.group))*dim.innerWidth/newdata.length;
                 }
             })
             // NOTE: this needs to be fixed so that y0 is 
             // parameterized before this takes place.
             .attr("y", function(d, i){ return (attr.layout == "stacked") ? axes.yScale(d.y0 + d.y) : axes.yScale(d.y); })
-            .attr("height", function(d, i){ return (attr.layout == "stacked") ? (axes.yScale(d.y0) - axes.yScale(d.y0 + d.y)) : (h - axes.yScale(d.y)); })
+            .attr("height", function(d, i){ return (attr.layout == "stacked") ? (axes.yScale(d.y0) - axes.yScale(d.y0 + d.y)) : (dim.innerHeight - axes.yScale(d.y)); })
             .attr("width", function(){
                 if (attr.layout == "stacked"){
                     var xlim = _.max(_.map(layers, function(d){ return d.length; }));
-                    return (w-xlim)/xlim;
+                    return (dim.innerWidth-xlim)/xlim;
                 }else{
-                    return (w-newdata.length)/newdata.length;
+                    return (dim.innerWidth-newdata.length)/newdata.length;
                 }
             }).attr("fill", function(d, i){ return attr.color(d.group); })
             .style("opacity", 0.75)
@@ -117,8 +116,8 @@ quorra.bar = function(attributes) {
         go.yScale = axes.yScale;
         go.yAxis = axes.yAxis;
         go.yGroups = axes.yGroups;
-        go.innerWidth = w;
-        go.innerHeight = h;
+        go.innerWidth = dim.innerWidth;
+        go.innerHeight = dim.innerHeight;
     }
 
     // bind attributes to constructor

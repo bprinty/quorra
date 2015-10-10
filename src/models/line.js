@@ -18,25 +18,24 @@ quorra.line = function(attributes) {
         // format selection
         if (typeof selection == "string") selection = d3.select(selection);
 
-        // if height/width are auto, determine them from selection
-        var w = (attr.width == "auto") ? (parseInt(selection.style("width")) - attr.margin.left - attr.margin.right) : attr.width;
-        var h = (attr.height == "auto") ? (parseInt(selection.style("height")) - attr.margin.top - attr.margin.bottom) : attr.height;
-        
         // transform data (if transformation function is applied)
         // this is used for density plots
         var newdata = attr.transform(selection.data()[0]);
 
         // canvas
-        var svg = initializeCanvas(selection, attr, w, h);
+        var svg = initializeCanvas(selection, attr);
+
+        // determine inner dimensions for plot
+        var dim = parameterizeInnerDimensions(selection, attr);
 
         // configure axes
-        var axes = parameterizeAxes(selection, newdata, attr, w, h);
+        var axes = parameterizeAxes(selection, newdata, attr, dim.innerWidth, dim.innerHeight);
 
         // axes
-        drawAxes(svg, attr, axes.xAxis, axes.yAxis, w, h);
+        drawAxes(svg, attr, axes.xAxis, axes.yAxis, dim.innerWidth, dim.innerHeight);
         
         // construct legend
-        var legend = legendConstructor(svg, attr, w, h);
+        var legend = legendConstructor(svg, attr, dim.innerWidth, dim.innerHeight);
 
         // plotting lines
         var line = d3.svg.line()
@@ -111,8 +110,8 @@ quorra.line = function(attributes) {
         go.yScale = axes.yScale;
         go.yAxis = axes.yAxis;
         go.yGroups = axes.yGroups;
-        go.innerWidth = w;
-        go.innerHeight = h;
+        go.innerWidth = dim.innerWidth;
+        go.innerHeight = dim.innerHeight;
     }
 
     // bind attributes to constructor

@@ -32,19 +32,22 @@ quorra.scatter = function(attributes) {
         var newdata = attr.transform(selection.data()[0]);
 
         // canvas
-        var svg = initializeCanvas(selection, attr, w, h);
+        var svg = initializeCanvas(selection, attr);
+
+        // determine inner dimensions for plot
+        var dim = parameterizeInnerDimensions(selection, attr);
 
         // configure axes
-        var axes = parameterizeAxes(selection, newdata, attr, w, h);
+        var axes = parameterizeAxes(selection, newdata, attr, dim.innerWidth, dim.innerHeight);
 
         // axes
-        drawAxes(svg, attr, axes.xAxis, axes.yAxis, w, h);
+        drawAxes(svg, attr, axes.xAxis, axes.yAxis, dim.innerWidth, dim.innerHeight);
         
         // construct legend
-        var legend = legendConstructor(svg, attr, w, h);
+        var legend = legendConstructor(svg, attr, dim.innerWidth, dim.innerHeight);
 
         // plotting points
-        svg.selectAll(".dot")
+        var dot = svg.selectAll(".dot")
             .data(newdata)
             .enter().append("circle")
             .attr("class", function(d, i){
@@ -115,8 +118,9 @@ quorra.scatter = function(attributes) {
         go.yScale = axes.yScale;
         go.yAxis = axes.yAxis;
         go.yGroups = axes.yGroups;
-        go.innerWidth = w;
-        go.innerHeight = h;
+        go.innerWidth = dim.innerWidth;
+        go.innerHeight = dim.innerHeight;
+        go.dot = dot;
     }
 
     // bind attributes to constructor

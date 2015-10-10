@@ -19,14 +19,16 @@
         #density, 
         #lowdensity {
             width: 600px;
-            height: 500px;
+            height: 400px;
+            margin-bottom: 20px;
+            margin-top: 40px;
             margin-left: auto;
             margin-right: auto;
         }
         #density .plotarea,
         #lowdensity .plotarea {
             width: 600px;
-            height: 500px;
+            height: 400px;
         }
     </style>
   </head>
@@ -51,7 +53,8 @@ var redblue = d3.scale.ordinal().domain(['Evil', 'Good']).range(['firebrick','st
         <div id="density-editor" class="editor"> 
 // regular scatter
 var density = quorra.density()
-    .width(500).height(400)
+    .width(600)
+    .height(400)
     .margin({"top": 20, "bottom": 20, "left": 50, "right": 20})
     .grid(true)
     .yticks(10).xticks(10)
@@ -72,9 +75,12 @@ d3.select('#density .plotarea')
         <div id="lowdensity-editor" class="editor"> 
 // regular scatter
 var lowdensity = quorra.density()
-    .width(500)
+    .width(600)
     .height(400)
-    .margin({"top": 20, "bottom": 20, "left": 60, "right": 20})
+    .margin({"top": 20, "bottom": 20, "left": 60, "right": 100})
+    .lposition("outside")
+    .lshape("circle")
+    .lmargin({"top": 0, "left": 40, "right": 0})
     .resolution(5)
     .points(5)
     .xlabel("X Axis Label")

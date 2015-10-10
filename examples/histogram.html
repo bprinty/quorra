@@ -20,6 +20,8 @@
         #stacked {
             width: 600px;
             height: 400px;
+            margin-bottom: 20px;
+            margin-top: 40px;
             margin-left: auto;
             margin-right: auto;
         }
@@ -51,8 +53,8 @@ var redblue = d3.scale.ordinal().domain(["Evil", "Good"]).range(["firebrick","st
         <div id="grouped-editor" class="editor">  
 // grouped bar
 var grouped = quorra.histogram()
-    .width(500)
-    .height(300)
+    .width(600)
+    .height(400)
     .grid(true)
     .bins(5)
     .layout("grouped")
@@ -73,10 +75,14 @@ d3.select("#grouped .plotarea")
         <div id="stacked-editor" class="editor">  
 // stacked bar
 var stacked = quorra.histogram()
-    .width(500)
-    .height(300)
+    .width(600)
+    .height(400)
+    .margin({"top": 20, "bottom": 20, "left": 60, "right": 100})
     .layout("stacked")
     .bins(10)
+    .lposition("outside")
+    .lshape("circle")
+    .lmargin({"top": 0, "left": 40, "right": 0})
     .display("percent") // fraction is also possible
     .xlabel("X Axis Label")
     .ylabel("Percent")

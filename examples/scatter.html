@@ -19,14 +19,16 @@
         #scatter,
         #jitter {
             width: 600px;
-            height: 500px;
+            height: 400px;
+            margin-bottom: 20px;
+            margin-top: 40px;
             margin-left: auto;
             margin-right: auto;
         }
         #jitter .plotarea,
         #scatter .plotarea {
             width: 600px;
-            height: 500px;
+            height: 400px;
         }
     </style>
   </head>
@@ -50,7 +52,7 @@ var redblue = d3.scale.ordinal().domain(['Evil', 'Good']).range(['firebrick','st
         <div id="scatter-editor" class="editor">
 // regular scatter
 var scatter = quorra.scatter()
-    .width(500)
+    .width(600)
     .height(400)
     .grid(true)
     .lshape("circle")
@@ -72,10 +74,13 @@ d3.select('#scatter .plotarea')
         <div id="jitter-editor" class="editor">
 // grouped scatter with jitter
 var jitter = quorra.scatter()
-    .width(500)
+    .width(600)
     .height(400)
+    .margin({"top": 20, "bottom": 20, "left": 60, "right": 100})
     .xjitter(100)
+    .lposition("outside")
     .lshape("circle")
+    .lmargin({"top": 0, "left": 40, "right": 0})
     .ydensity(true)
     .xlabel("Group")
     .ylabel("Y Axis Label")

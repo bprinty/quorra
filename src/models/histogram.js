@@ -25,7 +25,14 @@ quorra.histogram = function(attributes) {
         .transform(function(data){
         
             // formatters
-            var format = d3.format(".04f");
+            var format;
+            if (go.display() == "percent") {
+                format = d3.format("%");
+            } else if (go.display() == "counts") {
+                format = d3.format(".0f");
+            } else if (go.display() == "fraction"){
+                format = d3.format(".02f");
+            }
             var xScale = d3.scale.linear().range([0, go.innerWidth]);
 
             // generate histogram binning

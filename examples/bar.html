@@ -19,14 +19,16 @@
         #grouped,
         #stacked {
             width: 600px;
-            height: 500px;
+            height: 400px;
+            margin-bottom: 20px;
+            margin-top: 40px;
             margin-left: auto;
             margin-right: auto;
         }
         #grouped .plotarea,
         #stacked .plotarea {
             width: 600px;
-            height: 500px;
+            height: 400px;
         }
     </style>
   </head>
@@ -50,7 +52,7 @@ var redblue = d3.scale.ordinal().domain(['Evil', 'Good']).range(['firebrick','st
         <div id="grouped-editor" class="editor">
 // grouped bar
 var grouped = quorra.bar()
-    .width(500)
+    .width(600)
     .height(400)
     .grid(true)
     .layout('grouped')
@@ -70,8 +72,12 @@ d3.select('#grouped .plotarea')
         <div id="stacked-editor" class="editor">
 // stacked bar
 var stacked = quorra.bar()
-    .width(500)
+    .width(600)
     .height(400)
+    .margin({"top": 20, "bottom": 20, "left": 40, "right": 100})
+    .lposition("outside")
+    .lshape("circle")
+    .lmargin({"top": 0, "left": 40, "right": 0})
     .layout('stacked')
     .xlabel("X Axis Label")
     .ylabel("Y Axis Label")

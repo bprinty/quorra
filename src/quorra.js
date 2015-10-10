@@ -41,19 +41,20 @@ attributeConstructor = function(id){
         // plot styling
         color: d3.scale.category10(),
         grid: false,
+        xticks: "auto",
+        yticks: "auto",
         xlabel: "",
         ylabel: "",
         xformat: "auto",
         yformat: "auto",
         xorient: "bottom",
         yorient: "left",
-        xticks: "auto",
-        yticks: "auto",
+        axisposition: "inside",
         
         // legend
         legend: true,
         lmargin: {"top": 0, "bottom": 0, "left": 0, "right": 0},
-        lposition: "inner",
+        lposition: "inside",
         lshape: "square",
         toggle: true,
         
@@ -107,20 +108,20 @@ legendConstructor = function(svg, attr, innerWidth, innerHeight){
         .enter().append("g")
         .attr("class", "legend")
         .attr("id", attr.id + "-legend")
-        .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
+        .attr("transform", function(d, i) { return "translate(0," + (attr.lmargin.top + i * 20) + ")"; });
 
     var selector;
     if (attr.lshape === "square"){
         selector = leg.append("rect")
             .attr("class", "selector")
-            .attr("x", attr.lmargin.left + innerWidth - 18)
+            .attr("x", innerWidth - 18 - attr.lmargin.right + attr.lmargin.left)
             .attr("width", 18)
             .attr("height", 18)
             .style("fill", attr.color);        
     }else if (attr.lshape === "circle"){
         selector = leg.append("circle")
             .attr("class", "selector")
-            .attr("cx", innerWidth - 10)
+            .attr("cx", innerWidth - 10 - attr.lmargin.right + attr.lmargin.left)
             .attr("cy", 8)
             .attr("r", 9)
             .style("fill", attr.color);
@@ -144,18 +145,18 @@ legendConstructor = function(svg, attr, innerWidth, innerHeight){
 
     leg.append("text")
         .attr("x", function(){
-            if (attr.lposition === "inner"){
-                return innerWidth - 24;
-            }else if (attr.lposition === "outer"){
-                return innerWidth + 2;
+            if (attr.lposition === "inside"){
+                return innerWidth - 24 - attr.lmargin.right + attr.lmargin.left;
+            }else if (attr.lposition === "outside"){
+                return innerWidth + 2 - attr.lmargin.right + attr.lmargin.left;
             }        
         })
         .attr("y", 9)
         .attr("dy", ".35em")
         .style("text-anchor", function(){
-            if (attr.lposition === "inner"){
+            if (attr.lposition === "inside"){
                 return "end";
-            }else if (attr.lposition === "outer"){
+            }else if (attr.lposition === "outside"){
                 return "beginning";
             }
         })
@@ -164,6 +165,26 @@ legendConstructor = function(svg, attr, innerWidth, innerHeight){
     return leg;
 }
 
+
+parameterizeInnerDimensions = function(selection, attr){
+    /**
+    quorra.parameterizeInnerDimensions()
+
+    Parameterize dimensions for plot based on margins.
+
+    @author <bprinty@gmail.com>
+    */
+    var width = (attr.width == "auto") ? parseInt(selection.style("width")) : attr.width;
+    var height = (attr.height == "auto") ? parseInt(selection.style("height")) : attr.height;
+    
+    var iw = width - attr.margin.left - attr.margin.right;
+    var ih = height - attr.margin.top - attr.margin.bottom;
+
+    return {
+        innerWidth: iw,
+        innerHeight: ih
+    }
+}
 
 parameterizeAxes = function(selection, data, attr, innerWidth, innerHeight){
     /**
@@ -207,7 +228,27 @@ parameterizeAxes = function(selection, data, attr, innerWidth, innerHeight){
         yScale = d3.scale.linear().range([innerHeight, 0]);
         // manually set the domain here because it needs to 
         // be aware of the data object (histogram plots)
-        yScale.domain(d3.extent(data, attr.y)).nice();
+        if (attr.layout === 'stacked'){
+            // for some reason, underscore's map function won't 
+            // work for accessing the d.y0 property -- so we have
+            // to do it another way
+            var ux = _.unique(_.map(data, attr.x));
+            var marr = _.map(ux, function(d){
+                var nd =_.filter(
+                        data,
+                        function(g){ return attr.x(g) == d; }
+                    );
+                var tmap = _.map(nd, function(g){ return attr.y(g); });
+                return _.reduce(tmap, function(a, b){ return a + b; }, 0);
+            });
+            var max = _.max(marr);
+        }else{
+            var max = _.max(_.map(data, attr.y));
+        }
+        yScale.domain([
+            _.min(_.map(data, attr.y)),
+            max
+        ]).nice();
     }
 
     // tick formatting
@@ -278,7 +319,7 @@ drawAxes = function(svg, attr, xAxis, yAxis, innerWidth, innerHeight){
 }
 
 
-initializeCanvas = function(selection, attr, innerWidth, innerHeight){
+initializeCanvas = function(selection, attr){
     /**
     quorra.initializeCanvas()
 
@@ -294,8 +335,8 @@ initializeCanvas = function(selection, attr, innerWidth, innerHeight){
     }
 
     svg = svg.attr("class", "quorra-bar")
-        .attr("width", innerWidth + attr.margin.left + attr.margin.right)
-        .attr("height", innerHeight + attr.margin.top + attr.margin.bottom)
+        .attr("width", attr.width)
+        .attr("height", attr.width)
         .append("g")
         .attr("transform", "translate(" + attr.margin.left + "," + attr.margin.top + ")");
 
