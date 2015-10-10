@@ -35,23 +35,26 @@ attributeConstructor = function(id){
         group: function(d, i){ return (typeof d.group === 'undefined') ? 0 : d.group; },
         label: function(d, i){ return (typeof d.label === 'undefined') ? i : d.label; },
         transform: function(d){ return d; },
+        color: d3.scale.category10(),
 
         // triggers
         groupclick: function(d, i){},
         labelclick: function(d, i){},
         
         // plot styling
-        color: d3.scale.category10(),
         grid: false,
         xticks: "auto",
         yticks: "auto",
-        xlabel: "",
-        ylabel: "",
         xformat: "auto",
         yformat: "auto",
         xorient: "bottom",
         yorient: "left",
-        axisposition: "inside",
+        xlabel: "",
+        ylabel: "",
+        yposition: "outside",
+        xposition: "outside",
+        labelposition: "middle",
+        labelpadding: {x: 0, y: 0},
         
         // legend
         legend: true,
@@ -88,7 +91,12 @@ bindConstructorAttributes = function(constructor, attributes){
             if (i === 'tooltip'){
                 attributes[i].remove();
             }
-            attributes[i] = value;
+            // maintain non-overridden object arguments
+            if (typeof value === 'object' && i != 'tooltip'){            
+                attributes[i] = _.extend(attributes[i], value);
+            }else{
+                attributes[i] = value;
+            }
             return constructor;
         }        
     });
@@ -301,9 +309,23 @@ drawAxes = function(svg, attr, xAxis, yAxis, innerWidth, innerHeight){
         .call(xAxis)
     .append("text")
         .attr("class", "label")
-        .attr("x", innerWidth)
-        .attr("y", -6)
-        .style("text-anchor", "end")
+        .attr("x", function(x){
+            if (attr.labelposition == "end"){
+                return innerWidth;
+            }else if (attr.labelposition == "middle"){
+                return innerWidth / 2;
+            }else if (attr.labelposition == "beginning"){
+                return 0;
+            }
+        })
+        .attr("y", function(){
+            if (attr.xposition == "inside"){
+                return -6 + attr.labelpadding.x;
+            }else if(attr.xposition === "outside"){
+                return 35 + attr.labelpadding.x;
+            }
+        })
+        .style("text-anchor", attr.labelposition)
         .text(attr.xlabel);
 
     svg.append("g")
@@ -312,10 +334,23 @@ drawAxes = function(svg, attr, xAxis, yAxis, innerWidth, innerHeight){
     .append("text")
         .attr("class", "label")
         .attr("transform", "rotate(-90)")
-        .attr("y", 6)
+        .attr("x", function(x){
+            if (attr.labelposition == "end"){
+                return 0;
+            }else if (attr.labelposition == "middle"){
+                return -innerHeight / 2;
+            }else if (attr.labelposition == "beginning"){
+                return -innerHeight;
+            }
+        }).attr("y", function(){
+            if (attr.yposition == "inside"){
+                return 6 + attr.labelpadding.y;
+            }else if(attr.yposition === "outside"){
+                return -40 + attr.labelpadding.y;
+            }
+        })
         .attr("dy", ".71em")
-        .style("text-anchor", "end")
-        .text(attr.ylabel);
+        .style("text-anchor", attr.labelposition).text(attr.ylabel);
 
     return;
 }
