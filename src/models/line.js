@@ -50,7 +50,9 @@ quorra.line = function(attributes) {
             var subdat = _.filter(newdata, function(d){ return d.group == ugrps[grp]; });
             svg.append("path")
                 .datum(subdat)
-                .attr("class", "line")
+                .attr("class", function(d, i){
+                    return "line " + "g_" + d[0].group;
+                })
                 .attr("d", line)
                 .style("stroke", attr.color(ugrps[grp]))
                 .style("opacity", 0.75)
@@ -67,7 +69,7 @@ quorra.line = function(attributes) {
                 }).on("mouseout", function(d){
                     d3.select(this).style("opacity", 0.75);
                     attr.tooltip.style("opacity", 0);
-                });
+                }).on("click", attr.groupclick);
 
         }
 
@@ -76,7 +78,9 @@ quorra.line = function(attributes) {
             svg.selectAll(".dot")
                 .data(newdata)
                 .enter().append("circle")
-                .attr("class", "dot")
+                .attr("class", function(d, i){
+                    return "dot " + "g_" + d.group;
+                })
                 .attr("r", attr.points)
                 .attr("cx", function(d, i) { return axes.xScale(attr.x(d, i)); })
                 .attr("cy", function(d, i) { return axes.yScale(attr.y(d, i)); })
@@ -95,7 +99,7 @@ quorra.line = function(attributes) {
                 }).on("mouseout", function(d){
                     d3.select(this).style("opacity", 0.75);
                     attr.tooltip.style("opacity", 0);
-                });
+                }).on("click", attr.labelclick);
         }
 
         // expose editable attributes (user control)

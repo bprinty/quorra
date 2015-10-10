@@ -1,4 +1,4 @@
-/* quorra version 0.0.1 (http://bprinty.github.io/quorra) 2015-10-09 */
+/* quorra version 0.0.1 (http://bprinty.github.io/quorra) 2015-10-10 */
 /*
  * Quorra stylesheet.
  *
@@ -37,4 +37,9 @@
 }
 .arc path {
   stroke: #fff;
+}
+
+.selector {
+    stroke: #bbb;
+    stroke-width: 1px;
 }

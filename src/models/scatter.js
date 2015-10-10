@@ -47,7 +47,9 @@ quorra.scatter = function(attributes) {
         svg.selectAll(".dot")
             .data(newdata)
             .enter().append("circle")
-            .attr("class", "dot")
+            .attr("class", function(d, i){
+                return "dot " + "g_" + d.group;
+            })
             .attr("r", attr.size)
             .attr("cx", function(d, i) { return (Math.random()-0.5)*attr.xjitter + axes.xScale(attr.x(d, i)); })
             .attr("cy", function(d, i) { return (Math.random()-0.5)*attr.yjitter + axes.yScale(attr.y(d, i)); })
@@ -73,7 +75,9 @@ quorra.scatter = function(attributes) {
             svg.selectAll(".xtick")
                 .data(newdata)
                 .enter().append("line")
-                .attr("class", "xtick")
+                .attr("class", function(d, i){
+                    return "xtick " + "g_" + d.group;
+                })
                 .attr("x1", function(d, i) { return axes.xScale(attr.x(d, i)); })
                 .attr("x2", function(d, i) { return axes.xScale(attr.x(d, i)); })
                 .attr("y1", function(d, i) { return h-5; })
@@ -86,7 +90,9 @@ quorra.scatter = function(attributes) {
             svg.selectAll(".ytick")
                 .data(newdata)
                 .enter().append("line")
-                .attr("class", "ytick")
+                .attr("class", function(d, i){
+                    return "ytick " + "g_" + d.group;
+                })
                 .attr("x1", function(d, i) { return -5; })
                 .attr("x2", function(d, i) { return 5; })
                 .attr("y1", function(d, i) { return axes.yScale(attr.y(d, i)); })

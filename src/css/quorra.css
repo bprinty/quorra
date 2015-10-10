@@ -37,3 +37,8 @@
 .arc path {
   stroke: #fff;
 }
+
+.selector {
+    stroke: #bbb;
+    stroke-width: 1px;
+}

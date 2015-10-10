@@ -70,6 +70,9 @@ quorra.bar = function(attributes) {
         var rect = layer.selectAll("rect")
             .data(function(d){ return d; })
             .enter().append("rect")
+            .attr("class", function(d, i){
+                return "bar " + "g_" + d.group;
+            })
             .attr("x", function(d, i){
                 if (attr.layout == "stacked"){
                     return axes.xScale(attr.x(d, i));    

@@ -1,4 +1,4 @@
-/* quorra version 0.0.1 (http://bprinty.github.io/quorra) 2015-10-09 */
+/* quorra version 0.0.1 (http://bprinty.github.io/quorra) 2015-10-10 */
 (function(){
 function quorra() {
     /**
@@ -23,16 +23,25 @@ attributeConstructor = function(id){
 
     id = typeof id !== 'undefined' ?  id : 'qplot';
     return {
+        // sizing
         id: id,
         width: "auto",
         height: "auto",
         margin: {"top": 20, "bottom": 20, "left": 40, "right": 20},
-        color: d3.scale.category10(),
+        
+        // data rendering
         x: function(d, i) { return d.x; },
         y: function(d, i) { return d.y; },
         group: function(d, i){ return (typeof d.group === 'undefined') ? 0 : d.group; },
         label: function(d, i){ return (typeof d.label === 'undefined') ? i : d.label; },
         transform: function(d){ return d; },
+
+        // triggers
+        groupclick: function(d, i){},
+        labelclick: function(d, i){},
+        
+        // plot styling
+        color: d3.scale.category10(),
         grid: false,
         xlabel: "",
         ylabel: "",
@@ -40,10 +49,17 @@ attributeConstructor = function(id){
         yformat: "auto",
         xorient: "bottom",
         yorient: "left",
-        legend: true,
-        lshape: "square",
         xticks: "auto",
         yticks: "auto",
+        
+        // legend
+        legend: true,
+        lmargin: {"top": 0, "bottom": 0, "left": 0, "right": 0},
+        lposition: "inner",
+        lshape: "square",
+        toggle: true,
+        
+        // tooltip
         tooltip: d3.select("body").append("div")
             .attr("id", id + "-tooltip")
             .attr("class", "tooltip")
@@ -77,7 +93,7 @@ bindConstructorAttributes = function(constructor, attributes){
     });
 }
 
-legendConstructor = function(svg, attr, innerwidth, innerheight){
+legendConstructor = function(svg, attr, innerWidth, innerHeight){
     /**
     quorra.legendConstructor()
 
@@ -92,19 +108,59 @@ legendConstructor = function(svg, attr, innerwidth, innerheight){
         .data(attr.color.domain())
         .enter().append("g")
         .attr("class", "legend")
+        .attr("id", attr.id + "-legend")
         .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
 
-    leg.append("rect")
-        .attr("x", innerwidth - 18)
-        .attr("width", 18)
-        .attr("height", 18)
-        .style("fill", attr.color);
+    var selector;
+    if (attr.lshape === "square"){
+        selector = leg.append("rect")
+            .attr("class", "selector")
+            .attr("x", attr.lmargin.left + innerWidth - 18)
+            .attr("width", 18)
+            .attr("height", 18)
+            .style("fill", attr.color);        
+    }else if (attr.lshape === "circle"){
+        selector = leg.append("circle")
+            .attr("class", "selector")
+            .attr("cx", innerWidth - 10)
+            .attr("cy", 8)
+            .attr("r", 9)
+            .style("fill", attr.color);
+    }
+
+    if (attr.toggle){
+        selector.on("mouseover", function(d, i){
+            d3.select(this).style('opacity', 0.75);
+        }).on("mouseout", function(d, i){
+            d3.select(this).style('opacity', 1);
+        }).on("click", function(d, i){
+            if (d3.select(this).style('fill-opacity') == 0){
+                d3.select(this).style('fill-opacity', 1);
+                svg.selectAll(".g_" + d).style('visibility', 'visible');
+            }else{
+                d3.select(this).style('fill-opacity', 0);
+                svg.selectAll(".g_" + d).style('visibility', 'hidden');
+            }
+        });
+    }
 
     leg.append("text")
-        .attr("x", innerwidth - 24)
+        .attr("x", function(){
+            if (attr.lposition === "inner"){
+                return innerWidth - 24;
+            }else if (attr.lposition === "outer"){
+                return innerWidth + 2;
+            }        
+        })
         .attr("y", 9)
         .attr("dy", ".35em")
-        .style("text-anchor", "end")
+        .style("text-anchor", function(){
+            if (attr.lposition === "inner"){
+                return "end";
+            }else if (attr.lposition === "outer"){
+                return "beginning";
+            }
+        })
         .text(function(d) { return d; });
 
     return leg;
@@ -378,6 +434,9 @@ quorra.bar = function(attributes) {
         var rect = layer.selectAll("rect")
             .data(function(d){ return d; })
             .enter().append("rect")
+            .attr("class", function(d, i){
+                return "bar " + "g_" + d.group;
+            })
             .attr("x", function(d, i){
                 if (attr.layout == "stacked"){
                     return axes.xScale(attr.x(d, i));    
@@ -603,7 +662,9 @@ quorra.bar = function(attributes) {
             var subdat = _.filter(newdata, function(d){ return d.group == ugrps[grp]; });
             svg.append("path")
                 .datum(subdat)
-                .attr("class", "line")
+                .attr("class", function(d, i){
+                    return "line " + "g_" + d[0].group;
+                })
                 .attr("d", line)
                 .style("stroke", attr.color(ugrps[grp]))
                 .style("opacity", 0.75)
@@ -620,7 +681,7 @@ quorra.bar = function(attributes) {
                 }).on("mouseout", function(d){
                     d3.select(this).style("opacity", 0.75);
                     attr.tooltip.style("opacity", 0);
-                });
+                }).on("click", attr.groupclick);
 
         }
 
@@ -629,7 +690,9 @@ quorra.bar = function(attributes) {
             svg.selectAll(".dot")
                 .data(newdata)
                 .enter().append("circle")
-                .attr("class", "dot")
+                .attr("class", function(d, i){
+                    return "dot " + "g_" + d.group;
+                })
                 .attr("r", attr.points)
                 .attr("cx", function(d, i) { return axes.xScale(attr.x(d, i)); })
                 .attr("cy", function(d, i) { return axes.yScale(attr.y(d, i)); })
@@ -648,7 +711,7 @@ quorra.bar = function(attributes) {
                 }).on("mouseout", function(d){
                     d3.select(this).style("opacity", 0.75);
                     attr.tooltip.style("opacity", 0);
-                });
+                }).on("click", attr.labelclick);
         }
 
         // expose editable attributes (user control)
@@ -1048,7 +1111,9 @@ quorra.bar = function(attributes) {
         svg.selectAll(".dot")
             .data(newdata)
             .enter().append("circle")
-            .attr("class", "dot")
+            .attr("class", function(d, i){
+                return "dot " + "g_" + d.group;
+            })
             .attr("r", attr.size)
             .attr("cx", function(d, i) { return (Math.random()-0.5)*attr.xjitter + axes.xScale(attr.x(d, i)); })
             .attr("cy", function(d, i) { return (Math.random()-0.5)*attr.yjitter + axes.yScale(attr.y(d, i)); })
@@ -1074,7 +1139,9 @@ quorra.bar = function(attributes) {
             svg.selectAll(".xtick")
                 .data(newdata)
                 .enter().append("line")
-                .attr("class", "xtick")
+                .attr("class", function(d, i){
+                    return "xtick " + "g_" + d.group;
+                })
                 .attr("x1", function(d, i) { return axes.xScale(attr.x(d, i)); })
                 .attr("x2", function(d, i) { return axes.xScale(attr.x(d, i)); })
                 .attr("y1", function(d, i) { return h-5; })
@@ -1087,7 +1154,9 @@ quorra.bar = function(attributes) {
             svg.selectAll(".ytick")
                 .data(newdata)
                 .enter().append("line")
-                .attr("class", "ytick")
+                .attr("class", function(d, i){
+                    return "ytick " + "g_" + d.group;
+                })
                 .attr("x1", function(d, i) { return -5; })
                 .attr("x2", function(d, i) { return 5; })
                 .attr("y1", function(d, i) { return axes.yScale(attr.y(d, i)); })
