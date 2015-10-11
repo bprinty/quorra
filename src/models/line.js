@@ -11,6 +11,7 @@ quorra.line = function(attributes) {
     // attributes
     var attr = attributeConstructor('line');
     attr.points = 0;
+    attr.layout = "line";
     attr = _.extend(attr, attributes);
 
     // generator
@@ -41,7 +42,7 @@ quorra.line = function(attributes) {
         var line = d3.svg.line()
             .x(function(d, i) { return axes.xScale(attr.x(d, i)); })
             .y(function(d, i) { return axes.yScale(attr.y(d, i)); });
-        
+
         var ugrps = _.unique(_.map(newdata, function(d){ return d.group; }));
         for (var grp in ugrps) {
             
@@ -52,7 +53,23 @@ quorra.line = function(attributes) {
                 .attr("class", function(d, i){
                     return "line " + "g_" + d[0].group;
                 })
-                .attr("d", line)
+                .attr("d", function(d){
+                    var path = line(d);
+                    if (attr.layout === "line"){
+                        return path;
+                    }else if (attr.layout === "area"){
+                        var end = RegExp(".*L(.+?)$", "g").exec(path);
+                        var lcoords = _.map(end[1].split(","), parseFloat);
+                        return path + "L" + lcoords[0] + "," + (dim.innerHeight - 2) + "Z";
+                    }
+                })
+                .style("fill", function(d){
+                    if (attr.layout === "line"){
+                        return "none";
+                    }else if (attr.layout === "area"){
+                        return attr.color(d[0].group);
+                    }
+                })
                 .style("stroke", attr.color(ugrps[grp]))
                 .style("opacity", 0.75)
                 .on("mouseover", function(d, i){
