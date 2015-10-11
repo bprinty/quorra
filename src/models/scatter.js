@@ -23,10 +23,6 @@ quorra.scatter = function(attributes) {
     function go(selection){
         // format selection
         if (typeof selection === 'string') selection = d3.select(selection);
-
-        // if height/width are auto, determine them from selection
-        var w = (attr.width === 'auto') ? (parseInt(selection.style("width")) - attr.margin.left - attr.margin.right) : attr.width;
-        var h = (attr.height === 'auto') ? (parseInt(selection.style("height")) - attr.margin.top - attr.margin.bottom) : attr.height;
         
         // transform data (if transformation function is applied)
         var newdata = attr.transform(selection.data()[0]);
@@ -43,8 +39,11 @@ quorra.scatter = function(attributes) {
         // axes
         drawAxes(svg, attr, axes.xAxis, axes.yAxis, dim.innerWidth, dim.innerHeight);
         
+        // coloring
+        var color = parameterizeColorPallete(newdata, attr);
+
         // construct legend
-        var legend = legendConstructor(svg, attr, dim.innerWidth, dim.innerHeight);
+        var legend = legendConstructor(svg, attr, dim.innerWidth, dim.innerHeight, color);
 
         // plotting points
         var dot = svg.selectAll(".dot")
@@ -56,7 +55,7 @@ quorra.scatter = function(attributes) {
             .attr("r", attr.size)
             .attr("cx", function(d, i) { return (Math.random()-0.5)*attr.xjitter + axes.xScale(attr.x(d, i)); })
             .attr("cy", function(d, i) { return (Math.random()-0.5)*attr.yjitter + axes.yScale(attr.y(d, i)); })
-            .style("fill", function(d, i) { return attr.color(attr.group(d, i)); })
+            .style("fill", function(d, i) { return color(attr.group(d, i)); })
             .style("opacity", 0.75)
             .on("mouseover", function(d, i){
                 d3.select(this).style("opacity", 0.25);
@@ -85,7 +84,7 @@ quorra.scatter = function(attributes) {
                 .attr("x2", function(d, i) { return axes.xScale(attr.x(d, i)); })
                 .attr("y1", function(d, i) { return h-5; })
                 .attr("y2", function(d, i) { return h+5; })
-                .attr("stroke", function(d, i){ return attr.color(attr.group(d, i)); })
+                .attr("stroke", function(d, i){ return color(attr.group(d, i)); })
                 .style("opacity", 0.75);
                 // TODO: maybe include two-way selection/highlighting here?
         }
@@ -100,7 +99,7 @@ quorra.scatter = function(attributes) {
                 .attr("x2", function(d, i) { return 5; })
                 .attr("y1", function(d, i) { return axes.yScale(attr.y(d, i)); })
                 .attr("y2", function(d, i) { return axes.yScale(attr.y(d, i)); })
-                .attr("stroke", function(d, i){ return attr.color(attr.group(d, i)); })
+                .attr("stroke", function(d, i){ return color(attr.group(d, i)); })
                 .style("opacity", 0.75);
         }
 

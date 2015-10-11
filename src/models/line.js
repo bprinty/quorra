@@ -35,8 +35,11 @@ quorra.line = function(attributes) {
         // axes
         drawAxes(svg, attr, axes.xAxis, axes.yAxis, dim.innerWidth, dim.innerHeight);
         
+        // coloring
+        var color = parameterizeColorPallete(newdata, attr);
+
         // construct legend
-        var legend = legendConstructor(svg, attr, dim.innerWidth, dim.innerHeight);
+        var legend = legendConstructor(svg, attr, dim.innerWidth, dim.innerHeight, color);
 
         // plotting lines
         var line = d3.svg.line()
@@ -67,10 +70,10 @@ quorra.line = function(attributes) {
                     if (attr.layout === "line"){
                         return "none";
                     }else if (attr.layout === "area"){
-                        return attr.color(d[0].group);
+                        return color(d[0].group);
                     }
                 })
-                .style("stroke", attr.color(ugrps[grp]))
+                .style("stroke", color(ugrps[grp]))
                 .style("opacity", 0.75)
                 .on("mouseover", function(d, i){
                     d3.select(this).style("opacity", 0.25);
@@ -100,7 +103,7 @@ quorra.line = function(attributes) {
                 .attr("r", attr.points)
                 .attr("cx", function(d, i) { return axes.xScale(attr.x(d, i)); })
                 .attr("cy", function(d, i) { return axes.yScale(attr.y(d, i)); })
-                .style("fill", function(d, i){ return attr.color(attr.group(d, i)); })
+                .style("fill", function(d, i){ return color(attr.group(d, i)); })
                 .style("opacity", 0.75)
                 .on("mouseover", function(d, i){
                     d3.select(this).style("opacity", 0.25);

@@ -38,10 +38,6 @@
     </div>
 
     <div id="plots">
-        <div id="config-editor" class="editor" style="height: 75px;"> 
-var colors = d3.scale.ordinal().domain(['Evil', 'Good', 'Okay']).range(['firebrick','forestgreen','steelblue']);
-        </div>
-        <p class="pre-editor">Hit Cmd+Enter for changes to take effect.</p>
 
         <div id="pie" class="container">
             <div class="plotarea"></div>
@@ -51,7 +47,7 @@ var colors = d3.scale.ordinal().domain(['Evil', 'Good', 'Okay']).range(['firebri
 var pie = quorra.pie()
     .radius(200)
     .tooltip(false)
-    .color(colors)
+    .color(['firebrick','forestgreen','steelblue'])
     .aggregate(function(x){ return(x.length); });
 
 d3.select('#pie .plotarea')
@@ -69,7 +65,7 @@ var hollowpie = quorra.pie()
     .legend(false)
     .radius(200)
     .inner(100)
-    .color(colors);
+    .color(['firebrick','forestgreen','steelblue']);
 
 d3.select('#hollowpie .plotarea')
     .datum([
@@ -105,7 +101,6 @@ d3.select('#hollowpie .plotarea')
     </script>
 
     <script>
-        eval(parameterizeEditor('config-editor'));
         eval(parameterizeEditor('pie-editor', '#pie .plotarea svg'));
         eval(parameterizeEditor('hollowpie-editor', '#hollowpie .plotarea svg'));
     </script>

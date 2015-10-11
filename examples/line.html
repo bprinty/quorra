@@ -40,10 +40,6 @@
     </div>
 
     <div id="plots">
-        <div id="config-editor" class="editor" style="height: 75px;"> 
-var redblue = d3.scale.ordinal().domain(['Evil', 'Good']).range(['firebrick','steelblue']);
-        </div>
-        <p class="pre-editor">Hit Cmd+Enter for changes to take effect.</p>
 
         <div id="line" class="container">
             <div class="plotarea"></div>
@@ -60,7 +56,7 @@ var line = quorra.line()
     .xticks(10)
     .xlabel("X Axis Label")
     .ylabel("Y Axis Label")
-    .color(redblue);
+    .color(['firebrick','steelblue']);
 
 d3.select('#line .plotarea')
     .datum(data).call(line);
@@ -72,7 +68,7 @@ d3.select('#line .plotarea')
         </div>
 
         <div id="pointline-editor" class="editor"> 
-// grouped scatter with jitter
+// line with points
 var pointline = quorra.line()
     .width(600)
     .height(400)
@@ -86,7 +82,7 @@ var pointline = quorra.line()
     .points(5)
     .xlabel("X Axis Label")
     .ylabel("Y Axis Label")
-    .color(redblue);
+    .color(['firebrick','steelblue']);
 
 d3.select('#pointline .plotarea')
     .datum(data).call(pointline);
@@ -121,7 +117,6 @@ d3.select('#pointline .plotarea')
     </script>
 
     <script>
-        eval(parameterizeEditor('config-editor'));
         eval(parameterizeEditor('line-editor', '#line .plotarea svg'));
         eval(parameterizeEditor('pointline-editor', '#pointline .plotarea svg'));
     </script>

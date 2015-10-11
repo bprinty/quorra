@@ -35,7 +35,7 @@ attributeConstructor = function(id){
         group: function(d, i){ return (typeof d.group === 'undefined') ? 0 : d.group; },
         label: function(d, i){ return (typeof d.label === 'undefined') ? i : d.label; },
         transform: function(d){ return d; },
-        color: d3.scale.category10(),
+        color: "auto",
 
         // triggers
         groupclick: function(d, i){},
@@ -93,16 +93,20 @@ bindConstructorAttributes = function(constructor, attributes){
             }
             // maintain non-overridden object arguments
             if (typeof value === 'object' && i != 'tooltip'){            
-                attributes[i] = _.extend(attributes[i], value);
+                if (typeof attributes[i] === 'object'){
+                    attributes[i] = _.extend(attributes[i], value);
+                }else{
+                    attributes[i] = value;
+                }
             }else{
                 attributes[i] = value;
             }
             return constructor;
-        }        
+        }    
     });
 }
 
-legendConstructor = function(svg, attr, innerWidth, innerHeight){
+legendConstructor = function(svg, attr, innerWidth, innerHeight, color){
     /**
     quorra.legendConstructor()
 
@@ -114,7 +118,7 @@ legendConstructor = function(svg, attr, innerWidth, innerHeight){
     if (!attr.legend){ return undefined; }
 
     var leg = svg.selectAll(".legend")
-        .data(attr.color.domain())
+        .data(color.domain())
         .enter().append("g")
         .attr("class", "legend")
         .attr("id", attr.id + "-legend")
@@ -127,14 +131,14 @@ legendConstructor = function(svg, attr, innerWidth, innerHeight){
             .attr("x", innerWidth - 18 - attr.lmargin.right + attr.lmargin.left)
             .attr("width", 18)
             .attr("height", 18)
-            .style("fill", attr.color);        
+            .style("fill", color);        
     }else if (attr.lshape === "circle"){
         selector = leg.append("circle")
             .attr("class", "selector")
             .attr("cx", innerWidth - 10 - attr.lmargin.right + attr.lmargin.left)
             .attr("cy", 8)
             .attr("r", 9)
-            .style("fill", attr.color);
+            .style("fill", color);
     }
 
     if (attr.toggle){
@@ -193,8 +197,23 @@ parameterizeInnerDimensions = function(selection, attr){
     return {
         innerWidth: iw,
         innerHeight: ih
-    }
+    };
 }
+
+
+parameterizeColorPallete = function(data, attr){
+    /**
+    quorra.parameterizeColorPallete()
+
+    Parameterize color pallete based on grouping.
+
+    @author <bprinty@gmail.com>
+    */
+    var pallette = (attr.color === "auto") ? d3.scale.category10() : d3.scale.ordinal().range(attr.color);
+    var domain = _.unique(_.map(data, attr.group)).sort();
+    return pallette.domain(domain);
+}
+
 
 parameterizeAxes = function(selection, data, attr, innerWidth, innerHeight){
     /**
@@ -474,8 +493,11 @@ quorra.bar = function(attributes) {
         // axes
         drawAxes(svg, attr, axes.xAxis, axes.yAxis, dim.innerWidth, dim.innerHeight);
         
+        // coloring
+        var color = parameterizeColorPallete(newdata, attr);
+
         // construct legend
-        var legend = legendConstructor(svg, attr, dim.innerWidth, dim.innerHeight);
+        var legend = legendConstructor(svg, attr, dim.innerWidth, dim.innerHeight, color);
 
         // organizing data
         // no interpolation should happen here because 
@@ -516,7 +538,7 @@ quorra.bar = function(attributes) {
                 if (attr.layout == "stacked"){
                     return axes.xScale(attr.x(d, i));    
                 }else{
-                    return axes.xScale(attr.x(d, i)) + attr.color.range().indexOf(attr.color(d.group))*dim.innerWidth/newdata.length;
+                    return axes.xScale(attr.x(d, i)) + color.range().indexOf(color(d.group))*dim.innerWidth/newdata.length;
                 }
             })
             // NOTE: this needs to be fixed so that y0 is 
@@ -530,7 +552,7 @@ quorra.bar = function(attributes) {
                 }else{
                     return (dim.innerWidth-newdata.length)/newdata.length;
                 }
-            }).attr("fill", function(d, i){ return attr.color(d.group); })
+            }).attr("fill", function(d, i){ return color(d.group); })
             .style("opacity", 0.75)
             .on("mouseover", function(d, i){
                 d3.select(this).style("opacity", 0.25);
@@ -644,11 +666,14 @@ quorra.bar = function(attributes) {
             // formatters
             var format;
             if (go.display() == "percent") {
-                format = d3.format("%");
+                format = d3.format("0.02%");
             } else if (go.display() == "counts") {
                 format = d3.format(".0f");
             } else if (go.display() == "fraction"){
                 format = d3.format(".02f");
+            }
+            if (go.yformat() === "auto"){
+                go.yformat(format);
             }
             var xScale = d3.scale.linear().range([0, go.innerWidth]);
 
@@ -667,7 +692,7 @@ quorra.bar = function(attributes) {
                     if (go.display() == 'counts'){
                         d.y = d.y*subdat.length;
                     } else if (go.display() == 'percent'){
-                        d.y = d.y*100;
+                        d.y = d.y;
                     }
                     return {
                         x: d.x,
@@ -681,15 +706,6 @@ quorra.bar = function(attributes) {
 
             return newdata;
         });
-
-    // config display
-    if (go.display() == "percent") {
-        go = go.yformat(d3.format("%"));
-    } else if (go.display() == "counts") {
-        go = go.yformat(d3.format(".0f"));
-    } else if (go.display() == "fraction"){
-        go = go.yformat(d3.format(".02f"));
-    }
 
     return go;
 };quorra.line = function(attributes) {
@@ -729,8 +745,11 @@ quorra.bar = function(attributes) {
         // axes
         drawAxes(svg, attr, axes.xAxis, axes.yAxis, dim.innerWidth, dim.innerHeight);
         
+        // coloring
+        var color = parameterizeColorPallete(newdata, attr);
+
         // construct legend
-        var legend = legendConstructor(svg, attr, dim.innerWidth, dim.innerHeight);
+        var legend = legendConstructor(svg, attr, dim.innerWidth, dim.innerHeight, color);
 
         // plotting lines
         var line = d3.svg.line()
@@ -761,10 +780,10 @@ quorra.bar = function(attributes) {
                     if (attr.layout === "line"){
                         return "none";
                     }else if (attr.layout === "area"){
-                        return attr.color(d[0].group);
+                        return color(d[0].group);
                     }
                 })
-                .style("stroke", attr.color(ugrps[grp]))
+                .style("stroke", color(ugrps[grp]))
                 .style("opacity", 0.75)
                 .on("mouseover", function(d, i){
                     d3.select(this).style("opacity", 0.25);
@@ -794,7 +813,7 @@ quorra.bar = function(attributes) {
                 .attr("r", attr.points)
                 .attr("cx", function(d, i) { return axes.xScale(attr.x(d, i)); })
                 .attr("cy", function(d, i) { return axes.yScale(attr.y(d, i)); })
-                .style("fill", function(d, i){ return attr.color(attr.group(d, i)); })
+                .style("fill", function(d, i){ return color(attr.group(d, i)); })
                 .style("opacity", 0.75)
                 .on("mouseover", function(d, i){
                     d3.select(this).style("opacity", 0.25);
@@ -1107,8 +1126,11 @@ quorra.bar = function(attributes) {
             .sort(null)
             .value(function(d){ return d.x; });
 
+        // coloring
+        var color = parameterizeColorPallete(newdata, attr);
+
         // construct legend
-        var legend = legendConstructor(svg, attr, w, h);
+        var legend = legendConstructor(svg, attr, w, h, color);
 
         // plot
         var g = svg.selectAll(".arc")
@@ -1118,7 +1140,7 @@ quorra.bar = function(attributes) {
 
         g.append("path")
             .attr("d", arc)
-            .style("fill", function(d, i) { return attr.color(attr.group(d.data, i)); })
+            .style("fill", function(d, i) { return color(attr.group(d.data, i)); })
             .style("opacity", 0.75)
             .on("mouseover", function(d, i){
                 d3.select(this).style("opacity", 0.25);
@@ -1185,10 +1207,6 @@ quorra.bar = function(attributes) {
     function go(selection){
         // format selection
         if (typeof selection === 'string') selection = d3.select(selection);
-
-        // if height/width are auto, determine them from selection
-        var w = (attr.width === 'auto') ? (parseInt(selection.style("width")) - attr.margin.left - attr.margin.right) : attr.width;
-        var h = (attr.height === 'auto') ? (parseInt(selection.style("height")) - attr.margin.top - attr.margin.bottom) : attr.height;
         
         // transform data (if transformation function is applied)
         var newdata = attr.transform(selection.data()[0]);
@@ -1205,8 +1223,11 @@ quorra.bar = function(attributes) {
         // axes
         drawAxes(svg, attr, axes.xAxis, axes.yAxis, dim.innerWidth, dim.innerHeight);
         
+        // coloring
+        var color = parameterizeColorPallete(newdata, attr);
+
         // construct legend
-        var legend = legendConstructor(svg, attr, dim.innerWidth, dim.innerHeight);
+        var legend = legendConstructor(svg, attr, dim.innerWidth, dim.innerHeight, color);
 
         // plotting points
         var dot = svg.selectAll(".dot")
@@ -1218,7 +1239,7 @@ quorra.bar = function(attributes) {
             .attr("r", attr.size)
             .attr("cx", function(d, i) { return (Math.random()-0.5)*attr.xjitter + axes.xScale(attr.x(d, i)); })
             .attr("cy", function(d, i) { return (Math.random()-0.5)*attr.yjitter + axes.yScale(attr.y(d, i)); })
-            .style("fill", function(d, i) { return attr.color(attr.group(d, i)); })
+            .style("fill", function(d, i) { return color(attr.group(d, i)); })
             .style("opacity", 0.75)
             .on("mouseover", function(d, i){
                 d3.select(this).style("opacity", 0.25);
@@ -1247,7 +1268,7 @@ quorra.bar = function(attributes) {
                 .attr("x2", function(d, i) { return axes.xScale(attr.x(d, i)); })
                 .attr("y1", function(d, i) { return h-5; })
                 .attr("y2", function(d, i) { return h+5; })
-                .attr("stroke", function(d, i){ return attr.color(attr.group(d, i)); })
+                .attr("stroke", function(d, i){ return color(attr.group(d, i)); })
                 .style("opacity", 0.75);
                 // TODO: maybe include two-way selection/highlighting here?
         }
@@ -1262,7 +1283,7 @@ quorra.bar = function(attributes) {
                 .attr("x2", function(d, i) { return 5; })
                 .attr("y1", function(d, i) { return axes.yScale(attr.y(d, i)); })
                 .attr("y2", function(d, i) { return axes.yScale(attr.y(d, i)); })
-                .attr("stroke", function(d, i){ return attr.color(attr.group(d, i)); })
+                .attr("stroke", function(d, i){ return color(attr.group(d, i)); })
                 .style("opacity", 0.75);
         }
 

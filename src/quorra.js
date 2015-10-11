@@ -33,7 +33,7 @@ attributeConstructor = function(id){
         group: function(d, i){ return (typeof d.group === 'undefined') ? 0 : d.group; },
         label: function(d, i){ return (typeof d.label === 'undefined') ? i : d.label; },
         transform: function(d){ return d; },
-        color: d3.scale.category10(),
+        color: "auto",
 
         // triggers
         groupclick: function(d, i){},
@@ -91,16 +91,20 @@ bindConstructorAttributes = function(constructor, attributes){
             }
             // maintain non-overridden object arguments
             if (typeof value === 'object' && i != 'tooltip'){            
-                attributes[i] = _.extend(attributes[i], value);
+                if (typeof attributes[i] === 'object'){
+                    attributes[i] = _.extend(attributes[i], value);
+                }else{
+                    attributes[i] = value;
+                }
             }else{
                 attributes[i] = value;
             }
             return constructor;
-        }        
+        }    
     });
 }
 
-legendConstructor = function(svg, attr, innerWidth, innerHeight){
+legendConstructor = function(svg, attr, innerWidth, innerHeight, color){
     /**
     quorra.legendConstructor()
 
@@ -112,7 +116,7 @@ legendConstructor = function(svg, attr, innerWidth, innerHeight){
     if (!attr.legend){ return undefined; }
 
     var leg = svg.selectAll(".legend")
-        .data(attr.color.domain())
+        .data(color.domain())
         .enter().append("g")
         .attr("class", "legend")
         .attr("id", attr.id + "-legend")
@@ -125,14 +129,14 @@ legendConstructor = function(svg, attr, innerWidth, innerHeight){
             .attr("x", innerWidth - 18 - attr.lmargin.right + attr.lmargin.left)
             .attr("width", 18)
             .attr("height", 18)
-            .style("fill", attr.color);        
+            .style("fill", color);        
     }else if (attr.lshape === "circle"){
         selector = leg.append("circle")
             .attr("class", "selector")
             .attr("cx", innerWidth - 10 - attr.lmargin.right + attr.lmargin.left)
             .attr("cy", 8)
             .attr("r", 9)
-            .style("fill", attr.color);
+            .style("fill", color);
     }
 
     if (attr.toggle){
@@ -191,8 +195,23 @@ parameterizeInnerDimensions = function(selection, attr){
     return {
         innerWidth: iw,
         innerHeight: ih
-    }
+    };
 }
+
+
+parameterizeColorPallete = function(data, attr){
+    /**
+    quorra.parameterizeColorPallete()
+
+    Parameterize color pallete based on grouping.
+
+    @author <bprinty@gmail.com>
+    */
+    var pallette = (attr.color === "auto") ? d3.scale.category10() : d3.scale.ordinal().range(attr.color);
+    var domain = _.unique(_.map(data, attr.group)).sort();
+    return pallette.domain(domain);
+}
+
 
 parameterizeAxes = function(selection, data, attr, innerWidth, innerHeight){
     /**

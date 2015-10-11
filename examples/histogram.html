@@ -41,11 +41,6 @@
 
     <div id="plots">
         
-        <div id="config-editor" class="editor" style="height: 75px;"> 
-var redblue = d3.scale.ordinal().domain(["Evil", "Good"]).range(["firebrick","steelblue"]);
-        </div>
-        <p class="pre-editor">Hit Cmd+Enter for changes to take effect.</p>
-
         <div id="grouped" class="container">
             <div class="plotarea"></div>
         </div>
@@ -61,7 +56,7 @@ var grouped = quorra.histogram()
     .display("counts")
     .xlabel("X Axis Label")
     .ylabel("Counts")
-    .color(redblue);
+    .color(['firebrick','steelblue']);
 
 d3.select("#grouped .plotarea")
     .datum(data).call(grouped);
@@ -86,7 +81,9 @@ var stacked = quorra.histogram()
     .display("percent") // fraction is also possible
     .xlabel("X Axis Label")
     .ylabel("Percent")
-    .color(redblue);
+    .yformat(d3.format("%"))
+    .labelpadding({y: -10})
+    .color(['firebrick','steelblue']);
 
 d3.select("#stacked .plotarea")
     .datum(data).call(stacked);
@@ -115,7 +112,6 @@ d3.select("#stacked .plotarea")
     </script>
 
     <script>
-        eval(parameterizeEditor('config-editor'));
         eval(parameterizeEditor('grouped-editor', '#grouped .plotarea svg'));
         eval(parameterizeEditor('stacked-editor', '#stacked .plotarea svg'));
     </script>

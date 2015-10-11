@@ -61,8 +61,11 @@ quorra.pie = function(attributes) {
             .sort(null)
             .value(function(d){ return d.x; });
 
+        // coloring
+        var color = parameterizeColorPallete(newdata, attr);
+
         // construct legend
-        var legend = legendConstructor(svg, attr, w, h);
+        var legend = legendConstructor(svg, attr, w, h, color);
 
         // plot
         var g = svg.selectAll(".arc")
@@ -72,7 +75,7 @@ quorra.pie = function(attributes) {
 
         g.append("path")
             .attr("d", arc)
-            .style("fill", function(d, i) { return attr.color(attr.group(d.data, i)); })
+            .style("fill", function(d, i) { return color(attr.group(d.data, i)); })
             .style("opacity", 0.75)
             .on("mouseover", function(d, i){
                 d3.select(this).style("opacity", 0.25);

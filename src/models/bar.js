@@ -34,8 +34,11 @@ quorra.bar = function(attributes) {
         // axes
         drawAxes(svg, attr, axes.xAxis, axes.yAxis, dim.innerWidth, dim.innerHeight);
         
+        // coloring
+        var color = parameterizeColorPallete(newdata, attr);
+
         // construct legend
-        var legend = legendConstructor(svg, attr, dim.innerWidth, dim.innerHeight);
+        var legend = legendConstructor(svg, attr, dim.innerWidth, dim.innerHeight, color);
 
         // organizing data
         // no interpolation should happen here because 
@@ -76,7 +79,7 @@ quorra.bar = function(attributes) {
                 if (attr.layout == "stacked"){
                     return axes.xScale(attr.x(d, i));    
                 }else{
-                    return axes.xScale(attr.x(d, i)) + attr.color.range().indexOf(attr.color(d.group))*dim.innerWidth/newdata.length;
+                    return axes.xScale(attr.x(d, i)) + color.range().indexOf(color(d.group))*dim.innerWidth/newdata.length;
                 }
             })
             // NOTE: this needs to be fixed so that y0 is 
@@ -90,7 +93,7 @@ quorra.bar = function(attributes) {
                 }else{
                     return (dim.innerWidth-newdata.length)/newdata.length;
                 }
-            }).attr("fill", function(d, i){ return attr.color(d.group); })
+            }).attr("fill", function(d, i){ return color(d.group); })
             .style("opacity", 0.75)
             .on("mouseover", function(d, i){
                 d3.select(this).style("opacity", 0.25);

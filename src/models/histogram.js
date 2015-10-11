@@ -27,11 +27,14 @@ quorra.histogram = function(attributes) {
             // formatters
             var format;
             if (go.display() == "percent") {
-                format = d3.format("%");
+                format = d3.format("0.02%");
             } else if (go.display() == "counts") {
                 format = d3.format(".0f");
             } else if (go.display() == "fraction"){
                 format = d3.format(".02f");
+            }
+            if (go.yformat() === "auto"){
+                go.yformat(format);
             }
             var xScale = d3.scale.linear().range([0, go.innerWidth]);
 
@@ -50,7 +53,7 @@ quorra.histogram = function(attributes) {
                     if (go.display() == 'counts'){
                         d.y = d.y*subdat.length;
                     } else if (go.display() == 'percent'){
-                        d.y = d.y*100;
+                        d.y = d.y;
                     }
                     return {
                         x: d.x,
@@ -64,15 +67,6 @@ quorra.histogram = function(attributes) {
 
             return newdata;
         });
-
-    // config display
-    if (go.display() == "percent") {
-        go = go.yformat(d3.format("%"));
-    } else if (go.display() == "counts") {
-        go = go.yformat(d3.format(".0f"));
-    } else if (go.display() == "fraction"){
-        go = go.yformat(d3.format(".02f"));
-    }
 
     return go;
 };
