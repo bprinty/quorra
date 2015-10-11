@@ -1,4 +1,4 @@
-/* quorra version 0.0.1 (http://bprinty.github.io/quorra) 2015-10-10 */
+/* quorra version 0.0.1 (http://bprinty.github.io/quorra) 2015-10-11 */
 (function(){
 function quorra() {
     /**
@@ -36,6 +36,8 @@ attributeConstructor = function(id){
         label: function(d, i){ return (typeof d.label === 'undefined') ? i : d.label; },
         transform: function(d){ return d; },
         color: "auto",
+        xrange: "auto",
+        yrange: "auto",
 
         // triggers
         groupclick: function(d, i){},
@@ -179,7 +181,6 @@ legendConstructor = function(svg, attr, innerWidth, innerHeight, color){
     return leg;
 }
 
-
 parameterizeInnerDimensions = function(selection, attr){
     /**
     quorra.parameterizeInnerDimensions()
@@ -235,16 +236,20 @@ parameterizeAxes = function(selection, data, attr, innerWidth, innerHeight){
         // manually set the domain here because it needs to 
         // be aware of the data object (histogram plots)
         // and x axis tweaks for histogram objects
-        var xmax;
-        if (typeof attr.bins === 'undefined') {
-            xmax = _.max(_.map(data, attr.x));
-        } else {
-            xmax = _.max(xScale.ticks(attr.bins));
+        if (attr.xrange === "auto"){
+            var xmax;
+            if (typeof attr.bins === 'undefined') {
+                xmax = _.max(_.map(data, attr.x));
+            } else {
+                xmax = _.max(xScale.ticks(attr.bins));
+            }
+            xScale.domain([
+                _.min(_.map(data, attr.x)),
+                xmax
+            ]).nice();            
+        }else{
+            xScale.domain(attr.xrange).nice();
         }
-        xScale.domain([
-            _.min(_.map(data, attr.x)),
-            xmax
-        ]).nice();
     }
 
     // y scaling
@@ -257,27 +262,31 @@ parameterizeAxes = function(selection, data, attr, innerWidth, innerHeight){
         yScale = d3.scale.linear().range([innerHeight, 0]);
         // manually set the domain here because it needs to 
         // be aware of the data object (histogram plots)
-        if (attr.layout === 'stacked'){
-            // for some reason, underscore's map function won't 
-            // work for accessing the d.y0 property -- so we have
-            // to do it another way
-            var ux = _.unique(_.map(data, attr.x));
-            var marr = _.map(ux, function(d){
-                var nd =_.filter(
-                        data,
-                        function(g){ return attr.x(g) == d; }
-                    );
-                var tmap = _.map(nd, function(g){ return attr.y(g); });
-                return _.reduce(tmap, function(a, b){ return a + b; }, 0);
-            });
-            var max = _.max(marr);
+        if (attr.yrange === "auto"){
+            if (attr.layout === 'stacked'){
+                // for some reason, underscore's map function won't 
+                // work for accessing the d.y0 property -- so we have
+                // to do it another way
+                var ux = _.unique(_.map(data, attr.x));
+                var marr = _.map(ux, function(d){
+                    var nd =_.filter(
+                            data,
+                            function(g){ return attr.x(g) == d; }
+                        );
+                    var tmap = _.map(nd, function(g){ return attr.y(g); });
+                    return _.reduce(tmap, function(a, b){ return a + b; }, 0);
+                });
+                var max = _.max(marr);
+            }else{
+                var max = _.max(_.map(data, attr.y));
+            }
+            yScale.domain([
+                _.min(_.map(data, attr.y)),
+                max
+            ]).nice();
         }else{
-            var max = _.max(_.map(data, attr.y));
+            yScale.domain(attr.yrange).nice();
         }
-        yScale.domain([
-            _.min(_.map(data, attr.y)),
-            max
-        ]).nice();
     }
 
     // tick formatting
@@ -322,6 +331,7 @@ drawAxes = function(svg, attr, xAxis, yAxis, innerWidth, innerHeight){
         yAxis = yAxis.tickSize(-innerWidth, 0, 0);
     }
 
+    // x axis
     svg.append("g")
         .attr("class", "x axis")
         .attr("transform", "translate(0," + innerHeight + ")")
@@ -347,6 +357,7 @@ drawAxes = function(svg, attr, xAxis, yAxis, innerWidth, innerHeight){
         .style("text-anchor", attr.labelposition)
         .text(attr.xlabel);
 
+    // y axis
     svg.append("g")
         .attr("class", "y axis")
         .call(yAxis)
@@ -370,6 +381,13 @@ drawAxes = function(svg, attr, xAxis, yAxis, innerWidth, innerHeight){
         })
         .attr("dy", ".71em")
         .style("text-anchor", attr.labelposition).text(attr.ylabel);
+
+    // clip plot area
+    svg.append("clipPath")
+        .attr("id", "clip")
+        .append("rect")
+        .attr("width", innerWidth)
+        .attr("height", innerHeight);
 
     return;
 }
@@ -457,6 +475,14 @@ function epanechnikovKernel(scale) {
         return Math.abs(u /= scale) <= 1 ? 0.75 * (1 - u * u) / scale : 0;
     };
 }
+
+
+// underscore additions
+_.center = function(x, bounds){
+    return _.min([_.max([x, bounds[0]]), bounds[1]]);
+}
+
+
 quorra.bar = function(attributes) {
     /**
     quorra.bar()
@@ -526,7 +552,8 @@ quorra.bar = function(attributes) {
         var layer = svg.selectAll(".layer")
             .data(layers)
             .enter().append("g")
-            .attr("class","layer");
+            .attr("class","layer")
+            .attr("clip-path", "url(#clip)");
         
         var rect = layer.selectAll("rect")
             .data(function(d){ return d; })
@@ -550,6 +577,7 @@ quorra.bar = function(attributes) {
                     var xlim = _.max(_.map(layers, function(d){ return d.length; }));
                     return (dim.innerWidth-xlim)/xlim;
                 }else{
+                    // rescale bar width
                     return (dim.innerWidth-newdata.length)/newdata.length;
                 }
             }).attr("fill", function(d, i){ return color(d.group); })
@@ -722,6 +750,7 @@ quorra.bar = function(attributes) {
     var attr = attributeConstructor('line');
     attr.points = 0;
     attr.layout = "line";
+    attr.interpolate = "linear";
     attr = _.extend(attr, attributes);
 
     // generator
@@ -753,12 +782,24 @@ quorra.bar = function(attributes) {
 
         // plotting lines
         var line = d3.svg.line()
-            .x(function(d, i) { return axes.xScale(attr.x(d, i)); })
-            .y(function(d, i) { return axes.yScale(attr.y(d, i)); });
+            .x(function(d, i) { 
+                return axes.xScale(attr.x(d, i));
+                // if (attr.xrange === "auto"){
+                // }else{
+                //     return axes.xScale(_.center(attr.x(d, i), attr.xrange));
+                // }
+            })
+            .y(function(d, i) { 
+                return axes.yScale(attr.y(d, i));
+                // if (attr.yrange === "auto"){
+                // }else{
+                //     return axes.yScale(_.center(attr.y(d, i), attr.yrange));
+                // }
+            }).interpolate(attr.interpolate);
 
         var ugrps = _.unique(_.map(newdata, function(d){ return d.group; }));
         for (var grp in ugrps) {
-            
+
             // lines
             var subdat = _.filter(newdata, function(d){ return d.group == ugrps[grp]; });
             svg.append("path")
@@ -771,9 +812,7 @@ quorra.bar = function(attributes) {
                     if (attr.layout === "line"){
                         return path;
                     }else if (attr.layout === "area"){
-                        var end = RegExp(".*L(.+?)$", "g").exec(path);
-                        var lcoords = _.map(end[1].split(","), parseFloat);
-                        return path + "L" + lcoords[0] + "," + (dim.innerHeight - 2) + "Z";
+                        return path + "L" + axes.xScale(_.max(_.map(d, attr.x))) + "," + (dim.innerHeight - 2) + "Z";
                     }
                 })
                 .style("fill", function(d){
@@ -785,6 +824,7 @@ quorra.bar = function(attributes) {
                 })
                 .style("stroke", color(ugrps[grp]))
                 .style("opacity", 0.75)
+                .attr("clip-path", "url(#clip)")
                 .on("mouseover", function(d, i){
                     d3.select(this).style("opacity", 0.25);
                     attr.tooltip.html(d[0].group)
@@ -815,6 +855,7 @@ quorra.bar = function(attributes) {
                 .attr("cy", function(d, i) { return axes.yScale(attr.y(d, i)); })
                 .style("fill", function(d, i){ return color(attr.group(d, i)); })
                 .style("opacity", 0.75)
+                .attr("clip-path", "url(#clip)")
                 .on("mouseover", function(d, i){
                     d3.select(this).style("opacity", 0.25);
                     attr.tooltip.html(attr.label(d, i))
@@ -1241,6 +1282,7 @@ quorra.bar = function(attributes) {
             .attr("cy", function(d, i) { return (Math.random()-0.5)*attr.yjitter + axes.yScale(attr.y(d, i)); })
             .style("fill", function(d, i) { return color(attr.group(d, i)); })
             .style("opacity", 0.75)
+            .attr("clip-path", "url(#clip)")
             .on("mouseover", function(d, i){
                 d3.select(this).style("opacity", 0.25);
                 attr.tooltip.html(attr.label(d, i))

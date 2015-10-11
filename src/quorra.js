@@ -34,6 +34,8 @@ attributeConstructor = function(id){
         label: function(d, i){ return (typeof d.label === 'undefined') ? i : d.label; },
         transform: function(d){ return d; },
         color: "auto",
+        xrange: "auto",
+        yrange: "auto",
 
         // triggers
         groupclick: function(d, i){},
@@ -177,7 +179,6 @@ legendConstructor = function(svg, attr, innerWidth, innerHeight, color){
     return leg;
 }
 
-
 parameterizeInnerDimensions = function(selection, attr){
     /**
     quorra.parameterizeInnerDimensions()
@@ -233,16 +234,20 @@ parameterizeAxes = function(selection, data, attr, innerWidth, innerHeight){
         // manually set the domain here because it needs to 
         // be aware of the data object (histogram plots)
         // and x axis tweaks for histogram objects
-        var xmax;
-        if (typeof attr.bins === 'undefined') {
-            xmax = _.max(_.map(data, attr.x));
-        } else {
-            xmax = _.max(xScale.ticks(attr.bins));
+        if (attr.xrange === "auto"){
+            var xmax;
+            if (typeof attr.bins === 'undefined') {
+                xmax = _.max(_.map(data, attr.x));
+            } else {
+                xmax = _.max(xScale.ticks(attr.bins));
+            }
+            xScale.domain([
+                _.min(_.map(data, attr.x)),
+                xmax
+            ]).nice();            
+        }else{
+            xScale.domain(attr.xrange).nice();
         }
-        xScale.domain([
-            _.min(_.map(data, attr.x)),
-            xmax
-        ]).nice();
     }
 
     // y scaling
@@ -255,27 +260,31 @@ parameterizeAxes = function(selection, data, attr, innerWidth, innerHeight){
         yScale = d3.scale.linear().range([innerHeight, 0]);
         // manually set the domain here because it needs to 
         // be aware of the data object (histogram plots)
-        if (attr.layout === 'stacked'){
-            // for some reason, underscore's map function won't 
-            // work for accessing the d.y0 property -- so we have
-            // to do it another way
-            var ux = _.unique(_.map(data, attr.x));
-            var marr = _.map(ux, function(d){
-                var nd =_.filter(
-                        data,
-                        function(g){ return attr.x(g) == d; }
-                    );
-                var tmap = _.map(nd, function(g){ return attr.y(g); });
-                return _.reduce(tmap, function(a, b){ return a + b; }, 0);
-            });
-            var max = _.max(marr);
+        if (attr.yrange === "auto"){
+            if (attr.layout === 'stacked'){
+                // for some reason, underscore's map function won't 
+                // work for accessing the d.y0 property -- so we have
+                // to do it another way
+                var ux = _.unique(_.map(data, attr.x));
+                var marr = _.map(ux, function(d){
+                    var nd =_.filter(
+                            data,
+                            function(g){ return attr.x(g) == d; }
+                        );
+                    var tmap = _.map(nd, function(g){ return attr.y(g); });
+                    return _.reduce(tmap, function(a, b){ return a + b; }, 0);
+                });
+                var max = _.max(marr);
+            }else{
+                var max = _.max(_.map(data, attr.y));
+            }
+            yScale.domain([
+                _.min(_.map(data, attr.y)),
+                max
+            ]).nice();
         }else{
-            var max = _.max(_.map(data, attr.y));
+            yScale.domain(attr.yrange).nice();
         }
-        yScale.domain([
-            _.min(_.map(data, attr.y)),
-            max
-        ]).nice();
     }
 
     // tick formatting
@@ -320,6 +329,7 @@ drawAxes = function(svg, attr, xAxis, yAxis, innerWidth, innerHeight){
         yAxis = yAxis.tickSize(-innerWidth, 0, 0);
     }
 
+    // x axis
     svg.append("g")
         .attr("class", "x axis")
         .attr("transform", "translate(0," + innerHeight + ")")
@@ -345,6 +355,7 @@ drawAxes = function(svg, attr, xAxis, yAxis, innerWidth, innerHeight){
         .style("text-anchor", attr.labelposition)
         .text(attr.xlabel);
 
+    // y axis
     svg.append("g")
         .attr("class", "y axis")
         .call(yAxis)
@@ -368,6 +379,13 @@ drawAxes = function(svg, attr, xAxis, yAxis, innerWidth, innerHeight){
         })
         .attr("dy", ".71em")
         .style("text-anchor", attr.labelposition).text(attr.ylabel);
+
+    // clip plot area
+    svg.append("clipPath")
+        .attr("id", "clip")
+        .append("rect")
+        .attr("width", innerWidth)
+        .attr("height", innerHeight);
 
     return;
 }

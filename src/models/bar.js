@@ -67,7 +67,8 @@ quorra.bar = function(attributes) {
         var layer = svg.selectAll(".layer")
             .data(layers)
             .enter().append("g")
-            .attr("class","layer");
+            .attr("class","layer")
+            .attr("clip-path", "url(#clip)");
         
         var rect = layer.selectAll("rect")
             .data(function(d){ return d; })
@@ -91,6 +92,7 @@ quorra.bar = function(attributes) {
                     var xlim = _.max(_.map(layers, function(d){ return d.length; }));
                     return (dim.innerWidth-xlim)/xlim;
                 }else{
+                    // rescale bar width
                     return (dim.innerWidth-newdata.length)/newdata.length;
                 }
             }).attr("fill", function(d, i){ return color(d.group); })

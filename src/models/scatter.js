@@ -57,6 +57,7 @@ quorra.scatter = function(attributes) {
             .attr("cy", function(d, i) { return (Math.random()-0.5)*attr.yjitter + axes.yScale(attr.y(d, i)); })
             .style("fill", function(d, i) { return color(attr.group(d, i)); })
             .style("opacity", 0.75)
+            .attr("clip-path", "url(#clip)")
             .on("mouseover", function(d, i){
                 d3.select(this).style("opacity", 0.25);
                 attr.tooltip.html(attr.label(d, i))

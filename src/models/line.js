@@ -12,6 +12,7 @@ quorra.line = function(attributes) {
     var attr = attributeConstructor('line');
     attr.points = 0;
     attr.layout = "line";
+    attr.interpolate = "linear";
     attr = _.extend(attr, attributes);
 
     // generator
@@ -43,12 +44,24 @@ quorra.line = function(attributes) {
 
         // plotting lines
         var line = d3.svg.line()
-            .x(function(d, i) { return axes.xScale(attr.x(d, i)); })
-            .y(function(d, i) { return axes.yScale(attr.y(d, i)); });
+            .x(function(d, i) { 
+                return axes.xScale(attr.x(d, i));
+                // if (attr.xrange === "auto"){
+                // }else{
+                //     return axes.xScale(_.center(attr.x(d, i), attr.xrange));
+                // }
+            })
+            .y(function(d, i) { 
+                return axes.yScale(attr.y(d, i));
+                // if (attr.yrange === "auto"){
+                // }else{
+                //     return axes.yScale(_.center(attr.y(d, i), attr.yrange));
+                // }
+            }).interpolate(attr.interpolate);
 
         var ugrps = _.unique(_.map(newdata, function(d){ return d.group; }));
         for (var grp in ugrps) {
-            
+
             // lines
             var subdat = _.filter(newdata, function(d){ return d.group == ugrps[grp]; });
             svg.append("path")
@@ -61,9 +74,7 @@ quorra.line = function(attributes) {
                     if (attr.layout === "line"){
                         return path;
                     }else if (attr.layout === "area"){
-                        var end = RegExp(".*L(.+?)$", "g").exec(path);
-                        var lcoords = _.map(end[1].split(","), parseFloat);
-                        return path + "L" + lcoords[0] + "," + (dim.innerHeight - 2) + "Z";
+                        return path + "L" + axes.xScale(_.max(_.map(d, attr.x))) + "," + (dim.innerHeight - 2) + "Z";
                     }
                 })
                 .style("fill", function(d){
@@ -75,6 +86,7 @@ quorra.line = function(attributes) {
                 })
                 .style("stroke", color(ugrps[grp]))
                 .style("opacity", 0.75)
+                .attr("clip-path", "url(#clip)")
                 .on("mouseover", function(d, i){
                     d3.select(this).style("opacity", 0.25);
                     attr.tooltip.html(d[0].group)
@@ -105,6 +117,7 @@ quorra.line = function(attributes) {
                 .attr("cy", function(d, i) { return axes.yScale(attr.y(d, i)); })
                 .style("fill", function(d, i){ return color(attr.group(d, i)); })
                 .style("opacity", 0.75)
+                .attr("clip-path", "url(#clip)")
                 .on("mouseover", function(d, i){
                     d3.select(this).style("opacity", 0.25);
                     attr.tooltip.html(attr.label(d, i))

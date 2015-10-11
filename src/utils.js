@@ -57,3 +57,11 @@ function epanechnikovKernel(scale) {
         return Math.abs(u /= scale) <= 1 ? 0.75 * (1 - u * u) / scale : 0;
     };
 }
+
+
+// underscore additions
+_.center = function(x, bounds){
+    return _.min([_.max([x, bounds[0]]), bounds[1]]);
+}
+
+
