@@ -63,7 +63,8 @@ attributeConstructor = function(id){
         lshape: "square",
         toggle: true,
         
-        // tooltip
+        // tooltip/annotation
+        annotation: false,
         tooltip: d3.select("body").append("div")
             .attr("id", id + "-tooltip")
             .attr("class", "tooltip")
@@ -399,6 +400,7 @@ initializeCanvas = function(selection, attr){
 
     @author <bprinty@gmail.com>
     */
+
     var svg;
     if (selection.select("svg")[0][0] == null){
         svg = selection.append("svg");
@@ -413,4 +415,39 @@ initializeCanvas = function(selection, attr){
         .attr("transform", "translate(" + attr.margin.left + "," + attr.margin.top + ")");
 
     return svg;
+}
+
+
+annotationConstructor = function(svg, attr, xScale, yScale){
+    /**
+    quorra.initializeCanvas()
+
+    Initialze canvas for quorra plot and return svg selection.
+
+    @author <bprinty@gmail.com>
+    */
+    if (attr.annotation == false){ return false; }
+
+    if (!Array.isArray(attr.annotation)){
+        attr.annotation = [attr.annotation]
+    }
+    _.map(attr.annotation, function(d){
+        d = _.extend({
+            type: 'circle',
+            text: '',
+            value: '',
+            size: 15,
+            'font-size': 13,
+            'font-position': {x: 0, y: 20},
+            x: 0,
+            y: 0,
+            style: {}
+        }, d);
+        quorra[d.type](svg, d.size, xScale(d.x), yScale(d.y), d.style);
+        if (d.text != ''){
+            quorra.text(svg, d['font-size'], xScale(d.x) + d['font-position'].x, xScale(d.y) - d['font-position'].y, d.text);
+        }
+        return;
+    });
+    return ;
 }

@@ -30,111 +30,112 @@ quorra.line = function(attributes) {
         // determine inner dimensions for plot
         var dim = parameterizeInnerDimensions(selection, attr);
 
-        // configure axes
-        var axes = parameterizeAxes(selection, newdata, attr, dim.innerWidth, dim.innerHeight);
-
-        // axes
-        drawAxes(svg, attr, axes.xAxis, axes.yAxis, dim.innerWidth, dim.innerHeight);
-        
         // coloring
         var color = parameterizeColorPallete(newdata, attr);
 
         // construct legend
         var legend = legendConstructor(svg, attr, dim.innerWidth, dim.innerHeight, color);
 
-        // plotting lines
-        var line = d3.svg.line()
-            .x(function(d, i) { 
-                return axes.xScale(attr.x(d, i));
-                // if (attr.xrange === "auto"){
-                // }else{
-                //     return axes.xScale(_.center(attr.x(d, i), attr.xrange));
-                // }
-            })
-            .y(function(d, i) { 
-                return axes.yScale(attr.y(d, i));
-                // if (attr.yrange === "auto"){
-                // }else{
-                //     return axes.yScale(_.center(attr.y(d, i), attr.yrange));
-                // }
-            }).interpolate(attr.interpolate);
+        function render(){
 
-        var ugrps = _.unique(_.map(newdata, function(d){ return d.group; }));
-        for (var grp in ugrps) {
+            // configure axes
+            var axes = parameterizeAxes(selection, newdata, attr, dim.innerWidth, dim.innerHeight);
 
-            // lines
-            var subdat = _.filter(newdata, function(d){ return d.group == ugrps[grp]; });
-            svg.append("path")
-                .datum(subdat)
-                .attr("class", function(d, i){
-                    return "line " + "g_" + d[0].group;
-                })
-                .attr("d", function(d){
-                    var path = line(d);
-                    if (attr.layout === "line"){
-                        return path;
-                    }else if (attr.layout === "area"){
-                        return path + "L" + axes.xScale(_.max(_.map(d, attr.x))) + "," + (dim.innerHeight - 2) + "Z";
-                    }
-                })
-                .style("fill", function(d){
-                    if (attr.layout === "line"){
-                        return "none";
-                    }else if (attr.layout === "area"){
-                        return color(d[0].group);
-                    }
-                })
-                .style("stroke", color(ugrps[grp]))
-                .style("opacity", 0.75)
-                .attr("clip-path", "url(#clip)")
-                .on("mouseover", function(d, i){
-                    d3.select(this).style("opacity", 0.25);
-                    attr.tooltip.html(d[0].group)
-                        .style("opacity", 1)
-                        .style("left", (d3.event.pageX + 5) + "px")
-                        .style("top", (d3.event.pageY - 20) + "px");
-                }).on("mousemove", function(d){
-                    attr.tooltip
-                        .style("left", (d3.event.pageX + 5) + "px")
-                        .style("top", (d3.event.pageY - 20) + "px");
-                }).on("mouseout", function(d){
-                    d3.select(this).style("opacity", 0.75);
-                    attr.tooltip.style("opacity", 0);
-                }).on("click", attr.groupclick);
+            // axes
+            drawAxes(svg, attr, axes.xAxis, axes.yAxis, dim.innerWidth, dim.innerHeight);
 
+            // plotting lines
+            var line = d3.svg.line()
+                .x(function(d, i) { return axes.xScale(attr.x(d, i)); })
+                .y(function(d, i) { return axes.yScale(attr.y(d, i)); })
+                .interpolate(attr.interpolate);
+
+            var ugrps = _.unique(_.map(newdata, function(d){ return d.group; }));
+            for (var grp in ugrps) {
+
+                // lines
+                var subdat = _.filter(newdata, function(d){ return d.group == ugrps[grp]; });
+                svg.append("path")
+                    .datum(subdat)
+                    .attr("class", function(d, i){
+                        return "line " + "g_" + d[0].group;
+                    })
+                    .attr("d", function(d){
+                        var path = line(d);
+                        if (attr.layout === "line"){
+                            return path;
+                        }else if (attr.layout === "area"){
+                            return path + "L" + axes.xScale(_.max(_.map(d, attr.x))) + "," + (dim.innerHeight - 2) + "Z";
+                        }
+                    })
+                    .style("fill", function(d){
+                        if (attr.layout === "line"){
+                            return "none";
+                        }else if (attr.layout === "area"){
+                            return color(d[0].group);
+                        }
+                    })
+                    .style("stroke", color(ugrps[grp]))
+                    .style("opacity", 0.75)
+                    .attr("clip-path", "url(#clip)")
+                    .on("mouseover", function(d, i){
+                        d3.select(this).style("opacity", 0.25);
+                        attr.tooltip.html(d[0].group)
+                            .style("opacity", 1)
+                            .style("left", (d3.event.pageX + 5) + "px")
+                            .style("top", (d3.event.pageY - 20) + "px");
+                    }).on("mousemove", function(d){
+                        attr.tooltip
+                            .style("left", (d3.event.pageX + 5) + "px")
+                            .style("top", (d3.event.pageY - 20) + "px");
+                    }).on("mouseout", function(d){
+                        d3.select(this).style("opacity", 0.75);
+                        attr.tooltip.style("opacity", 0);
+                    }).on("click", attr.groupclick);
+
+            }
+
+            // points (if specified)
+            if (attr.points > 0){
+                svg.selectAll(".dot")
+                    .data(newdata)
+                    .enter().append("circle")
+                    .attr("class", function(d, i){
+                        return "dot " + "g_" + d.group;
+                    })
+                    .attr("r", attr.points)
+                    .attr("cx", function(d, i) { return axes.xScale(attr.x(d, i)); })
+                    .attr("cy", function(d, i) { return axes.yScale(attr.y(d, i)); })
+                    .style("fill", function(d, i){ return color(attr.group(d, i)); })
+                    .style("opacity", 0.75)
+                    .attr("clip-path", "url(#clip)")
+                    .on("mouseover", function(d, i){
+                        d3.select(this).style("opacity", 0.25);
+                        attr.tooltip.html(attr.label(d, i))
+                            .style("opacity", 1)
+                            .style("left", (d3.event.pageX + 5) + "px")
+                            .style("top", (d3.event.pageY - 20) + "px");
+                    }).on("mousemove", function(d){
+                        attr.tooltip
+                            .style("left", (d3.event.pageX + 5) + "px")
+                            .style("top", (d3.event.pageY - 20) + "px");
+                    }).on("mouseout", function(d){
+                        d3.select(this).style("opacity", 0.75);
+                        attr.tooltip.style("opacity", 0);
+                    }).on("click", attr.labelclick);
+            }
+
+            // do annotation
+            var annotation = annotationConstructor(svg, attr, axes.xScale, axes.yScale);
         }
+        render();
 
-        // points (if specified)
-        if (attr.points > 0){
-            svg.selectAll(".dot")
-                .data(newdata)
-                .enter().append("circle")
-                .attr("class", function(d, i){
-                    return "dot " + "g_" + d.group;
-                })
-                .attr("r", attr.points)
-                .attr("cx", function(d, i) { return axes.xScale(attr.x(d, i)); })
-                .attr("cy", function(d, i) { return axes.yScale(attr.y(d, i)); })
-                .style("fill", function(d, i){ return color(attr.group(d, i)); })
-                .style("opacity", 0.75)
-                .attr("clip-path", "url(#clip)")
-                .on("mouseover", function(d, i){
-                    d3.select(this).style("opacity", 0.25);
-                    attr.tooltip.html(attr.label(d, i))
-                        .style("opacity", 1)
-                        .style("left", (d3.event.pageX + 5) + "px")
-                        .style("top", (d3.event.pageY - 20) + "px");
-                }).on("mousemove", function(d){
-                    attr.tooltip
-                        .style("left", (d3.event.pageX + 5) + "px")
-                        .style("top", (d3.event.pageY - 20) + "px");
-                }).on("mouseout", function(d){
-                    d3.select(this).style("opacity", 0.75);
-                    attr.tooltip.style("opacity", 0);
-                }).on("click", attr.labelclick);
-        }
+        // if (attr.zoomable){
+        //     enableZooming(svg, render, attr, dim);
+        // }
 
         // expose editable attributes (user control)
+        go.render = render;
         go.svg = svg;
         go.legend = legend;
         go.xScale = axes.xScale;

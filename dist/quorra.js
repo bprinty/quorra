@@ -65,7 +65,8 @@ attributeConstructor = function(id){
         lshape: "square",
         toggle: true,
         
-        // tooltip
+        // tooltip/annotation
+        annotation: false,
         tooltip: d3.select("body").append("div")
             .attr("id", id + "-tooltip")
             .attr("class", "tooltip")
@@ -401,6 +402,7 @@ initializeCanvas = function(selection, attr){
 
     @author <bprinty@gmail.com>
     */
+
     var svg;
     if (selection.select("svg")[0][0] == null){
         svg = selection.append("svg");
@@ -415,6 +417,41 @@ initializeCanvas = function(selection, attr){
         .attr("transform", "translate(" + attr.margin.left + "," + attr.margin.top + ")");
 
     return svg;
+}
+
+
+annotationConstructor = function(svg, attr, xScale, yScale){
+    /**
+    quorra.initializeCanvas()
+
+    Initialze canvas for quorra plot and return svg selection.
+
+    @author <bprinty@gmail.com>
+    */
+    if (attr.annotation == false){ return false; }
+
+    if (!Array.isArray(attr.annotation)){
+        attr.annotation = [attr.annotation]
+    }
+    _.map(attr.annotation, function(d){
+        d = _.extend({
+            type: 'circle',
+            text: '',
+            value: '',
+            size: 15,
+            'font-size': 13,
+            'font-position': {x: 0, y: 20},
+            x: 0,
+            y: 0,
+            style: {}
+        }, d);
+        quorra[d.type](svg, d.size, xScale(d.x), yScale(d.y), d.style);
+        if (d.text != ''){
+            quorra.text(svg, d['font-size'], xScale(d.x) + d['font-position'].x, xScale(d.y) - d['font-position'].y, d.text);
+        }
+        return;
+    });
+    return ;
 }
 
 // set default seed for random number generation
@@ -474,6 +511,56 @@ function epanechnikovKernel(scale) {
     return function(u) {
         return Math.abs(u /= scale) <= 1 ? 0.75 * (1 - u * u) / scale : 0;
     };
+}
+
+
+// shapes
+quorra.text = function(svg, size, x, y, value){
+    var text = svg.append('text')
+        .attr('class', 'annotation')
+        .attr('x', x)
+        .attr('y', y)
+        .style("font-size", size)
+        .style("text-anchor", "middle")
+        .text(value);
+
+    return;
+}
+
+
+quorra.square = function(svg, size, x, y, style){
+    var square = svg.append('rect')
+        .attr('class', 'annotation')
+        .attr('width', size)
+        .attr('height', size)
+        .attr('x', x - size / 2)
+        .attr('y', y - size / 2);
+
+    for (i in style){
+        square.style(i, style[i]);
+    }
+    
+    return;
+}
+
+
+quorra.circle = function(svg, size, x, y, style){
+    var circle = svg.append('circle')
+        .attr('class', 'annotation')
+        .attr('r', size / 2)
+        .attr('cx', x)
+        .attr('cy', y);
+
+    for (i in style){
+        circle.style(i, style[i]);
+    }
+
+    return;
+}
+
+
+quorra.triangle = function(svg, size, x, y){
+
 }
 
 
@@ -768,111 +855,112 @@ quorra.bar = function(attributes) {
         // determine inner dimensions for plot
         var dim = parameterizeInnerDimensions(selection, attr);
 
-        // configure axes
-        var axes = parameterizeAxes(selection, newdata, attr, dim.innerWidth, dim.innerHeight);
-
-        // axes
-        drawAxes(svg, attr, axes.xAxis, axes.yAxis, dim.innerWidth, dim.innerHeight);
-        
         // coloring
         var color = parameterizeColorPallete(newdata, attr);
 
         // construct legend
         var legend = legendConstructor(svg, attr, dim.innerWidth, dim.innerHeight, color);
 
-        // plotting lines
-        var line = d3.svg.line()
-            .x(function(d, i) { 
-                return axes.xScale(attr.x(d, i));
-                // if (attr.xrange === "auto"){
-                // }else{
-                //     return axes.xScale(_.center(attr.x(d, i), attr.xrange));
-                // }
-            })
-            .y(function(d, i) { 
-                return axes.yScale(attr.y(d, i));
-                // if (attr.yrange === "auto"){
-                // }else{
-                //     return axes.yScale(_.center(attr.y(d, i), attr.yrange));
-                // }
-            }).interpolate(attr.interpolate);
+        function render(){
 
-        var ugrps = _.unique(_.map(newdata, function(d){ return d.group; }));
-        for (var grp in ugrps) {
+            // configure axes
+            var axes = parameterizeAxes(selection, newdata, attr, dim.innerWidth, dim.innerHeight);
 
-            // lines
-            var subdat = _.filter(newdata, function(d){ return d.group == ugrps[grp]; });
-            svg.append("path")
-                .datum(subdat)
-                .attr("class", function(d, i){
-                    return "line " + "g_" + d[0].group;
-                })
-                .attr("d", function(d){
-                    var path = line(d);
-                    if (attr.layout === "line"){
-                        return path;
-                    }else if (attr.layout === "area"){
-                        return path + "L" + axes.xScale(_.max(_.map(d, attr.x))) + "," + (dim.innerHeight - 2) + "Z";
-                    }
-                })
-                .style("fill", function(d){
-                    if (attr.layout === "line"){
-                        return "none";
-                    }else if (attr.layout === "area"){
-                        return color(d[0].group);
-                    }
-                })
-                .style("stroke", color(ugrps[grp]))
-                .style("opacity", 0.75)
-                .attr("clip-path", "url(#clip)")
-                .on("mouseover", function(d, i){
-                    d3.select(this).style("opacity", 0.25);
-                    attr.tooltip.html(d[0].group)
-                        .style("opacity", 1)
-                        .style("left", (d3.event.pageX + 5) + "px")
-                        .style("top", (d3.event.pageY - 20) + "px");
-                }).on("mousemove", function(d){
-                    attr.tooltip
-                        .style("left", (d3.event.pageX + 5) + "px")
-                        .style("top", (d3.event.pageY - 20) + "px");
-                }).on("mouseout", function(d){
-                    d3.select(this).style("opacity", 0.75);
-                    attr.tooltip.style("opacity", 0);
-                }).on("click", attr.groupclick);
+            // axes
+            drawAxes(svg, attr, axes.xAxis, axes.yAxis, dim.innerWidth, dim.innerHeight);
 
+            // plotting lines
+            var line = d3.svg.line()
+                .x(function(d, i) { return axes.xScale(attr.x(d, i)); })
+                .y(function(d, i) { return axes.yScale(attr.y(d, i)); })
+                .interpolate(attr.interpolate);
+
+            var ugrps = _.unique(_.map(newdata, function(d){ return d.group; }));
+            for (var grp in ugrps) {
+
+                // lines
+                var subdat = _.filter(newdata, function(d){ return d.group == ugrps[grp]; });
+                svg.append("path")
+                    .datum(subdat)
+                    .attr("class", function(d, i){
+                        return "line " + "g_" + d[0].group;
+                    })
+                    .attr("d", function(d){
+                        var path = line(d);
+                        if (attr.layout === "line"){
+                            return path;
+                        }else if (attr.layout === "area"){
+                            return path + "L" + axes.xScale(_.max(_.map(d, attr.x))) + "," + (dim.innerHeight - 2) + "Z";
+                        }
+                    })
+                    .style("fill", function(d){
+                        if (attr.layout === "line"){
+                            return "none";
+                        }else if (attr.layout === "area"){
+                            return color(d[0].group);
+                        }
+                    })
+                    .style("stroke", color(ugrps[grp]))
+                    .style("opacity", 0.75)
+                    .attr("clip-path", "url(#clip)")
+                    .on("mouseover", function(d, i){
+                        d3.select(this).style("opacity", 0.25);
+                        attr.tooltip.html(d[0].group)
+                            .style("opacity", 1)
+                            .style("left", (d3.event.pageX + 5) + "px")
+                            .style("top", (d3.event.pageY - 20) + "px");
+                    }).on("mousemove", function(d){
+                        attr.tooltip
+                            .style("left", (d3.event.pageX + 5) + "px")
+                            .style("top", (d3.event.pageY - 20) + "px");
+                    }).on("mouseout", function(d){
+                        d3.select(this).style("opacity", 0.75);
+                        attr.tooltip.style("opacity", 0);
+                    }).on("click", attr.groupclick);
+
+            }
+
+            // points (if specified)
+            if (attr.points > 0){
+                svg.selectAll(".dot")
+                    .data(newdata)
+                    .enter().append("circle")
+                    .attr("class", function(d, i){
+                        return "dot " + "g_" + d.group;
+                    })
+                    .attr("r", attr.points)
+                    .attr("cx", function(d, i) { return axes.xScale(attr.x(d, i)); })
+                    .attr("cy", function(d, i) { return axes.yScale(attr.y(d, i)); })
+                    .style("fill", function(d, i){ return color(attr.group(d, i)); })
+                    .style("opacity", 0.75)
+                    .attr("clip-path", "url(#clip)")
+                    .on("mouseover", function(d, i){
+                        d3.select(this).style("opacity", 0.25);
+                        attr.tooltip.html(attr.label(d, i))
+                            .style("opacity", 1)
+                            .style("left", (d3.event.pageX + 5) + "px")
+                            .style("top", (d3.event.pageY - 20) + "px");
+                    }).on("mousemove", function(d){
+                        attr.tooltip
+                            .style("left", (d3.event.pageX + 5) + "px")
+                            .style("top", (d3.event.pageY - 20) + "px");
+                    }).on("mouseout", function(d){
+                        d3.select(this).style("opacity", 0.75);
+                        attr.tooltip.style("opacity", 0);
+                    }).on("click", attr.labelclick);
+            }
+
+            // do annotation
+            var annotation = annotationConstructor(svg, attr, axes.xScale, axes.yScale);
         }
+        render();
 
-        // points (if specified)
-        if (attr.points > 0){
-            svg.selectAll(".dot")
-                .data(newdata)
-                .enter().append("circle")
-                .attr("class", function(d, i){
-                    return "dot " + "g_" + d.group;
-                })
-                .attr("r", attr.points)
-                .attr("cx", function(d, i) { return axes.xScale(attr.x(d, i)); })
-                .attr("cy", function(d, i) { return axes.yScale(attr.y(d, i)); })
-                .style("fill", function(d, i){ return color(attr.group(d, i)); })
-                .style("opacity", 0.75)
-                .attr("clip-path", "url(#clip)")
-                .on("mouseover", function(d, i){
-                    d3.select(this).style("opacity", 0.25);
-                    attr.tooltip.html(attr.label(d, i))
-                        .style("opacity", 1)
-                        .style("left", (d3.event.pageX + 5) + "px")
-                        .style("top", (d3.event.pageY - 20) + "px");
-                }).on("mousemove", function(d){
-                    attr.tooltip
-                        .style("left", (d3.event.pageX + 5) + "px")
-                        .style("top", (d3.event.pageY - 20) + "px");
-                }).on("mouseout", function(d){
-                    d3.select(this).style("opacity", 0.75);
-                    attr.tooltip.style("opacity", 0);
-                }).on("click", attr.labelclick);
-        }
+        // if (attr.zoomable){
+        //     enableZooming(svg, render, attr, dim);
+        // }
 
         // expose editable attributes (user control)
+        go.render = render;
         go.svg = svg;
         go.legend = legend;
         go.xScale = axes.xScale;

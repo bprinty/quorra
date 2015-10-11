@@ -59,6 +59,56 @@ function epanechnikovKernel(scale) {
 }
 
 
+// shapes
+quorra.text = function(svg, size, x, y, value){
+    var text = svg.append('text')
+        .attr('class', 'annotation')
+        .attr('x', x)
+        .attr('y', y)
+        .style("font-size", size)
+        .style("text-anchor", "middle")
+        .text(value);
+
+    return;
+}
+
+
+quorra.square = function(svg, size, x, y, style){
+    var square = svg.append('rect')
+        .attr('class', 'annotation')
+        .attr('width', size)
+        .attr('height', size)
+        .attr('x', x - size / 2)
+        .attr('y', y - size / 2);
+
+    for (i in style){
+        square.style(i, style[i]);
+    }
+    
+    return;
+}
+
+
+quorra.circle = function(svg, size, x, y, style){
+    var circle = svg.append('circle')
+        .attr('class', 'annotation')
+        .attr('r', size / 2)
+        .attr('cx', x)
+        .attr('cy', y);
+
+    for (i in style){
+        circle.style(i, style[i]);
+    }
+
+    return;
+}
+
+
+quorra.triangle = function(svg, size, x, y){
+
+}
+
+
 // underscore additions
 _.center = function(x, bounds){
     return _.min([_.max([x, bounds[0]]), bounds[1]]);
