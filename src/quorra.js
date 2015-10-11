@@ -40,6 +40,7 @@ attributeConstructor = function(id){
         // triggers
         groupclick: function(d, i){},
         labelclick: function(d, i){},
+        zoomable: false,
         
         // plot styling
         grid: false,
@@ -408,7 +409,9 @@ initializeCanvas = function(selection, attr){
         svg = selection.select("svg");
     }
 
-    svg = svg.attr("class", "quorra-" + attr.id)
+    svg = svg
+        .attr("id", quorra.uuid())
+        .attr("class", "quorra-" + attr.id)
         .attr("width", attr.width)
         .attr("height", attr.height)
         .append("g")
@@ -433,6 +436,7 @@ annotationConstructor = function(svg, attr, xScale, yScale){
     }
     _.map(attr.annotation, function(d){
         d = _.extend({
+            id: quorra.uuid(),
             type: 'circle',
             text: '',
             value: '',
@@ -441,11 +445,12 @@ annotationConstructor = function(svg, attr, xScale, yScale){
             'font-position': {x: 0, y: 20},
             x: 0,
             y: 0,
-            style: {}
+            style: {},
+            click: function(){}
         }, d);
-        quorra[d.type](svg, d.size, xScale(d.x), yScale(d.y), d.style);
+        quorra[d.type](svg, xScale(d.x), yScale(d.y), d);
         if (d.text != ''){
-            quorra.text(svg, d['font-size'], xScale(d.x) + d['font-position'].x, xScale(d.y) - d['font-position'].y, d.text);
+            quorra.text(svg, d['font-size'], xScale(d.x) + d['font-position'].x, yScale(d.y) - d['font-position'].y, d.text);
         }
         return;
     });

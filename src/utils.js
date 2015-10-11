@@ -29,6 +29,28 @@ quorra.random = function() {
     return x - Math.floor(x);
 };
 
+
+quorra.uuid = function() {
+    /**
+    quorra.uuid()
+
+    Generate random uuid with seed. 
+
+    @author <bprinty@gmail.com>
+    */
+
+    function uk() {
+        return Math.floor((1 + quorra.random()) * 0x10000)
+            .toString(16).substring(1);
+    }
+    return 'u' + [
+        uk() + uk(),
+        uk(), uk(), uk(),
+        uk() + uk() + uk()
+    ].join('-');
+};
+
+
 function kdeEstimator(kernel, x) {
     /**
     quorra.kdeEstimator()
@@ -73,39 +95,80 @@ quorra.text = function(svg, size, x, y, value){
 }
 
 
-quorra.square = function(svg, size, x, y, style){
-    var square = svg.append('rect')
-        .attr('class', 'annotation')
-        .attr('width', size)
-        .attr('height', size)
-        .attr('x', x - size / 2)
-        .attr('y', y - size / 2);
+quorra.square = function(svg, x, y, data){
+    var square = svg.selectAll('.annotation.square')
+        .data([data]).enter()
+        .append('rect')
+        .attr('class', 'annotation square')
+        .attr('width', data.size)
+        .attr('height', data.size)
+        .attr('x', x - data.size / 2)
+        .attr('y', y - data.size / 2)
+        .on('mouseover', function(){
+            d3.select(this).style('opacity', 0.75);
+        })
+        .on('mouseout', function(){
+            d3.select(this).style('opacity', 1);
+        })
+        .on('click', data.click);
 
-    for (i in style){
-        square.style(i, style[i]);
+    for (i in data.style){
+        square.style(i, data.style[i]);
     }
     
     return;
 }
 
 
-quorra.circle = function(svg, size, x, y, style){
-    var circle = svg.append('circle')
-        .attr('class', 'annotation')
-        .attr('r', size / 2)
+quorra.circle = function(svg, x, y, data){
+    var circle = svg.selectAll('.annotation.circle')
+        .data([data]).enter()
+        .append('circle')
+        .attr('class', 'annotation circle')
+        .attr('r', data.size / 2)
         .attr('cx', x)
-        .attr('cy', y);
+        .attr('cy', y)
+        .on('mouseover', function(){
+            d3.select(this).style('opacity', 0.75);
+        })
+        .on('mouseout', function(){
+            d3.select(this).style('opacity', 1);
+        })
+        .on('click', data.click);;
 
-    for (i in style){
-        circle.style(i, style[i]);
+    for (i in data.style){
+        circle.style(i, data.style[i]);
     }
 
     return;
 }
 
 
-quorra.triangle = function(svg, size, x, y){
+quorra.triangle = function(svg, x, y, data){
+    var triangle = svg.selectAll('.annotation.triangle')
+        .data([data]).enter()
+        .append('path')
+        .attr('class', 'annotation triangle')
+        .attr('d', function(d){
+            return [
+            'M' + (x - (d.size / 2)) + ',' + (y - (d.size / 2)),
+            'L' + (x + (d.size / 2)) + ',' + (y - (d.size / 2)),
+            'L' + x + ',' + (y + (d.size / 2)),
+            'Z'].join('');
+        })
+        .on('mouseover', function(){
+            d3.select(this).style('opacity', 0.75);
+        })
+        .on('mouseout', function(){
+            d3.select(this).style('opacity', 1);
+        })
+        .on('click', data.click);
 
+    for (i in data.style){
+        triangle.style(i, data.style[i]);
+    }
+
+    return;
 }
 
 

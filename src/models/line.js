@@ -36,16 +36,17 @@ quorra.line = function(attributes) {
         // construct legend
         var legend = legendConstructor(svg, attr, dim.innerWidth, dim.innerHeight, color);
 
+        var axes, line, dot;
         function render(){
 
             // configure axes
-            var axes = parameterizeAxes(selection, newdata, attr, dim.innerWidth, dim.innerHeight);
+            axes = parameterizeAxes(selection, newdata, attr, dim.innerWidth, dim.innerHeight);
 
             // axes
             drawAxes(svg, attr, axes.xAxis, axes.yAxis, dim.innerWidth, dim.innerHeight);
 
             // plotting lines
-            var line = d3.svg.line()
+            var path = d3.svg.line()
                 .x(function(d, i) { return axes.xScale(attr.x(d, i)); })
                 .y(function(d, i) { return axes.yScale(attr.y(d, i)); })
                 .interpolate(attr.interpolate);
@@ -55,17 +56,17 @@ quorra.line = function(attributes) {
 
                 // lines
                 var subdat = _.filter(newdata, function(d){ return d.group == ugrps[grp]; });
-                svg.append("path")
+                line = svg.append("path")
                     .datum(subdat)
                     .attr("class", function(d, i){
                         return "line " + "g_" + d[0].group;
                     })
                     .attr("d", function(d){
-                        var path = line(d);
+                        var p = path(d);
                         if (attr.layout === "line"){
-                            return path;
+                            return p;
                         }else if (attr.layout === "area"){
-                            return path + "L" + axes.xScale(_.max(_.map(d, attr.x))) + "," + (dim.innerHeight - 2) + "Z";
+                            return p + "L" + axes.xScale(_.max(_.map(d, attr.x))) + "," + (dim.innerHeight - 2) + "Z";
                         }
                     })
                     .style("fill", function(d){
@@ -97,7 +98,7 @@ quorra.line = function(attributes) {
 
             // points (if specified)
             if (attr.points > 0){
-                svg.selectAll(".dot")
+                dot = svg.selectAll(".dot")
                     .data(newdata)
                     .enter().append("circle")
                     .attr("class", function(d, i){
@@ -128,15 +129,17 @@ quorra.line = function(attributes) {
             // do annotation
             var annotation = annotationConstructor(svg, attr, axes.xScale, axes.yScale);
         }
-        render();
 
         // if (attr.zoomable){
         //     enableZooming(svg, render, attr, dim);
         // }
+        render();
 
         // expose editable attributes (user control)
         go.render = render;
         go.svg = svg;
+        go.line = line;
+        go.dot = dot;
         go.legend = legend;
         go.xScale = axes.xScale;
         go.xAxis = axes.xAxis;

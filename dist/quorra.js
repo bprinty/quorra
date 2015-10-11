@@ -42,6 +42,7 @@ attributeConstructor = function(id){
         // triggers
         groupclick: function(d, i){},
         labelclick: function(d, i){},
+        zoomable: false,
         
         // plot styling
         grid: false,
@@ -410,7 +411,9 @@ initializeCanvas = function(selection, attr){
         svg = selection.select("svg");
     }
 
-    svg = svg.attr("class", "quorra-" + attr.id)
+    svg = svg
+        .attr("id", quorra.uuid())
+        .attr("class", "quorra-" + attr.id)
         .attr("width", attr.width)
         .attr("height", attr.height)
         .append("g")
@@ -435,6 +438,7 @@ annotationConstructor = function(svg, attr, xScale, yScale){
     }
     _.map(attr.annotation, function(d){
         d = _.extend({
+            id: quorra.uuid(),
             type: 'circle',
             text: '',
             value: '',
@@ -443,11 +447,12 @@ annotationConstructor = function(svg, attr, xScale, yScale){
             'font-position': {x: 0, y: 20},
             x: 0,
             y: 0,
-            style: {}
+            style: {},
+            click: function(){}
         }, d);
-        quorra[d.type](svg, d.size, xScale(d.x), yScale(d.y), d.style);
+        quorra[d.type](svg, xScale(d.x), yScale(d.y), d);
         if (d.text != ''){
-            quorra.text(svg, d['font-size'], xScale(d.x) + d['font-position'].x, xScale(d.y) - d['font-position'].y, d.text);
+            quorra.text(svg, d['font-size'], xScale(d.x) + d['font-position'].x, yScale(d.y) - d['font-position'].y, d.text);
         }
         return;
     });
@@ -483,6 +488,28 @@ quorra.random = function() {
     var x = Math.sin(seed++) * 10000;
     return x - Math.floor(x);
 };
+
+
+quorra.uuid = function() {
+    /**
+    quorra.uuid()
+
+    Generate random uuid with seed. 
+
+    @author <bprinty@gmail.com>
+    */
+
+    function uk() {
+        return Math.floor((1 + quorra.random()) * 0x10000)
+            .toString(16).substring(1);
+    }
+    return 'u' + [
+        uk() + uk(),
+        uk(), uk(), uk(),
+        uk() + uk() + uk()
+    ].join('-');
+};
+
 
 function kdeEstimator(kernel, x) {
     /**
@@ -528,39 +555,80 @@ quorra.text = function(svg, size, x, y, value){
 }
 
 
-quorra.square = function(svg, size, x, y, style){
-    var square = svg.append('rect')
-        .attr('class', 'annotation')
-        .attr('width', size)
-        .attr('height', size)
-        .attr('x', x - size / 2)
-        .attr('y', y - size / 2);
+quorra.square = function(svg, x, y, data){
+    var square = svg.selectAll('.annotation.square')
+        .data([data]).enter()
+        .append('rect')
+        .attr('class', 'annotation square')
+        .attr('width', data.size)
+        .attr('height', data.size)
+        .attr('x', x - data.size / 2)
+        .attr('y', y - data.size / 2)
+        .on('mouseover', function(){
+            d3.select(this).style('opacity', 0.75);
+        })
+        .on('mouseout', function(){
+            d3.select(this).style('opacity', 1);
+        })
+        .on('click', data.click);
 
-    for (i in style){
-        square.style(i, style[i]);
+    for (i in data.style){
+        square.style(i, data.style[i]);
     }
     
     return;
 }
 
 
-quorra.circle = function(svg, size, x, y, style){
-    var circle = svg.append('circle')
-        .attr('class', 'annotation')
-        .attr('r', size / 2)
+quorra.circle = function(svg, x, y, data){
+    var circle = svg.selectAll('.annotation.circle')
+        .data([data]).enter()
+        .append('circle')
+        .attr('class', 'annotation circle')
+        .attr('r', data.size / 2)
         .attr('cx', x)
-        .attr('cy', y);
+        .attr('cy', y)
+        .on('mouseover', function(){
+            d3.select(this).style('opacity', 0.75);
+        })
+        .on('mouseout', function(){
+            d3.select(this).style('opacity', 1);
+        })
+        .on('click', data.click);;
 
-    for (i in style){
-        circle.style(i, style[i]);
+    for (i in data.style){
+        circle.style(i, data.style[i]);
     }
 
     return;
 }
 
 
-quorra.triangle = function(svg, size, x, y){
+quorra.triangle = function(svg, x, y, data){
+    var triangle = svg.selectAll('.annotation.triangle')
+        .data([data]).enter()
+        .append('path')
+        .attr('class', 'annotation triangle')
+        .attr('d', function(d){
+            return [
+            'M' + (x - (d.size / 2)) + ',' + (y - (d.size / 2)),
+            'L' + (x + (d.size / 2)) + ',' + (y - (d.size / 2)),
+            'L' + x + ',' + (y + (d.size / 2)),
+            'Z'].join('');
+        })
+        .on('mouseover', function(){
+            d3.select(this).style('opacity', 0.75);
+        })
+        .on('mouseout', function(){
+            d3.select(this).style('opacity', 1);
+        })
+        .on('click', data.click);
 
+    for (i in data.style){
+        triangle.style(i, data.style[i]);
+    }
+
+    return;
 }
 
 
@@ -861,16 +929,17 @@ quorra.bar = function(attributes) {
         // construct legend
         var legend = legendConstructor(svg, attr, dim.innerWidth, dim.innerHeight, color);
 
+        var axes, line, dot;
         function render(){
 
             // configure axes
-            var axes = parameterizeAxes(selection, newdata, attr, dim.innerWidth, dim.innerHeight);
+            axes = parameterizeAxes(selection, newdata, attr, dim.innerWidth, dim.innerHeight);
 
             // axes
             drawAxes(svg, attr, axes.xAxis, axes.yAxis, dim.innerWidth, dim.innerHeight);
 
             // plotting lines
-            var line = d3.svg.line()
+            var path = d3.svg.line()
                 .x(function(d, i) { return axes.xScale(attr.x(d, i)); })
                 .y(function(d, i) { return axes.yScale(attr.y(d, i)); })
                 .interpolate(attr.interpolate);
@@ -880,17 +949,17 @@ quorra.bar = function(attributes) {
 
                 // lines
                 var subdat = _.filter(newdata, function(d){ return d.group == ugrps[grp]; });
-                svg.append("path")
+                line = svg.append("path")
                     .datum(subdat)
                     .attr("class", function(d, i){
                         return "line " + "g_" + d[0].group;
                     })
                     .attr("d", function(d){
-                        var path = line(d);
+                        var p = path(d);
                         if (attr.layout === "line"){
-                            return path;
+                            return p;
                         }else if (attr.layout === "area"){
-                            return path + "L" + axes.xScale(_.max(_.map(d, attr.x))) + "," + (dim.innerHeight - 2) + "Z";
+                            return p + "L" + axes.xScale(_.max(_.map(d, attr.x))) + "," + (dim.innerHeight - 2) + "Z";
                         }
                     })
                     .style("fill", function(d){
@@ -922,7 +991,7 @@ quorra.bar = function(attributes) {
 
             // points (if specified)
             if (attr.points > 0){
-                svg.selectAll(".dot")
+                dot = svg.selectAll(".dot")
                     .data(newdata)
                     .enter().append("circle")
                     .attr("class", function(d, i){
@@ -953,15 +1022,17 @@ quorra.bar = function(attributes) {
             // do annotation
             var annotation = annotationConstructor(svg, attr, axes.xScale, axes.yScale);
         }
-        render();
 
         // if (attr.zoomable){
         //     enableZooming(svg, render, attr, dim);
         // }
+        render();
 
         // expose editable attributes (user control)
         go.render = render;
         go.svg = svg;
+        go.line = line;
+        go.dot = dot;
         go.legend = legend;
         go.xScale = axes.xScale;
         go.xAxis = axes.xAxis;
