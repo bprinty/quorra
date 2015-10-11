@@ -25,7 +25,7 @@ attributeConstructor = function(id){
         id: id,
         width: "auto",
         height: "auto",
-        margin: {"top": 20, "bottom": 20, "left": 40, "right": 20},
+        margin: {"top": 20, "bottom": 40, "left": 40, "right": 20},
         
         // data rendering
         x: function(d, i) { return d.x; },
@@ -185,8 +185,8 @@ parameterizeInnerDimensions = function(selection, attr){
     var width = (attr.width == "auto") ? parseInt(selection.style("width")) : attr.width;
     var height = (attr.height == "auto") ? parseInt(selection.style("height")) : attr.height;
     
-    var iw = width - attr.margin.left - attr.margin.right;
-    var ih = height - attr.margin.top - attr.margin.bottom;
+    var iw = width - attr.margin.left - attr.margin.right - attr.labelpadding.y;
+    var ih = height - attr.margin.top - attr.margin.bottom - attr.labelpadding.x;
 
     return {
         innerWidth: iw,
@@ -369,9 +369,9 @@ initializeCanvas = function(selection, attr){
         svg = selection.select("svg");
     }
 
-    svg = svg.attr("class", "quorra-bar")
+    svg = svg.attr("class", "quorra-" + attr.id)
         .attr("width", attr.width)
-        .attr("height", attr.width)
+        .attr("height", attr.height)
         .append("g")
         .attr("transform", "translate(" + attr.margin.left + "," + attr.margin.top + ")");
 
