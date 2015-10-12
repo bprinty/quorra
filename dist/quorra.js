@@ -1438,6 +1438,7 @@ quorra.bar = function(attributes) {
             svg = selection.select("svg");
         }
         svg = svg.attr("class", "quorra-pie")
+            .attr("id", quorra.uuid())
             .attr("width", w + attr.margin.left + attr.margin.right)
             .attr("height", h + attr.margin.top + attr.margin.bottom)
             .append("g")
@@ -1461,7 +1462,9 @@ quorra.bar = function(attributes) {
         var g = svg.selectAll(".arc")
             .data(pie(newdata))
             .enter().append("g")
-            .attr("class", "arc");
+            .attr("class", function(d){
+                return "arc g_" + d.data.group;
+            });
 
         g.append("path")
             .attr("d", arc)
@@ -1483,22 +1486,12 @@ quorra.bar = function(attributes) {
                 d3.select(this).style("opacity", 0.75);
                 if (attr.tooltip == false) { return 0; }
                 attr.tooltip.style("opacity", 0);
-            });
-
-        // legend (if specified)
-        if (attr.legend) {
-            g.append("text")
-                .attr("class", "axis")
-                .attr("transform", function(d) { return "translate(" + arc.centroid(d) + ")"; })
-                .attr("dy", ".35em")
-                .style("text-anchor", "middle")
-                .text(function(d) { return attr.group(d.data, i); });
-        }
+            }).on("click", attr.labelclick);
 
         // expose editable attributes (user control)
         go.svg = svg;
         go.legend = legend;
-        go.arc = arc;
+        go.arc = g;
         go.innerWidth = w;
         go.innerHeight = h;
     }

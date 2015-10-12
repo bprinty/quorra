@@ -18,14 +18,14 @@
     <style>
         #pie, 
         #hollowpie {
-            width: 900px;
+            width: 600px;
             height: 500px;
             margin-left: auto;
             margin-right: auto;
         }
         #pie .plotarea, 
         #hollowpie .plotarea {
-            width: 900px;
+            width: 600px;
             height: 500px;
         }
     </style>
@@ -46,6 +46,8 @@
 // regular pie
 var pie = quorra.pie()
     .radius(200)
+    .lmargin({top: 40})
+    .lshape("circle")
     .tooltip(false)
     .color(['firebrick','forestgreen','steelblue'])
     .aggregate(function(x){ return(x.length); });
