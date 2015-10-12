@@ -635,7 +635,7 @@ quorra.text = function(svg, size, x, y, value){
 
 
 quorra.square = function(svg, x, y, data){
-    var square = svg.selectAll('.annotation.square')
+    var square = svg.selectAll('.annotation.square#' + quorra.uuid())
         .data([data]).enter()
         .append('rect')
         .attr('class', 'annotation square')
@@ -660,7 +660,7 @@ quorra.square = function(svg, x, y, data){
 
 
 quorra.circle = function(svg, x, y, data){
-    var circle = svg.selectAll('.annotation.circle')
+    var circle = svg.selectAll('.annotation.circle#' + quorra.uuid())
         .data([data]).enter()
         .append('circle')
         .attr('class', 'annotation circle')
@@ -684,7 +684,7 @@ quorra.circle = function(svg, x, y, data){
 
 
 quorra.triangle = function(svg, x, y, data){
-    var triangle = svg.selectAll('.annotation.triangle')
+    var triangle = svg.selectAll('.annotation.triangle#' + quorra.uuid())
         .data([data]).enter()
         .append('path')
         .attr('class', 'annotation triangle')
