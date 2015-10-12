@@ -68,7 +68,10 @@ quorra.scatter = function(attributes) {
                     return (quorra.random()-0.5)*attr.yjitter + axes.yScale(attr.y(d, i));
                 })
                 .style("fill", function(d, i) { return color(attr.group(d, i)); })
-                .style("opacity", 0.75)
+                .style("opacity", attr.opacity)
+                .style("visibility", function(d){
+                    return _.contains(attr.toggled, attr.group(d)) ? 'hidden' : 'visible';
+                })
                 .attr("clip-path", "url(#clip)")
                 .on("mouseover", function(d, i){
                     d3.select(this).style("opacity", 0.25);
@@ -81,7 +84,7 @@ quorra.scatter = function(attributes) {
                         .style("left", (d3.event.pageX + 5) + "px")
                         .style("top", (d3.event.pageY - 20) + "px");
                 }).on("mouseout", function(d){
-                    d3.select(this).style("opacity", 0.75);
+                    d3.select(this).style("opacity", attr.opacity);
                     attr.tooltip.style("opacity", 0);
                 });
 
@@ -99,7 +102,10 @@ quorra.scatter = function(attributes) {
                     .attr("y1", function(d, i) { return dim.innerHeight; })
                     .attr("y2", function(d, i) { return dim.innerHeight-10; })
                     .attr("stroke", function(d, i){ return color(attr.group(d, i)); })
-                    .style("opacity", 0.75);
+                    .style("opacity", attr.opacity)
+                    .style("visibility", function(d){
+                        return _.contains(attr.toggled, attr.group(d)) ? 'hidden' : 'visible';
+                    });
                     // TODO: maybe include two-way selection/highlighting here?
             }
             if (attr.ydensity){
@@ -115,7 +121,10 @@ quorra.scatter = function(attributes) {
                     .attr("y1", function(d, i) { return axes.yScale(attr.y(d, i)); })
                     .attr("y2", function(d, i) { return axes.yScale(attr.y(d, i)); })
                     .attr("stroke", function(d, i){ return color(attr.group(d, i)); })
-                    .style("opacity", 0.75);
+                    .style("opacity", attr.opacity)
+                    .style("visibility", function(d){
+                        return _.contains(attr.toggled, attr.group(d)) ? 'hidden' : 'visible';
+                    });
             }
 
             // generating regression line with smoothing curve (if specified)

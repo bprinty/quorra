@@ -114,7 +114,10 @@ quorra.bar = function(attributes) {
                         return range[1] - range[0] - 2;
                     }
                 }).attr("fill", function(d, i){ return color(d.group); })
-                .style("opacity", 0.75)
+                .style("opacity", attr.opacity)
+                .style("visibility", function(d){
+                    return _.contains(attr.toggled, d.group) ? 'hidden' : 'visible';
+                })
                 .on("mouseover", function(d, i){
                     d3.select(this).style("opacity", 0.25);
                     attr.tooltip.html(d.label)
@@ -126,7 +129,7 @@ quorra.bar = function(attributes) {
                         .style("left", (d3.event.pageX + 5) + "px")
                         .style("top", (d3.event.pageY - 20) + "px");
                 }).on("mouseout", function(d){
-                    d3.select(this).style("opacity", 0.75);
+                    d3.select(this).style("opacity", attr.opacity);
                     attr.tooltip.style("opacity", 0);
                 });
 

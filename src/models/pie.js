@@ -74,12 +74,15 @@ quorra.pie = function(attributes) {
             .enter().append("g")
             .attr("class", function(d){
                 return "arc g_" + d.data.group;
+            })
+            .style("visibility", function(d){
+                return _.contains(attr.toggled, attr.group(d.data)) ? 'hidden' : 'visible';
             });
 
         g.append("path")
             .attr("d", arc)
             .style("fill", function(d, i) { return color(attr.group(d.data, i)); })
-            .style("opacity", 0.75)
+            .style("opacity", attr.opacity)
             .on("mouseover", function(d, i){
                 d3.select(this).style("opacity", 0.25);
                 if (attr.tooltip == false) { return 0; }
@@ -93,7 +96,7 @@ quorra.pie = function(attributes) {
                     .style("left", (d3.event.pageX + 5) + "px")
                     .style("top", (d3.event.pageY - 20) + "px");
             }).on("mouseout", function(d){
-                d3.select(this).style("opacity", 0.75);
+                d3.select(this).style("opacity", attr.opacity);
                 if (attr.tooltip == false) { return 0; }
                 attr.tooltip.style("opacity", 0);
             }).on("click", attr.labelclick);

@@ -71,7 +71,12 @@ quorra.line = function(attributes) {
                         if (attr.layout === "line"){
                             return p;
                         }else if (attr.layout === "area"){
-                            return p + "L" + axes.xScale(_.max(_.map(d, attr.x))) + "," + (dim.innerHeight - 2) + "Z";
+                            return [
+                                p,
+                                "L" + axes.xScale(_.max(_.map(d, attr.x))) + "," + axes.yScale(_.min(_.map(d, attr.y))),
+                                "L" + axes.xScale(_.min(_.map(d, attr.x))) + "," + axes.yScale(_.min(_.map(d, attr.y))),
+                                "Z"
+                            ].join('');
                         }
                     })
                     .style("fill", function(d){
@@ -82,7 +87,10 @@ quorra.line = function(attributes) {
                         }
                     })
                     .style("stroke", color(ugrps[grp]))
-                    .style("opacity", 0.75)
+                    .style("opacity", attr.opacity)
+                    .style("visibility", function(d){
+                        return _.contains(attr.toggled, attr.group(d[0])) ? 'hidden' : 'visible';
+                    })
                     .attr("clip-path", "url(#clip)")
                     .on("mouseover", function(d, i){
                         d3.select(this).style("opacity", 0.25);
@@ -95,7 +103,7 @@ quorra.line = function(attributes) {
                             .style("left", (d3.event.pageX + 5) + "px")
                             .style("top", (d3.event.pageY - 20) + "px");
                     }).on("mouseout", function(d){
-                        d3.select(this).style("opacity", 0.75);
+                        d3.select(this).style("opacity", attr.opacity);
                         attr.tooltip.style("opacity", 0);
                     }).on("click", attr.groupclick);
 
@@ -113,7 +121,10 @@ quorra.line = function(attributes) {
                     .attr("cx", function(d, i) { return axes.xScale(attr.x(d, i)); })
                     .attr("cy", function(d, i) { return axes.yScale(attr.y(d, i)); })
                     .style("fill", function(d, i){ return color(attr.group(d, i)); })
-                    .style("opacity", 0.75)
+                    .style("opacity", attr.opacity)
+                    .style("visibility", function(d){
+                        return _.contains(attr.toggled, attr.group(d)) ? 'hidden' : 'visible';
+                    })
                     .attr("clip-path", "url(#clip)")
                     .on("mouseover", function(d, i){
                         d3.select(this).style("opacity", 0.25);
@@ -126,7 +137,7 @@ quorra.line = function(attributes) {
                             .style("left", (d3.event.pageX + 5) + "px")
                             .style("top", (d3.event.pageY - 20) + "px");
                     }).on("mouseout", function(d){
-                        d3.select(this).style("opacity", 0.75);
+                        d3.select(this).style("opacity", attr.opacity);
                         attr.tooltip.style("opacity", 0);
                     }).on("click", attr.labelclick);
             }

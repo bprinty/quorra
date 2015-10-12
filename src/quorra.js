@@ -56,6 +56,7 @@ attributeConstructor = function(id){
         xposition: "outside",
         labelposition: "middle",
         labelpadding: {x: 0, y: 0},
+        opacity: 0.75,
         
         // legend
         legend: true,
@@ -63,6 +64,7 @@ attributeConstructor = function(id){
         lposition: "inside",
         lshape: "square",
         toggle: true,
+        toggled: [],
         
         // tooltip/annotation
         annotation: false,
@@ -119,67 +121,86 @@ legendConstructor = function(svg, attr, innerWidth, innerHeight, color){
 
     if (!attr.legend){ return undefined; }
 
-    var leg = d3.select('#' + svg.node().parentNode.id)
-        .append("g")
-        .attr("transform", "translate(" + attr.margin.left + "," + attr.margin.top + ")")
-        .selectAll(".legend")
-        .data(color.domain())
-        .enter().append("g")
-        .attr("class", "legend")
-        .attr("id", attr.id + "-legend")
-        .attr("transform", function(d, i) { return "translate(0," + (attr.lmargin.top + i * 20) + ")"; });
+    var leg;
+    // we have to use a set interval here, because
+    // sometimes the plot isn't rendered before this method is called
+    var ival = setInterval(function(){
+        
+        if (d3.select('#' + svg.node().parentNode.id)[0][0] == null){
+            return;
+        }
+        leg = d3.select('#' + svg.node().parentNode.id)
+            .append("g")
+            .attr("transform", "translate(" + attr.margin.left + "," + attr.margin.top + ")")
+            .selectAll(".legend")
+            .data(color.domain())
+            .enter().append("g")
+            .attr("class", "legend")
+            .attr("id", attr.id + "-legend")
+            .attr("transform", function(d, i) { return "translate(0," + (attr.lmargin.top + i * 20) + ")"; });
 
-    var selector;
-    if (attr.lshape === "square"){
-        selector = leg.append("rect")
-            .attr("class", "selector")
-            .attr("x", innerWidth - 18 - attr.lmargin.right + attr.lmargin.left)
-            .attr("width", 18)
-            .attr("height", 18)
-            .style("fill", color);        
-    }else if (attr.lshape === "circle"){
-        selector = leg.append("circle")
-            .attr("class", "selector")
-            .attr("cx", innerWidth - 10 - attr.lmargin.right + attr.lmargin.left)
-            .attr("cy", 8)
-            .attr("r", 9)
-            .style("fill", color);
-    }
+        var selector;
+        if (attr.lshape === "square"){
+            selector = leg.append("rect")
+                .attr("class", "selector")
+                .attr("x", innerWidth - 18 - attr.lmargin.right + attr.lmargin.left)
+                .attr("width", 18)
+                .attr("height", 18)
+                .style("fill", color)
+                .style("fill-opacity", function(d){
+                    return _.contains(attr.toggled, d) ? 0 : 1;
+                });        
+        }else if (attr.lshape === "circle"){
+            selector = leg.append("circle")
+                .attr("class", "selector")
+                .attr("cx", innerWidth - 10 - attr.lmargin.right + attr.lmargin.left)
+                .attr("cy", 8)
+                .attr("r", 9)
+                .style("fill", color)
+                .style("fill-opacity", function(d){
+                    return _.contains(attr.toggled, d) ? 0 : 1;
+                });
+        }
 
-    if (attr.toggle){
-        selector.on("mouseover", function(d, i){
-            d3.select(this).style('opacity', 0.75);
-        }).on("mouseout", function(d, i){
-            d3.select(this).style('opacity', 1);
-        }).on("click", function(d, i){
-            if (d3.select(this).style('fill-opacity') == 0){
-                d3.select(this).style('fill-opacity', 1);
-                svg.selectAll(".g_" + d).style('visibility', 'visible');
-            }else{
-                d3.select(this).style('fill-opacity', 0);
-                svg.selectAll(".g_" + d).style('visibility', 'hidden');
-            }
-        });
-    }
+        if (attr.toggle){
+            selector.on("mouseover", function(d, i){
+                d3.select(this).style('opacity', 0.75);
+            }).on("mouseout", function(d, i){
+                d3.select(this).style('opacity', 1);
+            }).on("click", function(d, i){
+                if (d3.select(this).style('fill-opacity') == 0){
+                    d3.select(this).style('fill-opacity', 1);
+                    svg.selectAll(".g_" + d).style('visibility', 'visible');
+                    attr.toggled = _.without(attr.toggled, d);
+                }else{
+                    d3.select(this).style('fill-opacity', 0);
+                    svg.selectAll(".g_" + d).style('visibility', 'hidden');
+                    attr.toggled = _.union(attr.toggled, [d]);
+                }
+            });
+        }
 
-    leg.append("text")
-        .attr("x", function(){
-            if (attr.lposition === "inside"){
-                return innerWidth - 24 - attr.lmargin.right + attr.lmargin.left;
-            }else if (attr.lposition === "outside"){
-                return innerWidth + 2 - attr.lmargin.right + attr.lmargin.left;
-            }        
-        })
-        .attr("y", 9)
-        .attr("dy", ".35em")
-        .style("text-anchor", function(){
-            if (attr.lposition === "inside"){
-                return "end";
-            }else if (attr.lposition === "outside"){
-                return "beginning";
-            }
-        })
-        .text(function(d) { return d; });
+        leg.append("text")
+            .attr("x", function(){
+                if (attr.lposition === "inside"){
+                    return innerWidth - 24 - attr.lmargin.right + attr.lmargin.left;
+                }else if (attr.lposition === "outside"){
+                    return innerWidth + 2 - attr.lmargin.right + attr.lmargin.left;
+                }        
+            })
+            .attr("y", 9)
+            .attr("dy", ".35em")
+            .style("text-anchor", function(){
+                if (attr.lposition === "inside"){
+                    return "end";
+                }else if (attr.lposition === "outside"){
+                    return "beginning";
+                }
+            })
+            .text(function(d) { return d; });
+
+        clearInterval(ival);
+    }, 100);
 
     return leg;
 }
@@ -445,16 +466,17 @@ annotationConstructor = function(svg, attr, xScale, yScale){
             text: '',
             value: '',
             size: 15,
-            'font-size': 13,
-            'font-position': {x: 0, y: 20},
+            'text-size': 13,
+            'text-position': {x: 0, y: 20},
             x: 0,
             y: 0,
             style: {},
             click: function(){}
         }, d);
+        d['text-position'] = _.extend({x: 0, y: 20}, d['text-position']);
         quorra[d.type](svg, xScale(d.x), yScale(d.y), d);
         if (d.text != ''){
-            quorra.text(svg, d['font-size'], xScale(d.x) + d['font-position'].x, yScale(d.y) - d['font-position'].y, d.text);
+            quorra.text(svg, d['text-size'], xScale(d.x) + d['text-position'].x, yScale(d.y) - d['text-position'].y, d.text);
         }
         return;
     });
