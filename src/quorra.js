@@ -119,7 +119,10 @@ legendConstructor = function(svg, attr, innerWidth, innerHeight, color){
 
     if (!attr.legend){ return undefined; }
 
-    var leg = svg.selectAll(".legend")
+    var leg = d3.select('#' + svg.node().parentNode.id)
+        .append("g")
+        .attr("transform", "translate(" + attr.margin.left + "," + attr.margin.top + ")")
+        .selectAll(".legend")
         .data(color.domain())
         .enter().append("g")
         .attr("class", "legend")
@@ -248,7 +251,7 @@ parameterizeAxes = function(selection, data, attr, innerWidth, innerHeight){
                 xmax
             ]).nice();            
         }else{
-            xScale.domain(attr.xrange).nice();
+            xScale.domain(attr.xrange);
         }
     }
 
@@ -285,7 +288,7 @@ parameterizeAxes = function(selection, data, attr, innerWidth, innerHeight){
                 max
             ]).nice();
         }else{
-            yScale.domain(attr.yrange).nice();
+            yScale.domain(attr.yrange);
         }
     }
 
@@ -429,6 +432,7 @@ annotationConstructor = function(svg, attr, xScale, yScale){
 
     @author <bprinty@gmail.com>
     */
+
     if (attr.annotation == false){ return false; }
 
     if (!Array.isArray(attr.annotation)){
@@ -454,5 +458,81 @@ annotationConstructor = function(svg, attr, xScale, yScale){
         }
         return;
     });
-    return ;
+    return;
+}
+
+
+enableZoom = function(selection, render, controller){
+    /**
+    quorra.enableZoom()
+
+    Initialze canvas for quorra plot and return svg selection.
+
+    @author <bprinty@gmail.com>
+    */
+
+    // return processed mouse coordinates
+    function mouseCoordinates(){
+        var coordinates = d3.mouse(selection.node());
+        coordinates[0] = coordinates[0] - controller.left;
+        coordinates[1] = coordinates[1] - controller.top;
+        return coordinates;
+    }
+
+    // set up default translation
+    controller.left = controller.x;
+    controller.top = controller.y;
+
+    // init viewbox for selection
+    var viewbox = selection
+        .append('path')
+        .attr('class', 'viewbox')
+        .attr("transform", "translate(" + controller.left + "," + controller.top + ")")
+
+    // set up drag behavior
+    var drag = d3.behavior.drag()
+        .origin(function(d){ return d; })
+        .on("dragstart", function(d){
+            var coordinates = mouseCoordinates();
+            controller.x = coordinates[0];
+            controller.y = coordinates[1];
+        })
+        .on("dragend", function(d){
+            viewbox.attr('d', '');
+            var coordinates = mouseCoordinates();
+            if (Math.abs(controller.x - coordinates[0]) > 10 && Math.abs(controller.y - coordinates[1]) > 10){
+                var l = controller.xstack.length;
+                var xmap = d3.scale.linear().domain(controller.xstack[l-1].range()).range(controller.xstack[l-1].domain());
+                var ymap = d3.scale.linear().domain(controller.ystack[l-1].range()).range(controller.ystack[l-1].domain());
+                var xval = [xmap(controller.x), xmap(coordinates[0])].sort();
+                var yval = [ymap(controller.y), ymap(coordinates[1])].sort(function(a, b){ return a - b; });
+                render(xval, yval);
+                controller.xstack.push(d3.scale.linear().domain(xval).range(controller.xstack[0].range()));
+                controller.ystack.push(d3.scale.linear().domain(yval).range(controller.ystack[0].range()));
+            }
+        })
+        .on("drag", function(d){
+            var coordinates = mouseCoordinates();
+            viewbox.attr('d', [
+                'M' + controller.x + ',' + controller.y,
+                'L' + controller.x + ',' + coordinates[1],
+                'L' + coordinates[0] + ',' + coordinates[1],
+                'L' + coordinates[0] + ',' + controller.y,
+                'Z'
+            ].join(''));
+        });
+
+    // enable double click for jumping up on the stack
+    selection.on('dblclick', function(){
+        var l = controller.xstack.length;
+        if (l > 1){
+            controller.xstack.pop();
+            controller.ystack.pop();
+            l = l - 1;
+            render(controller.xstack[l-1].domain(), controller.ystack[l-1].domain());
+        }
+    })
+    .call(drag);
+
+    return;
 }

@@ -44,3 +44,10 @@ text.annotation,
     stroke: #bbb;
     stroke-width: 1px;
 }
+
+.viewbox {
+    stroke: #000;
+    stroke-width: 1px;
+    fill: steelblue;
+    opacity: 0.25;
+}

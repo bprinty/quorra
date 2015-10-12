@@ -37,9 +37,14 @@ quorra.line = function(attributes) {
         var legend = legendConstructor(svg, attr, dim.innerWidth, dim.innerHeight, color);
 
         var axes, line, dot;
-        function render(){
+        function render(xrange, yrange){
+
+            // clean previous rendering
+            svg.selectAll("*").remove();
 
             // configure axes
+            attr.xrange = xrange;
+            attr.yrange = yrange;
             axes = parameterizeAxes(selection, newdata, attr, dim.innerWidth, dim.innerHeight);
 
             // axes
@@ -129,11 +134,17 @@ quorra.line = function(attributes) {
             // do annotation
             var annotation = annotationConstructor(svg, attr, axes.xScale, axes.yScale);
         }
+        render(attr.xrange, attr.yrange);
 
-        // if (attr.zoomable){
-        //     enableZooming(svg, render, attr, dim);
-        // }
-        render();
+        if (attr.zoomable){
+            controller = {
+                x: attr.margin.left,
+                y: attr.margin.top,
+                xstack: [axes.xScale],
+                ystack: [axes.yScale],
+            };
+            enableZoom(selection.select('svg'), render, controller);
+        }
 
         // expose editable attributes (user control)
         go.render = render;
