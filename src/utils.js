@@ -1,4 +1,29 @@
 
+// log key presses
+quorra.keys = {
+    shift: false,
+    a: false
+};
+
+document.onkeydown = function (e) {
+    e = e || window.event;
+    var k = e.which;
+    switch (k) {
+        case 16: quorra.keys.shift = true;
+        case 65: quorra.keys.a = true;
+    }
+};
+
+document.onkeyup = function (e) {
+    e = e || window.event;
+    var k = e.which;
+    switch (k) {
+        case 16: quorra.keys.shift = false;
+        case 65: quorra.keys.a = false;
+    }
+};
+
+
 // set default seed for random number generation
 var seed = Math.round(Math.random()*100000);
 

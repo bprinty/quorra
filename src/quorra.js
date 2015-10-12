@@ -504,6 +504,9 @@ enableZoom = function(selection, render, controller){
     // set up default translation
     controller.left = controller.x;
     controller.top = controller.y;
+    controller.xdrag = controller.xstack[0];
+    controller.ydrag = controller.xstack[0];
+    controller.shift = false;
 
     // init viewbox for selection
     var viewbox = selection
@@ -520,28 +523,46 @@ enableZoom = function(selection, render, controller){
             controller.y = coordinates[1];
         })
         .on("dragend", function(d){
-            viewbox.attr('d', '');
-            var coordinates = mouseCoordinates();
-            if (Math.abs(controller.x - coordinates[0]) > 10 && Math.abs(controller.y - coordinates[1]) > 10){
-                var l = controller.xstack.length;
-                var xmap = d3.scale.linear().domain(controller.xstack[l-1].range()).range(controller.xstack[l-1].domain());
-                var ymap = d3.scale.linear().domain(controller.ystack[l-1].range()).range(controller.ystack[l-1].domain());
-                var xval = [xmap(controller.x), xmap(coordinates[0])].sort();
-                var yval = [ymap(controller.y), ymap(coordinates[1])].sort(function(a, b){ return a - b; });
-                render(xval, yval);
-                controller.xstack.push(d3.scale.linear().domain(xval).range(controller.xstack[0].range()));
-                controller.ystack.push(d3.scale.linear().domain(yval).range(controller.ystack[0].range()));
+            if (!quorra.keys.shift){
+                viewbox.attr('d', '');
+                var coordinates = mouseCoordinates();
+                if (Math.abs(controller.x - coordinates[0]) > 10 && Math.abs(controller.y - coordinates[1]) > 10){
+                    var l = controller.xstack.length;
+                    var xmap = d3.scale.linear().domain(controller.xstack[l-1].range()).range(controller.xstack[l-1].domain());
+                    var ymap = d3.scale.linear().domain(controller.ystack[l-1].range()).range(controller.ystack[l-1].domain());
+                    var xval = [xmap(controller.x), xmap(coordinates[0])].sort();
+                    var yval = [ymap(controller.y), ymap(coordinates[1])].sort(function(a, b){ return a - b; });
+                    render(xval, yval);
+                    var xscale = d3.scale.linear().domain(xval).range(controller.xstack[0].range());
+                    var yscale = d3.scale.linear().domain(yval).range(controller.ystack[0].range());
+                    controller.xstack.push(xscale);
+                    controller.ystack.push(yscale);
+                    controller.xdrag = xscale;
+                    controller.ydrag = yscale;
+                    
+                }
             }
         })
         .on("drag", function(d){
             var coordinates = mouseCoordinates();
-            viewbox.attr('d', [
-                'M' + controller.x + ',' + controller.y,
-                'L' + controller.x + ',' + coordinates[1],
-                'L' + coordinates[0] + ',' + coordinates[1],
-                'L' + coordinates[0] + ',' + controller.y,
-                'Z'
-            ].join(''));
+            if (quorra.keys.shift){
+                var l = controller.xstack.length;
+                var xmap = d3.scale.linear().domain(controller.xdrag.range()).range(controller.xdrag.domain());
+                var ymap = d3.scale.linear().domain(controller.ydrag.range()).range(controller.ydrag.domain());
+                var xval = _.map(controller.xdrag.range(), function(x){ return xmap(x - d3.event.dx); });
+                var yval = _.map(controller.ydrag.range(), function(x){ return ymap(x - d3.event.dy); });
+                render(xval, yval);
+                controller.xdrag = d3.scale.linear().domain(xval).range(controller.xstack[0].range());
+                controller.ydrag = d3.scale.linear().domain(yval).range(controller.ystack[0].range());
+            }else{
+                viewbox.attr('d', [
+                    'M' + controller.x + ',' + controller.y,
+                    'L' + controller.x + ',' + coordinates[1],
+                    'L' + coordinates[0] + ',' + coordinates[1],
+                    'L' + coordinates[0] + ',' + controller.y,
+                    'Z'
+                ].join(''));
+            }
         });
 
     // enable double click for jumping up on the stack
@@ -551,8 +572,10 @@ enableZoom = function(selection, render, controller){
             controller.xstack.pop();
             controller.ystack.pop();
             l = l - 1;
-            render(controller.xstack[l-1].domain(), controller.ystack[l-1].domain());
         }
+        render(controller.xstack[l-1].domain(), controller.ystack[l-1].domain());
+        controller.xdrag = controller.xstack[l-1];
+        controller.ydrag = controller.ystack[l-1];
     })
     .call(drag);
 
