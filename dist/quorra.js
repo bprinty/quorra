@@ -60,6 +60,8 @@ shapeAnnotation = function(svg, x, y, data){
             .append('path')
             .attr('id', data.id)
             .attr('class', 'annotation triangle g_' + data.group)
+            // TODO: get rotating annotation
+            // .attr('transform', 'translate(' + -1*((y - data.size)*1.5) + ', ' + -1*(x*1.5 - data.size/2) + ') rotate(-90)')
             .attr('d', function(d){
                 return [
                 'M' + (x - (d.size / 2)) + ',' + (y - (d.size / 2)),
@@ -545,8 +547,10 @@ annotationConstructor = function(selection, attr, xScale, yScale){
             text: '',
             size: 15,
             group: null,
+            rotate: 0,
             'text-size': 13,
             'text-position': {x: 0, y: 20},
+            'text-rotation': 0,
             x: 0,
             y: 0,
             style: {},
@@ -599,7 +603,7 @@ enableZoom = function(id){
 
     // set up default translation
     quorra.controller[id].xdrag = quorra.controller[id].xstack[0];
-    quorra.controller[id].ydrag = quorra.controller[id].xstack[0];
+    quorra.controller[id].ydrag = quorra.controller[id].ystack[0];
 
     // init viewbox for selection
     var viewbox = quorra.controller[id].svg
@@ -694,8 +698,10 @@ enableAnnotation = function(id){
         text: function(d){ return (quorra.controller[id].attr.xformat == "auto") ? d3.format(".2f")(d.x) : quorra.controller[id].attr.xformat(d.x); },
         size: function(d){ return 15; },
         group: function(d){ return null; },
+        rotate: function(d){ return 0; },
         'text-size': function(d){ return 13; },
         'text-position': function(d){ return {x: 0, y: 20}; },
+        'text-rotation': function(d){ return 0; },
         x: function(d){ return d.x; },
         y: function(d){ return d.y; },
         style: function(d){ return {}; },
