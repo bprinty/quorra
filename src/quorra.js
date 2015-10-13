@@ -9,6 +9,82 @@ function quorra() {
 }
 
 
+// manager for all frames and plot metadata
+quorra.controller = {};
+
+
+// shapes
+textAnnotation = function(svg, x, y, data){
+
+    var text = svg.selectAll('.annotation.text#' + data.id)
+        .data([data]).enter()
+        .append('text')
+        .attr('id', data.id)
+        .attr('class', 'annotation text')
+        .attr('x', x)
+        .attr('y', y)
+        .style("font-size", data['text-size'])
+        .style("text-anchor", "middle")
+        .text(data.text);
+
+    return text;
+}
+
+
+shapeAnnotation = function(svg, x, y, data){
+    
+    if (data.type == 'square'){
+        var annot = svg.selectAll('.annotation.square#' + data.id)
+            .data([data]).enter()
+            .append('rect')
+            .attr('id', data.id)
+            .attr('class', 'annotation square')
+            .attr('width', data.size)
+            .attr('height', data.size)
+            .attr('x', x - data.size / 2)
+            .attr('y', y - data.size / 2);
+    }else if (data.type == 'circle'){
+        var annot = svg.selectAll('.annotation.circle#' + data.id)
+            .data([data]).enter()
+            .append('circle')
+            .attr('id', data.id)
+            .attr('class', 'annotation circle')
+            .attr('r', data.size / 2)
+            .attr('cx', x)
+            .attr('cy', y);
+    }else if (data.type == 'triangle'){
+        var annot = svg.selectAll('.annotation.triangle#' + data.id)
+            .data([data]).enter()
+            .append('path')
+            .attr('id', data.id)
+            .attr('class', 'annotation triangle')
+            .attr('d', function(d){
+                return [
+                'M' + (x - (d.size / 2)) + ',' + (y - (d.size / 2)),
+                'L' + (x + (d.size / 2)) + ',' + (y - (d.size / 2)),
+                'L' + x + ',' + (y + (d.size / 2)),
+                'Z'].join('');
+            });
+    }
+
+    // mouse events
+    annot.on('mouseover', function(){
+        d3.select(this).style('opacity', 0.75);
+    })
+    .on('mouseout', function(){
+        d3.select(this).style('opacity', 1);
+    })
+    .on('click', data.click);
+
+    // styling
+    for (i in data.style){
+        annot.style(i, data.style[i]);
+    }
+    
+    return annot;
+}
+
+
 attributeConstructor = function(id){
     /**
     attributeConstructor()
@@ -19,10 +95,9 @@ attributeConstructor = function(id){
     @author <bprinty@gmail.com>
     */
 
-    id = typeof id !== 'undefined' ?  id : 'qplot';
     return {
         // sizing
-        id: id,
+        id: (typeof id !== 'undefined') ?  id : quorra.uuid(),
         width: "auto",
         height: "auto",
         margin: {"top": 20, "bottom": 40, "left": 40, "right": 20},
@@ -41,7 +116,8 @@ attributeConstructor = function(id){
         groupclick: function(d, i){},
         labelclick: function(d, i){},
         zoomable: false,
-        
+        annotatable: false,
+
         // plot styling
         grid: false,
         xticks: "auto",
@@ -66,7 +142,7 @@ attributeConstructor = function(id){
         toggle: true,
         toggled: [],
         
-        // tooltip/annotation
+        // additional display
         annotation: false,
         tooltip: d3.select("body").append("div")
             .attr("id", id + "-tooltip")
@@ -438,6 +514,7 @@ initializeCanvas = function(selection, attr){
         .attr("class", "quorra-" + attr.id)
         .attr("width", attr.width)
         .attr("height", attr.height)
+        .on("click", attr.plotclick)
         .append("g")
         .attr("transform", "translate(" + attr.margin.left + "," + attr.margin.top + ")");
 
@@ -445,7 +522,7 @@ initializeCanvas = function(selection, attr){
 }
 
 
-annotationConstructor = function(svg, attr, xScale, yScale){
+annotationConstructor = function(selection, attr, xScale, yScale){
     /**
     quorra.initializeCanvas()
 
@@ -464,7 +541,6 @@ annotationConstructor = function(svg, attr, xScale, yScale){
             id: quorra.uuid(),
             type: 'circle',
             text: '',
-            value: '',
             size: 15,
             'text-size': 13,
             'text-position': {x: 0, y: 20},
@@ -474,9 +550,20 @@ annotationConstructor = function(svg, attr, xScale, yScale){
             click: function(){}
         }, d);
         d['text-position'] = _.extend({x: 0, y: 20}, d['text-position']);
-        quorra[d.type](svg, xScale(d.x), yScale(d.y), d);
+        d3.selectAll('.annotation#' + d.id).remove();
+        shapeAnnotation(
+            selection,
+            xScale(d.x),
+            yScale(d.y),
+            d
+        ).attr("clip-path", "url(#clip)");
         if (d.text != ''){
-            quorra.text(svg, d['text-size'], xScale(d.x) + d['text-position'].x, yScale(d.y) - d['text-position'].y, d.text);
+            textAnnotation(
+                selection,
+                xScale(d.x) + d['text-position'].x,
+                yScale(d.y) - d['text-position'].y,
+                d
+            ).attr("clip-path", "url(#clip)");
         }
         return;
     });
@@ -484,7 +571,7 @@ annotationConstructor = function(svg, attr, xScale, yScale){
 }
 
 
-enableZoom = function(selection, render, controller){
+enableZoom = function(id){
     /**
     quorra.enableZoom()
 
@@ -495,89 +582,171 @@ enableZoom = function(selection, render, controller){
 
     // return processed mouse coordinates
     function mouseCoordinates(){
-        var coordinates = d3.mouse(selection.node());
-        coordinates[0] = coordinates[0] - controller.left;
-        coordinates[1] = coordinates[1] - controller.top;
+        var coordinates = d3.mouse(quorra.controller[id].svg.node());
+        coordinates[0] = coordinates[0] - quorra.controller[id].left;
+        coordinates[1] = coordinates[1] - quorra.controller[id].top;
         return coordinates;
     }
 
     // set up default translation
-    controller.left = controller.x;
-    controller.top = controller.y;
-    controller.xdrag = controller.xstack[0];
-    controller.ydrag = controller.xstack[0];
-    controller.shift = false;
+    quorra.controller[id].xdrag = quorra.controller[id].xstack[0];
+    quorra.controller[id].ydrag = quorra.controller[id].xstack[0];
 
     // init viewbox for selection
-    var viewbox = selection
+    var viewbox = quorra.controller[id].svg
         .append('path')
         .attr('class', 'viewbox')
-        .attr("transform", "translate(" + controller.left + "," + controller.top + ")")
+        .attr("transform", "translate(" + quorra.controller[id].left + "," + quorra.controller[id].top + ")")
 
     // set up drag behavior
     var drag = d3.behavior.drag()
         .origin(function(d){ return d; })
         .on("dragstart", function(d){
             var coordinates = mouseCoordinates();
-            controller.x = coordinates[0];
-            controller.y = coordinates[1];
+            quorra.controller[id].x = coordinates[0];
+            quorra.controller[id].y = coordinates[1];
         })
         .on("dragend", function(d){
             if (!quorra.keys.shift){
                 viewbox.attr('d', '');
                 var coordinates = mouseCoordinates();
-                if (Math.abs(controller.x - coordinates[0]) > 10 && Math.abs(controller.y - coordinates[1]) > 10){
-                    var l = controller.xstack.length;
-                    var xmap = d3.scale.linear().domain(controller.xstack[l-1].range()).range(controller.xstack[l-1].domain());
-                    var ymap = d3.scale.linear().domain(controller.ystack[l-1].range()).range(controller.ystack[l-1].domain());
-                    var xval = [xmap(controller.x), xmap(coordinates[0])].sort();
-                    var yval = [ymap(controller.y), ymap(coordinates[1])].sort(function(a, b){ return a - b; });
-                    render(xval, yval);
-                    var xscale = d3.scale.linear().domain(xval).range(controller.xstack[0].range());
-                    var yscale = d3.scale.linear().domain(yval).range(controller.ystack[0].range());
-                    controller.xstack.push(xscale);
-                    controller.ystack.push(yscale);
-                    controller.xdrag = xscale;
-                    controller.ydrag = yscale;
-                    
+                if (Math.abs(quorra.controller[id].x - coordinates[0]) > 10 && Math.abs(quorra.controller[id].y - coordinates[1]) > 10){
+                    var l = quorra.controller[id].xstack.length;
+                    var xmap = d3.scale.linear()
+                        .domain(quorra.controller[id].xdrag.range())
+                        .range(quorra.controller[id].xdrag.domain());
+                    var ymap = d3.scale.linear()
+                        .domain(quorra.controller[id].ydrag.range())
+                        .range(quorra.controller[id].ydrag.domain());
+                    var xval = [xmap(quorra.controller[id].x), xmap(coordinates[0])].sort(function(a, b){ return a - b; });
+                    var yval = [ymap(quorra.controller[id].y), ymap(coordinates[1])].sort(function(a, b){ return a - b; });
+                    var xscale = d3.scale.linear().domain(xval).range(quorra.controller[id].xdrag.range());
+                    var yscale = d3.scale.linear().domain(yval).range(quorra.controller[id].ydrag.range());
+                    quorra.controller[id].render(xval, yval);
+                    quorra.controller[id].xstack.push(xscale);
+                    quorra.controller[id].ystack.push(yscale);
+                    quorra.controller[id].xdrag = xscale;
+                    quorra.controller[id].ydrag = yscale;
                 }
             }
         })
         .on("drag", function(d){
             var coordinates = mouseCoordinates();
             if (quorra.keys.shift){
-                var l = controller.xstack.length;
-                var xmap = d3.scale.linear().domain(controller.xdrag.range()).range(controller.xdrag.domain());
-                var ymap = d3.scale.linear().domain(controller.ydrag.range()).range(controller.ydrag.domain());
-                var xval = _.map(controller.xdrag.range(), function(x){ return xmap(x - d3.event.dx); });
-                var yval = _.map(controller.ydrag.range(), function(x){ return ymap(x - d3.event.dy); });
-                render(xval, yval);
-                controller.xdrag = d3.scale.linear().domain(xval).range(controller.xstack[0].range());
-                controller.ydrag = d3.scale.linear().domain(yval).range(controller.ystack[0].range());
+                var l = quorra.controller[id].xstack.length;
+                var xmap = d3.scale.linear().domain(quorra.controller[id].xdrag.range()).range(quorra.controller[id].xdrag.domain());
+                var ymap = d3.scale.linear().domain(quorra.controller[id].ydrag.range()).range(quorra.controller[id].ydrag.domain());
+                var xval = _.map(quorra.controller[id].xdrag.range(), function(x){ return xmap(x - d3.event.dx); });
+                var yval = _.map(quorra.controller[id].ydrag.range(), function(x){ return ymap(x - d3.event.dy); });
+                quorra.controller[id].render(xval, yval);
+                quorra.controller[id].xdrag = d3.scale.linear().domain(xval).range(quorra.controller[id].xstack[l-1].range());
+                quorra.controller[id].ydrag = d3.scale.linear().domain(yval).range(quorra.controller[id].ystack[l-1].range());
             }else{
                 viewbox.attr('d', [
-                    'M' + controller.x + ',' + controller.y,
-                    'L' + controller.x + ',' + coordinates[1],
+                    'M' + quorra.controller[id].x + ',' + quorra.controller[id].y,
+                    'L' + quorra.controller[id].x + ',' + coordinates[1],
                     'L' + coordinates[0] + ',' + coordinates[1],
-                    'L' + coordinates[0] + ',' + controller.y,
+                    'L' + coordinates[0] + ',' + quorra.controller[id].y,
                     'Z'
                 ].join(''));
             }
         });
 
     // enable double click for jumping up on the stack
-    selection.on('dblclick', function(){
-        var l = controller.xstack.length;
+    quorra.controller[id].svg.on('dblclick', function(){
+        var l = quorra.controller[id].xstack.length;
         if (l > 1){
-            controller.xstack.pop();
-            controller.ystack.pop();
+            quorra.controller[id].xstack.pop();
+            quorra.controller[id].ystack.pop();
             l = l - 1;
         }
-        render(controller.xstack[l-1].domain(), controller.ystack[l-1].domain());
-        controller.xdrag = controller.xstack[l-1];
-        controller.ydrag = controller.ystack[l-1];
+        quorra.controller[id].render(quorra.controller[id].xstack[l-1].domain(), quorra.controller[id].ystack[l-1].domain());
+        quorra.controller[id].xdrag = quorra.controller[id].xstack[l-1];
+        quorra.controller[id].ydrag = quorra.controller[id].ystack[l-1];
     })
     .call(drag);
 
     return;
 }
+
+enableAnnotation = function(id){
+    /**
+    quorra.enableAnnotation()
+
+    Enable manual annotation for plot.
+
+    @author <bprinty@gmail.com>
+    */
+
+    // TODO: UPDATE TO TAKE FUNCTION OR OTHER STUFF AS INPUT
+    var triggers = _.extend({
+        id: function(d){ return quorra.uuid(); },
+        type: function(d){ return 'circle'; },
+        text: function(d){ return (quorra.controller[id].attr.xformat == "auto") ? d3.format(".2f")(d.x) : quorra.controller[id].attr.xformat(d.x); },
+        size: function(d){ return 15; },
+        'text-size': function(d){ return 13; },
+        'text-position': function(d){ return {x: 0, y: 20}; },
+        x: function(d){ return d.x; },
+        y: function(d){ return d.y; },
+        style: function(d){ return {}; },
+        click: function(d){}
+    }, quorra.controller[id].attr.annotatable);
+    
+    var l = quorra.controller[id].xstack.length;
+    var xscale = quorra.controller[id].xstack[l-1];
+    var yscale = quorra.controller[id].ystack[l-1]
+    var xmap = d3.scale.linear().domain(xscale.range()).range(xscale.domain());
+    var ymap = d3.scale.linear().domain(yscale.range()).range(yscale.domain());
+    
+    quorra.controller[id].svg.on('click', function(){
+        if (quorra.keys.shift && quorra.keys.a){
+            var coordinates = d3.mouse(quorra.controller[id].svg.node());
+            coordinates[0] = coordinates[0];
+            coordinates[1] = coordinates[1];
+
+            var d = {
+                x: xmap(coordinates[0] - quorra.controller[id].left),
+                y: ymap(coordinates[1] + quorra.controller[id].top),
+            }
+            d.id = triggers.id(d);
+            d.type = triggers.type(d);
+            d.text = triggers.text(d);
+            d.click = triggers.click;
+            d.style = triggers.style(d);
+            d.size = triggers.size(d);
+            d['text-size'] = triggers['text-size'](d);
+            d['text-position'] = triggers['text-size'](d);
+            var l = quorra.controller[id].xstack.length;
+            var scaled = {
+                x: xscale(triggers.x(d)) + quorra.controller[id].left,
+                y: yscale(triggers.y(d)) - quorra.controller[id].top,
+            }
+
+            shapeAnnotation(
+                quorra.controller[id].svg,
+                scaled.x,
+                scaled.y,
+                d
+            ).attr("clip-path", "url(#clip)");
+
+            if (d.text != ''){
+                textAnnotation(
+                    quorra.controller[id].svg,
+                    xscale(d.x) + triggers['text-position'](d).x + quorra.controller[id].left,
+                    yscale(d.y) - triggers['text-position'](d).y - quorra.controller[id].top,
+                    d
+                ).attr("clip-path", "url(#clip)");
+            }
+            d.x = xmap(scaled.x - quorra.controller[id].left);
+            d.y = ymap(scaled.y - quorra.controller[id].top);
+            if (quorra.controller[id].attr.annotation){
+                quorra.controller[id].attr.annotation.push(d);
+            }else{
+                quorra.controller[id].attr.annotation = [d];
+            }
+        }
+    });
+}
+
+
+

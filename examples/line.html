@@ -53,12 +53,33 @@ var line = quorra.line()
     .grid(true)
     .layout('area')
     .yticks(10)
+    .margin({right: 100})
+    .lposition("outside")
+    .lmargin({left: 40})
     .zoomable(true)
     .xticks(10)
     .interpolate("cardinal")
     .xlabel("X Axis Label")
     .ylabel("Y Axis Label")
-    .color(['firebrick','steelblue']);
+    .color(['firebrick','steelblue'])
+    .annotation({
+        type: 'triangle',
+        text: 'annotation',
+        x: 10,
+        y: 15
+    })
+    .annotatable({
+        type: function(d){ return 'triangle'; },
+        x: function(d){
+            return d.x;
+        },
+        y: function(d){
+            return d.y;
+        },
+        click: function(d){
+            console.log('clicked!');
+        }
+    });
 
 d3.select('#line .plotarea')
     .datum(data).call(line);

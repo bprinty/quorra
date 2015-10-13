@@ -9,8 +9,8 @@ document.onkeydown = function (e) {
     e = e || window.event;
     var k = e.which;
     switch (k) {
-        case 16: quorra.keys.shift = true;
-        case 65: quorra.keys.a = true;
+        case 16: quorra.keys.shift = true; break;
+        case 65: quorra.keys.a = true; break;
     }
 };
 
@@ -18,8 +18,8 @@ document.onkeyup = function (e) {
     e = e || window.event;
     var k = e.which;
     switch (k) {
-        case 16: quorra.keys.shift = false;
-        case 65: quorra.keys.a = false;
+        case 16: quorra.keys.shift = false; break;
+        case 65: quorra.keys.a = false; break;
     }
 };
 
@@ -103,97 +103,6 @@ function epanechnikovKernel(scale) {
     return function(u) {
         return Math.abs(u /= scale) <= 1 ? 0.75 * (1 - u * u) / scale : 0;
     };
-}
-
-
-// shapes
-quorra.text = function(svg, size, x, y, value){
-    var text = svg.append('text')
-        .attr('class', 'annotation')
-        .attr('x', x)
-        .attr('y', y)
-        .style("font-size", size)
-        .style("text-anchor", "middle")
-        .text(value);
-
-    return;
-}
-
-
-quorra.square = function(svg, x, y, data){
-    var square = svg.selectAll('.annotation.square#' + quorra.uuid())
-        .data([data]).enter()
-        .append('rect')
-        .attr('class', 'annotation square')
-        .attr('width', data.size)
-        .attr('height', data.size)
-        .attr('x', x - data.size / 2)
-        .attr('y', y - data.size / 2)
-        .on('mouseover', function(){
-            d3.select(this).style('opacity', 0.75);
-        })
-        .on('mouseout', function(){
-            d3.select(this).style('opacity', 1);
-        })
-        .on('click', data.click);
-
-    for (i in data.style){
-        square.style(i, data.style[i]);
-    }
-    
-    return;
-}
-
-
-quorra.circle = function(svg, x, y, data){
-    var circle = svg.selectAll('.annotation.circle#' + quorra.uuid())
-        .data([data]).enter()
-        .append('circle')
-        .attr('class', 'annotation circle')
-        .attr('r', data.size / 2)
-        .attr('cx', x)
-        .attr('cy', y)
-        .on('mouseover', function(){
-            d3.select(this).style('opacity', 0.75);
-        })
-        .on('mouseout', function(){
-            d3.select(this).style('opacity', 1);
-        })
-        .on('click', data.click);;
-
-    for (i in data.style){
-        circle.style(i, data.style[i]);
-    }
-
-    return;
-}
-
-
-quorra.triangle = function(svg, x, y, data){
-    var triangle = svg.selectAll('.annotation.triangle#' + quorra.uuid())
-        .data([data]).enter()
-        .append('path')
-        .attr('class', 'annotation triangle')
-        .attr('d', function(d){
-            return [
-            'M' + (x - (d.size / 2)) + ',' + (y - (d.size / 2)),
-            'L' + (x + (d.size / 2)) + ',' + (y - (d.size / 2)),
-            'L' + x + ',' + (y + (d.size / 2)),
-            'Z'].join('');
-        })
-        .on('mouseover', function(){
-            d3.select(this).style('opacity', 0.75);
-        })
-        .on('mouseout', function(){
-            d3.select(this).style('opacity', 1);
-        })
-        .on('click', data.click);
-
-    for (i in data.style){
-        triangle.style(i, data.style[i]);
-    }
-
-    return;
 }
 
 

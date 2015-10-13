@@ -9,7 +9,7 @@ quorra.line = function(attributes) {
     */
 
     // attributes
-    var attr = attributeConstructor('line');
+    var attr = attributeConstructor();
     attr.points = 0;
     attr.layout = "line";
     attr.interpolate = "linear";
@@ -147,14 +147,24 @@ quorra.line = function(attributes) {
         }
         render(attr.xrange, attr.yrange);
 
+        // bind attributes to controller
+        quorra.controller[attr.id] = {
+            x: attr.margin.left,
+            y: attr.margin.top,
+            left: attr.margin.left,
+            top: attr.margin.top,
+            xstack: [axes.xScale],
+            ystack: [axes.yScale],
+            render: render,
+            svg: selection.select('svg'),
+            attr: attr 
+        }
         if (attr.zoomable){
-            controller = {
-                x: attr.margin.left,
-                y: attr.margin.top,
-                xstack: [axes.xScale],
-                ystack: [axes.yScale],
-            };
-            enableZoom(selection.select('svg'), render, controller);
+            enableZoom(attr.id);
+        }
+
+        if (attr.annotatable){
+            enableAnnotation(attr.id);
         }
 
         // expose editable attributes (user control)
