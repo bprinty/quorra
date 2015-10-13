@@ -20,7 +20,7 @@ textAnnotation = function(svg, x, y, data){
         .data([data]).enter()
         .append('text')
         .attr('id', data.id)
-        .attr('class', 'annotation text')
+        .attr('class', 'annotation text g_' + data.group)
         .attr('x', x)
         .attr('y', y)
         .style("font-size", data['text-size'])
@@ -38,7 +38,7 @@ shapeAnnotation = function(svg, x, y, data){
             .data([data]).enter()
             .append('rect')
             .attr('id', data.id)
-            .attr('class', 'annotation square')
+            .attr('class', 'annotation square g_' + data.group)
             .attr('width', data.size)
             .attr('height', data.size)
             .attr('x', x - data.size / 2)
@@ -48,7 +48,7 @@ shapeAnnotation = function(svg, x, y, data){
             .data([data]).enter()
             .append('circle')
             .attr('id', data.id)
-            .attr('class', 'annotation circle')
+            .attr('class', 'annotation circle g_' + data.group)
             .attr('r', data.size / 2)
             .attr('cx', x)
             .attr('cy', y);
@@ -57,7 +57,7 @@ shapeAnnotation = function(svg, x, y, data){
             .data([data]).enter()
             .append('path')
             .attr('id', data.id)
-            .attr('class', 'annotation triangle')
+            .attr('class', 'annotation triangle g_' + data.group)
             .attr('d', function(d){
                 return [
                 'M' + (x - (d.size / 2)) + ',' + (y - (d.size / 2)),
@@ -542,6 +542,7 @@ annotationConstructor = function(selection, attr, xScale, yScale){
             type: 'circle',
             text: '',
             size: 15,
+            group: null,
             'text-size': 13,
             'text-position': {x: 0, y: 20},
             x: 0,
@@ -556,14 +557,20 @@ annotationConstructor = function(selection, attr, xScale, yScale){
             xScale(d.x),
             yScale(d.y),
             d
-        ).attr("clip-path", "url(#clip)");
+        ).attr("clip-path", "url(#clip)")
+        .style("visibility", function(d){
+            return _.contains(attr.toggled, attr.group(d)) ? 'hidden' : 'visible';
+        });
         if (d.text != ''){
             textAnnotation(
                 selection,
                 xScale(d.x) + d['text-position'].x,
                 yScale(d.y) - d['text-position'].y,
                 d
-            ).attr("clip-path", "url(#clip)");
+            ).attr("clip-path", "url(#clip)")
+            .style("visibility", function(d){
+                return _.contains(attr.toggled, attr.group(d)) ? 'hidden' : 'visible';
+            });
         }
         return;
     });
@@ -684,6 +691,7 @@ enableAnnotation = function(id){
         type: function(d){ return 'circle'; },
         text: function(d){ return (quorra.controller[id].attr.xformat == "auto") ? d3.format(".2f")(d.x) : quorra.controller[id].attr.xformat(d.x); },
         size: function(d){ return 15; },
+        group: function(d){ return null; },
         'text-size': function(d){ return 13; },
         'text-position': function(d){ return {x: 0, y: 20}; },
         x: function(d){ return d.x; },
@@ -714,6 +722,7 @@ enableAnnotation = function(id){
             d.click = triggers.click;
             d.style = triggers.style(d);
             d.size = triggers.size(d);
+            d.group = triggers.group(d);
             d['text-size'] = triggers['text-size'](d);
             d['text-position'] = triggers['text-size'](d);
             var l = quorra.controller[id].xstack.length;
