@@ -1,25 +1,45 @@
 
-// log key presses
-quorra.keys = {
-    shift: false,
-    a: false
-};
+// key maps
+var baseKeys = { 16: 'Shift', 17: 'Ctrl', 18: 'Alt', 27: 'Esc'};
+var metaKeys = { 9: 'Tab', 13: 'Enter', 65: 'A', 66: 'B', 67: 'C', 68: 'D', 69: 'E', 70: 'F', 71: 'G', 72: 'H', 73: 'I', 74: 'J', 75: 'K', 76: 'L', 77: 'M', 78: 'N', 79: 'O', 80: 'P', 81: 'Q', 82: 'R', 83: 'S', 84: 'T', 85: 'U', 86: 'V', 87: 'W', 88: 'X', 89: 'Y', 90: 'Z'};
+var allKeys = _.extend(_.clone(baseKeys), metaKeys);
 
+// key press storage
+quorra.keys = {};
+_.each(allKeys, function(key){
+    quorra.keys[key] = false;
+});
+
+// event handlers
+quorra.events = {};
+_.each(baseKeys, function(base){
+    _.each(metaKeys, function(meta){
+        quorra.events[base + meta] = function(){};
+    });
+});
+
+
+// press/release events
 document.onkeydown = function (e) {
     e = e || window.event;
     var k = e.which;
-    switch (k) {
-        case 16: quorra.keys.shift = true; break;
-        case 65: quorra.keys.a = true; break;
+    if (_.has(allKeys, k)){
+        quorra.keys[allKeys[k]] = true;
+        if (_.has(metaKeys, k)){
+            _.each(baseKeys, function(i){
+                if (quorra.keys[i]){
+                    quorra.events[i+metaKeys[k]]();
+                }
+            });
+        }
     }
 };
 
 document.onkeyup = function (e) {
     e = e || window.event;
     var k = e.which;
-    switch (k) {
-        case 16: quorra.keys.shift = false; break;
-        case 65: quorra.keys.a = false; break;
+    if (_.has(allKeys, k)){
+        quorra.keys[allKeys[k]] = false;
     }
 };
 

@@ -1,4 +1,4 @@
-/* quorra version 0.0.1 (http://bprinty.github.io/quorra) 2015-10-13 */
+/* quorra version 0.0.1 (http://bprinty.github.io/quorra) 2015-10-14 */
 (function(){
 function quorra() {
     /**
@@ -18,11 +18,12 @@ quorra.controller = {};
 // shapes
 textAnnotation = function(svg, x, y, data){
 
+    var cl = (data.group == null) ? 'annotation text' : 'annotation text g_' + data.group;
     var text = svg.selectAll('.annotation.text#' + data.id)
         .data([data]).enter()
         .append('text')
         .attr('id', data.id)
-        .attr('class', 'annotation text g_' + data.group)
+        .attr('class', cl)
         .attr('x', x)
         .attr('y', y)
         .style("font-size", data['text-size'])
@@ -35,12 +36,13 @@ textAnnotation = function(svg, x, y, data){
 
 shapeAnnotation = function(svg, x, y, data){
     
+    var cl = (data.group == null) ? 'annotation ' + data.type : 'annotation text g_' + data.group;
     if (data.type == 'square'){
         var annot = svg.selectAll('.annotation.square#' + data.id)
             .data([data]).enter()
             .append('rect')
             .attr('id', data.id)
-            .attr('class', 'annotation square g_' + data.group)
+            .attr('class', cl)
             .attr('width', data.size)
             .attr('height', data.size)
             .attr('x', x - data.size / 2)
@@ -50,7 +52,7 @@ shapeAnnotation = function(svg, x, y, data){
             .data([data]).enter()
             .append('circle')
             .attr('id', data.id)
-            .attr('class', 'annotation circle g_' + data.group)
+            .attr('class', cl)
             .attr('r', data.size / 2)
             .attr('cx', x)
             .attr('cy', y);
@@ -59,7 +61,7 @@ shapeAnnotation = function(svg, x, y, data){
             .data([data]).enter()
             .append('path')
             .attr('id', data.id)
-            .attr('class', 'annotation triangle g_' + data.group)
+            .attr('class', cl)
             // TODO: get rotating annotation
             // .attr('transform', 'translate(' + -1*((y - data.size)*1.5) + ', ' + -1*(x*1.5 - data.size/2) + ') rotate(-90)')
             .attr('d', function(d){
@@ -768,27 +770,47 @@ enableAnnotation = function(id){
 
 
 
-// log key presses
-quorra.keys = {
-    shift: false,
-    a: false
-};
+// key maps
+var baseKeys = { 16: 'Shift', 17: 'Ctrl', 18: 'Alt', 27: 'Esc'};
+var metaKeys = { 9: 'Tab', 13: 'Enter', 65: 'A', 66: 'B', 67: 'C', 68: 'D', 69: 'E', 70: 'F', 71: 'G', 72: 'H', 73: 'I', 74: 'J', 75: 'K', 76: 'L', 77: 'M', 78: 'N', 79: 'O', 80: 'P', 81: 'Q', 82: 'R', 83: 'S', 84: 'T', 85: 'U', 86: 'V', 87: 'W', 88: 'X', 89: 'Y', 90: 'Z'};
+var allKeys = _.extend(_.clone(baseKeys), metaKeys);
 
+// key press storage
+quorra.keys = {};
+_.each(allKeys, function(key){
+    quorra.keys[key] = false;
+});
+
+// event handlers
+quorra.events = {};
+_.each(baseKeys, function(base){
+    _.each(metaKeys, function(meta){
+        quorra.events[base + meta] = function(){ console.log('in!');};
+    });
+});
+
+
+// capture events
 document.onkeydown = function (e) {
     e = e || window.event;
     var k = e.which;
-    switch (k) {
-        case 16: quorra.keys.shift = true; break;
-        case 65: quorra.keys.a = true; break;
+    if (_.has(allKeys, k)){
+        quorra.keys[allKeys[k]] = true;
+        if (_.has(metaKeys, k)){
+            _.each(baseKeys, function(i){
+                if (quorra.keys[i]){
+                    quorra.events[i+metaKeys[k]]();
+                }
+            });
+        }
     }
 };
 
 document.onkeyup = function (e) {
     e = e || window.event;
     var k = e.which;
-    switch (k) {
-        case 16: quorra.keys.shift = false; break;
-        case 65: quorra.keys.a = false; break;
+    if (_.has(allKeys, k)){
+        quorra.keys[allKeys[k]] = false;
     }
 };
 

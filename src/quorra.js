@@ -16,11 +16,12 @@ quorra.controller = {};
 // shapes
 textAnnotation = function(svg, x, y, data){
 
+    var cl = (data.group == null) ? 'annotation text' : 'annotation text g_' + data.group;
     var text = svg.selectAll('.annotation.text#' + data.id)
         .data([data]).enter()
         .append('text')
         .attr('id', data.id)
-        .attr('class', 'annotation text g_' + data.group)
+        .attr('class', cl)
         .attr('x', x)
         .attr('y', y)
         .style("font-size", data['text-size'])
@@ -33,12 +34,13 @@ textAnnotation = function(svg, x, y, data){
 
 shapeAnnotation = function(svg, x, y, data){
     
+    var cl = (data.group == null) ? 'annotation ' + data.type : 'annotation text g_' + data.group;
     if (data.type == 'square'){
         var annot = svg.selectAll('.annotation.square#' + data.id)
             .data([data]).enter()
             .append('rect')
             .attr('id', data.id)
-            .attr('class', 'annotation square g_' + data.group)
+            .attr('class', cl)
             .attr('width', data.size)
             .attr('height', data.size)
             .attr('x', x - data.size / 2)
@@ -48,7 +50,7 @@ shapeAnnotation = function(svg, x, y, data){
             .data([data]).enter()
             .append('circle')
             .attr('id', data.id)
-            .attr('class', 'annotation circle g_' + data.group)
+            .attr('class', cl)
             .attr('r', data.size / 2)
             .attr('cx', x)
             .attr('cy', y);
@@ -57,7 +59,7 @@ shapeAnnotation = function(svg, x, y, data){
             .data([data]).enter()
             .append('path')
             .attr('id', data.id)
-            .attr('class', 'annotation triangle g_' + data.group)
+            .attr('class', cl)
             // TODO: get rotating annotation
             // .attr('transform', 'translate(' + -1*((y - data.size)*1.5) + ', ' + -1*(x*1.5 - data.size/2) + ') rotate(-90)')
             .attr('d', function(d){
@@ -618,7 +620,7 @@ enableZoom = function(id){
             quorra.controller[id].y = coordinates[1];
         })
         .on("dragend", function(d){
-            if (!quorra.keys.shift){
+            if (!quorra.keys.Shift){
                 viewbox.attr('d', '');
                 var coordinates = mouseCoordinates();
                 if (Math.abs(quorra.controller[id].x - coordinates[0]) > 10 && Math.abs(quorra.controller[id].y - coordinates[1]) > 10){
@@ -643,7 +645,7 @@ enableZoom = function(id){
         })
         .on("drag", function(d){
             var coordinates = mouseCoordinates();
-            if (quorra.keys.shift){
+            if (quorra.keys.Shift){
                 var l = quorra.controller[id].xstack.length;
                 var xmap = d3.scale.linear().domain(quorra.controller[id].xdrag.range()).range(quorra.controller[id].xdrag.domain());
                 var ymap = d3.scale.linear().domain(quorra.controller[id].ydrag.range()).range(quorra.controller[id].ydrag.domain());
@@ -713,7 +715,7 @@ enableAnnotation = function(id){
     var ymap = d3.scale.linear().domain(yscale.range()).range(yscale.domain());
     
     quorra.controller[id].svg.on('click', function(){
-        if (quorra.keys.shift && quorra.keys.a){
+        if (quorra.keys.Shift && quorra.keys.A){
             var coordinates = d3.mouse(quorra.controller[id].svg.node());
             coordinates[0] = coordinates[0];
             coordinates[1] = coordinates[1];
