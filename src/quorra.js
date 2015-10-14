@@ -737,11 +737,17 @@ enableAnnotation = function(id){
             var coordinates = d3.mouse(quorra.controller[id].svg.node());
             coordinates[0] = coordinates[0];
             coordinates[1] = coordinates[1];
-
             var d = {
                 x: xmap(coordinates[0] - quorra.controller[id].left),
                 y: ymap(coordinates[1] - quorra.controller[id].top),
             }
+            for (i in quorra.controller[id].attr.annotation){
+                var annot = quorra.controller[id].attr.annotation[i];
+                if ((Math.abs(annot.x - d.x) < 2) && (Math.abs(annot.y - d.y) < 2)){
+                    return;
+                }
+            }
+
             d.parent = id;
             _.each(['id', 'type', 'text', 'click', 'style', 'size', 'group', 'text-size', 'text-position'], function(x){
                 d[x] = triggers[x](d);
