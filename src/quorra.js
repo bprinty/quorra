@@ -26,7 +26,12 @@ textAnnotation = function(svg, x, y, data){
         .attr('y', y)
         .style("font-size", data['text-size'])
         .style("text-anchor", "middle")
-        .text(data.text);
+        .text(data.text)
+        .on('mouseover', function(){
+            d3.select(this).style('opacity', 0.75);
+        }).on('mouseout', function(){
+            d3.select(this).style('opacity', 1);
+        }).on('click', data.click);
 
     return text;
 }
@@ -34,7 +39,7 @@ textAnnotation = function(svg, x, y, data){
 
 shapeAnnotation = function(svg, x, y, data){
     
-    var cl = (data.group == null) ? 'annotation ' + data.type : 'annotation text g_' + data.group;
+    var cl = (data.group == null) ? 'annotation ' + data.type : 'annotation ' + data.type + ' g_' + data.group;
     if (data.type == 'square'){
         var annot = svg.selectAll('.annotation.square#' + data.id)
             .data([data]).enter()
@@ -514,8 +519,8 @@ initializeCanvas = function(selection, attr){
     }
 
     svg = svg
-        .attr("id", quorra.uuid())
-        .attr("class", "quorra-" + attr.id)
+        .attr("id", attr.id)
+        .attr("class", "quorra-plot")
         .attr("width", attr.width)
         .attr("height", attr.height)
         .on("click", attr.plotclick)
@@ -542,6 +547,7 @@ annotationConstructor = function(selection, attr, xScale, yScale){
     }
     _.map(attr.annotation, function(d){
         d = _.extend({
+            parent: attr.id,
             id: quorra.uuid(),
             type: 'circle',
             text: '',
@@ -722,45 +728,22 @@ enableAnnotation = function(id){
 
             var d = {
                 x: xmap(coordinates[0] - quorra.controller[id].left),
-                y: ymap(coordinates[1] + quorra.controller[id].top),
+                y: ymap(coordinates[1] - quorra.controller[id].top),
             }
-            d.id = triggers.id(d);
-            d.type = triggers.type(d);
-            d.text = triggers.text(d);
-            d.click = triggers.click;
-            d.style = triggers.style(d);
-            d.size = triggers.size(d);
-            d.group = triggers.group(d);
-            d['text-size'] = triggers['text-size'](d);
-            d['text-position'] = triggers['text-size'](d);
-            var l = quorra.controller[id].xstack.length;
-            var scaled = {
-                x: xscale(triggers.x(d)) + quorra.controller[id].left,
-                y: yscale(triggers.y(d)) - quorra.controller[id].top,
-            }
-
-            shapeAnnotation(
-                quorra.controller[id].svg,
-                scaled.x,
-                scaled.y,
-                d
-            ).attr("clip-path", "url(#clip)");
-
-            if (d.text != ''){
-                textAnnotation(
-                    quorra.controller[id].svg,
-                    xscale(d.x) + triggers['text-position'](d).x + quorra.controller[id].left,
-                    yscale(d.y) - triggers['text-position'](d).y - quorra.controller[id].top,
-                    d
-                ).attr("clip-path", "url(#clip)");
-            }
-            d.x = xmap(scaled.x - quorra.controller[id].left);
-            d.y = ymap(scaled.y - quorra.controller[id].top);
+            d.parent = id;
+            _.each(['id', 'type', 'text', 'click', 'style', 'size', 'group', 'text-size', 'text-position'], function(x){
+                d[x] = triggers[x](d);
+            });
             if (quorra.controller[id].attr.annotation){
                 quorra.controller[id].attr.annotation.push(d);
             }else{
                 quorra.controller[id].attr.annotation = [d];
             }
+            var l = quorra.controller[id].xstack.length;
+            quorra.controller[id].render(
+                quorra.controller[id].xstack[l-1].domain(),
+                quorra.controller[id].ystack[l-1].domain()
+            );
         }
     });
 }
