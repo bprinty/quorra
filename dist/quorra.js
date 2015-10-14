@@ -550,11 +550,10 @@ annotationConstructor = function(selection, attr, xScale, yScale){
 
     // we have to use a set interval here, because
     // sometimes the plot isn't rendered before this method is called
-    var ival = setInterval(function(){
-        
-        if (d3.select('#' + selection.node().parentNode.id)[0][0] == null){
-            return;
-        }
+    // we also need to try and render it before the timeout for panning
+    // operations, so we encapsulate it in a function and call it before
+    // the timeout
+    function doit(){
         _.map(attr.annotation, function(d){
             d = _.extend({
                 parent: attr.id,
@@ -596,9 +595,17 @@ annotationConstructor = function(selection, attr, xScale, yScale){
             }
             return;
         });
+    }
+    doit();
+    var ival = setInterval(function(){
+        
+        if (d3.select('#' + selection.node().parentNode.id)[0][0] == null){
+            return;
+        }
+        doit();
 
         clearInterval(ival);
-    }, 100);
+    }, 5);
 
     return;
 }
