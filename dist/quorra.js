@@ -739,7 +739,7 @@ enableAnnotation = function(id){
             }
             for (i in quorra.controller[id].attr.annotation){
                 var annot = quorra.controller[id].attr.annotation[i];
-                if ((Math.abs(annot.x - d.x) < 2) && (Math.abs(annot.y - d.y) < 2)){
+                if ((Math.abs(xscale(annot.x) - xscale(d.x)) < 20) && (Math.abs(yscale(annot.y) - yscale(d.y)) < 20)){
                     return;
                 }
             }
