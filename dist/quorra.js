@@ -542,6 +542,8 @@ enableLegend = function(id){
                 .attr("x", ctrl.width - 18 - ctrl.attr.lmargin.right + ctrl.attr.lmargin.left)
                 .attr("width", 18)
                 .attr("height", 18)
+                .attr("rx", 5)
+                .attr("ry", 5)
                 .style("fill", ctrl.color)
                 .style("fill-opacity", function(d){
                     return _.contains(ctrl.attr.toggled, d) ? 0 : 1;
@@ -722,23 +724,31 @@ enableAnnotation = function(id){
         click: function(d){}
     }, quorra.controller[id].attr.annotatable);
     
-    var l = quorra.controller[id].xstack.length;
-    var xscale = quorra.controller[id].xstack[l-1];
-    var yscale = quorra.controller[id].ystack[l-1]
+    var ctrl = quorra.controller[id];
+    var l = ctrl.xstack.length;
+    var xscale = ctrl.xstack[l-1];
+    var yscale = ctrl.ystack[l-1]
     var xmap = d3.scale.linear().domain(xscale.range()).range(xscale.domain());
     var ymap = d3.scale.linear().domain(yscale.range()).range(yscale.domain());
     
     quorra.controller[id].svg.on('click', function(){
-        if ((quorra.keys.Shift && quorra.keys.A) || quorra.controller[id].annotate){
-            var coordinates = d3.mouse(quorra.controller[id].svg.node());
+        if ((quorra.keys.Shift && quorra.keys.A) || ctrl.annotate){
+            var coordinates = d3.mouse(ctrl.svg.node());
             coordinates[0] = coordinates[0];
             coordinates[1] = coordinates[1];
-            var d = {
-                x: xmap(coordinates[0] - quorra.controller[id].left),
-                y: ymap(coordinates[1] - quorra.controller[id].top),
+
+            if (coordinates[0] > (ctrl.width + ctrl.left) ||
+                coordinates[0] < ctrl.left ||
+                coordinates[1] > (ctrl.height + ctrl.top) ||
+                coordinates[1] < ctrl.top){
+                return;
             }
-            for (i in quorra.controller[id].attr.annotation){
-                var annot = quorra.controller[id].attr.annotation[i];
+            var d = {
+                x: xmap(coordinates[0] - ctrl.left),
+                y: ymap(coordinates[1] - ctrl.top),
+            }
+            for (i in ctrl.attr.annotation){
+                var annot = ctrl.attr.annotation[i];
                 if ((Math.abs(xscale(annot.x) - xscale(d.x)) < 20) && (Math.abs(yscale(annot.y) - yscale(d.y)) < 20)){
                     return;
                 }
@@ -748,15 +758,15 @@ enableAnnotation = function(id){
             _.each(['id', 'type', 'text', 'click', 'style', 'size', 'group', 'text-size', 'text-position'], function(x){
                 d[x] = triggers[x](d);
             });
-            if (quorra.controller[id].attr.annotation){
-                quorra.controller[id].attr.annotation.push(d);
+            if (ctrl.attr.annotation){
+                ctrl.attr.annotation.push(d);
             }else{
-                quorra.controller[id].attr.annotation = [d];
+                ctrl.attr.annotation = [d];
             }
-            var l = quorra.controller[id].xstack.length;
-            quorra.controller[id].render(
-                quorra.controller[id].xstack[l-1].domain(),
-                quorra.controller[id].ystack[l-1].domain()
+            var l = ctrl.xstack.length;
+            ctrl.render(
+                ctrl.xstack[l-1].domain(),
+                ctrl.ystack[l-1].domain()
             );
         }
     });
@@ -773,7 +783,6 @@ enableGlyphs = function(id){
     if (ctrl.attr.zoomable){
         gdata.push('zoom', 'pan', 'refresh');
     }
-    console.log(gdata);
     
     // we have to use a set interval here, because
     // sometimes the plot isn't rendered before this method is called
@@ -834,7 +843,10 @@ enableGlyphs = function(id){
                 .attr("class", "glyph")
                 .attr("x", ctrl.width - 18 - ctrl.attr.gmargin.right + ctrl.attr.gmargin.left)
                 .attr("width", 22)
-                .attr("height", 22);
+                .attr("height", 22)
+                .attr("rx", 5)
+                .attr("ry", 5)
+                .style("fill", "transparent");
 
         }else if (ctrl.attr.gshape === "circle"){
             gly.append("circle")
@@ -847,16 +859,24 @@ enableGlyphs = function(id){
         gly.append("text")
             .attr("class", "glyph")
             .attr("x", function(d){
-                var offset = 18;
+                var offset = (ctrl.attr.gshape === "square") ? 15 : 18;
                 switch(d){
-                    case 'pan': offset = 17; break;
-                    case 'zoom': offset = 18; break;
-                    case 'refresh': offset = 17; break;
-                    case 'annotate': offset = 15; break;
+                    case 'pan': offset = offset - 1; break;
+                    case 'zoom': offset = offset; break;
+                    case 'refresh': offset = offset - 1; break;
+                    case 'annotate': offset = offset - 3; break;
                 }
                 return ctrl.width - offset - ctrl.attr.gmargin.right + ctrl.attr.gmargin.left;
-            }).attr("y", 13)
-            .text(function(d){
+            }).attr("y", function(d){
+                var offset = (ctrl.attr.gshape === "square") ? 17 : 13;
+                switch(d){
+                    case 'pan': offset = offset - 2; break;
+                    case 'zoom': break;
+                    case 'refresh': break;
+                    case 'annotate': break;
+                }
+                return offset;
+            }).text(function(d){
                 switch(d){
                     case 'pan': return '↔'; break;
                     case 'zoom': return '🔍'; break;
@@ -866,7 +886,6 @@ enableGlyphs = function(id){
             });
 
         clearInterval(ival);
-        console.log('glyphs!' + quorra.uuid());
     }, 100);
 
 }

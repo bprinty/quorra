@@ -58,6 +58,7 @@ var line = quorra.line()
     .lmargin({left: 40})
     .zoomable(true)
     .xticks(10)
+    .gshape("square")
     .interpolate("cardinal")
     .xlabel("X Axis Label")
     .ylabel("Y Axis Label")
@@ -79,7 +80,7 @@ var line = quorra.line()
             return d.y;
         },
         click: function(d){
-            console.log(d);
+            console.log('Plot Annotation!');
         },
         group: function(d){ return 'Evil'; }
     });
