@@ -9,7 +9,7 @@ quorra.scatter = function(attributes) {
     */
 
     // attributes
-    var attr = attributeConstructor('scatter');
+    var attr = attributeConstructor();
     attr.lm = false; // options are "smooth", "poly-x" (x is order), and "linear"
     attr.xdensity = false;
     attr.ydensity = false;
@@ -36,11 +36,28 @@ quorra.scatter = function(attributes) {
         // coloring
         var color = parameterizeColorPallete(newdata, attr);
 
-        // construct legend
-        var legend = legendConstructor(svg, attr, dim.innerWidth, dim.innerHeight, color);
-        
+        // bind attributes to controller
+        quorra.controller[attr.id] = {
+            x: attr.margin.left,
+            y: attr.margin.top,
+            left: attr.margin.left,
+            top: attr.margin.top,
+            width: dim.innerWidth,
+            height: dim.innerHeight,
+            xstack: [],
+            ystack: [],
+            xdrag: null,
+            ydrag: null,
+            svg: selection.select('svg'),
+            attr: attr,
+            annotate: false,
+            zoom: true,
+            pan: false,
+            color: color
+        }
+
         var axes, line, dot;
-        function render(xrange, yrange){
+        quorra.controller[attr.id].render = function(xrange, yrange){
             
             // clean previous rendering
             svg.selectAll("*").remove();
@@ -49,6 +66,12 @@ quorra.scatter = function(attributes) {
             attr.xrange = xrange;
             attr.yrange = yrange;
             axes = parameterizeAxes(selection, newdata, attr, dim.innerWidth, dim.innerHeight);
+            if (quorra.controller[attr.id].xstack.length == 0){
+                quorra.controller[attr.id].xstack.push(axes.xScale);
+                quorra.controller[attr.id].ystack.push(axes.yScale);
+            }
+            quorra.controller[attr.id].xdrag = axes.xScale;
+            quorra.controller[attr.id].ydrag = axes.yScale;
 
             // axes
             drawAxes(svg, attr, axes.xAxis, axes.yAxis, dim.innerWidth, dim.innerHeight);
@@ -133,33 +156,30 @@ quorra.scatter = function(attributes) {
             }
 
             // do annotation
-            var annotation = annotationConstructor(svg, attr, axes.xScale, axes.yScale);
+            if (attr.annotation){
+                annotatePlot(attr.id);
+            }
         }
-        render(attr.xrange, attr.yrange);
+
+        // render
+        quorra.controller[attr.id].render(attr.xrange, attr.yrange);
+
+        // enable components
+        if (attr.legend){
+            enableLegend(attr.id);
+        }
 
         if (attr.zoomable){
-            controller = {
-                x: attr.margin.left,
-                y: attr.margin.top,
-                xstack: [axes.xScale],
-                ystack: [axes.yScale],
-            };
-            enableZoom(selection.select('svg'), render, controller);
+            enableZoom(attr.id);
         }
 
-        // expose editable attributes (user control)
-        go.svg = svg;
-        go.legend = legend;
-        go.dot = dot;
-        go.xScale = axes.xScale;
-        go.xAxis = axes.xAxis;
-        go.xGroups = axes.xGroups;
-        go.yScale = axes.yScale;
-        go.yAxis = axes.yAxis;
-        go.yGroups = axes.yGroups;
-        go.innerWidth = dim.innerWidth;
-        go.innerHeight = dim.innerHeight;
-        go.dot = dot;
+        if (attr.annotatable){
+            enableAnnotation(attr.id);
+        }
+
+        if (attr.glyphs){
+            enableGlyphs(attr.id);
+        }
     }
 
     // bind attributes to constructor

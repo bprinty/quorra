@@ -27,12 +27,19 @@
 .axis text,
 .legend text,
 text.annotation,
+text.glyph,
 .tooltip {
     font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif; 
     font-weight: 300;
     font-size: 12px;
     cursor: default;
 }
+
+text.glyph {
+    font-size: 14px;
+    font-weight: 100;
+}
+
 .dot {
     stroke-width: 0;
 }
@@ -42,6 +49,15 @@ text.annotation,
 
 .selector {
     stroke: #bbb;
+    stroke-width: 1px;
+}
+
+.glyphbox {
+    cursor: default;
+}
+
+.glyph {
+    stroke: #555;
     stroke-width: 1px;
 }
 
