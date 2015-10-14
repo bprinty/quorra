@@ -26,12 +26,7 @@ textAnnotation = function(svg, x, y, data){
         .attr('y', y)
         .style("font-size", data['text-size'])
         .style("text-anchor", "middle")
-        .text(data.text)
-        .on('mouseover', function(){
-            d3.select(this).style('opacity', 0.75);
-        }).on('mouseout', function(){
-            d3.select(this).style('opacity', 1);
-        }).on('click', data.click);
+        .text(data.text);
 
     return text;
 }
@@ -75,15 +70,6 @@ shapeAnnotation = function(svg, x, y, data){
                 'Z'].join('');
             });
     }
-
-    // mouse events
-    annot.on('mouseover', function(){
-        d3.select(this).style('opacity', 0.75);
-    })
-    .on('mouseout', function(){
-        d3.select(this).style('opacity', 1);
-    })
-    .on('click', data.click);
 
     // styling
     for (i in data.style){
@@ -461,8 +447,9 @@ annotatePlot = function(id){
     // operations, so we encapsulate it in a function and call it before
     // the timeout
     _.map(ctrl.attr.annotation, function(d){
-        d = _.extend({
+        var data = _.extend({
             parent: id,
+            exists: false,
             id: quorra.uuid(),
             type: 'circle',
             text: '',
@@ -477,26 +464,38 @@ annotatePlot = function(id){
             style: {},
             click: function(){}
         }, d);
-        d['text-position'] = _.extend({x: 0, y: 20}, d['text-position']);
-        ctrl.svg.select('g').selectAll('.annotation#' + d.id).remove();
+        data['text-position'] = _.extend({x: 0, y: 20}, data['text-position']);
+        ctrl.svg.select('g').selectAll('.annotation#' + data.id).remove();
         shapeAnnotation(
             ctrl.svg.select('g'),
             ctrl.xdrag(d.x),
             ctrl.ydrag(d.y),
-            d
+            data
         ).attr("clip-path", "url(#clip)")
         .style("visibility", function(d){
             return _.contains(ctrl.attr.toggled, ctrl.attr.group(d)) ? 'hidden' : 'visible';
+        }).on('mouseover', function(){
+            d3.select(this).style('opacity', 0.75);
+        }).on('mouseout', function(){
+            d3.select(this).style('opacity', 1);
+        }).on('click', function(d){
+            d.click(d);
         });
-        if (d.text != ''){
+        if (data.text != ''){
             textAnnotation(
                 ctrl.svg.select('g'),
-                ctrl.xdrag(d.x) + d['text-position'].x,
-                ctrl.ydrag(d.y) - d['text-position'].y,
-                d
+                ctrl.xdrag(data.x) + data['text-position'].x,
+                ctrl.ydrag(data.y) - data['text-position'].y,
+                data
             ).attr("clip-path", "url(#clip)")
             .style("visibility", function(d){
                 return _.contains(ctrl.attr.toggled, ctrl.attr.group(d)) ? 'hidden' : 'visible';
+            }).on('mouseover', function(){
+                d3.select(this).style('opacity', 0.75);
+            }).on('mouseout', function(){
+                d3.select(this).style('opacity', 1);
+            }).on('click', function(d){
+                d.click(d);
             });
         }
         return;
@@ -753,7 +752,8 @@ enableAnnotation = function(id){
             }
 
             d.parent = id;
-            _.each(['id', 'type', 'text', 'click', 'style', 'size', 'group', 'text-size', 'text-position'], function(x){
+            d.click = triggers.click;
+            _.each(['id', 'type', 'text', 'style', 'size', 'group', 'text-size', 'text-position'], function(x){
                 d[x] = triggers[x](d);
             });
             if (ctrl.attr.annotation){
