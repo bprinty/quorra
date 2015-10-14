@@ -547,47 +547,59 @@ annotationConstructor = function(selection, attr, xScale, yScale){
     if (!Array.isArray(attr.annotation)){
         attr.annotation = [attr.annotation]
     }
-    _.map(attr.annotation, function(d){
-        d = _.extend({
-            parent: attr.id,
-            id: quorra.uuid(),
-            type: 'circle',
-            text: '',
-            size: 15,
-            group: null,
-            rotate: 0,
-            'text-size': 13,
-            'text-position': {x: 0, y: 20},
-            'text-rotation': 0,
-            x: 0,
-            y: 0,
-            style: {},
-            click: function(){}
-        }, d);
-        d['text-position'] = _.extend({x: 0, y: 20}, d['text-position']);
-        d3.selectAll('.annotation#' + d.id).remove();
-        shapeAnnotation(
-            selection,
-            xScale(d.x),
-            yScale(d.y),
-            d
-        ).attr("clip-path", "url(#clip)")
-        .style("visibility", function(d){
-            return _.contains(attr.toggled, attr.group(d)) ? 'hidden' : 'visible';
-        });
-        if (d.text != ''){
-            textAnnotation(
+
+    // we have to use a set interval here, because
+    // sometimes the plot isn't rendered before this method is called
+    var ival = setInterval(function(){
+        
+        if (d3.select('#' + selection.node().parentNode.id)[0][0] == null){
+            return;
+        }
+        _.map(attr.annotation, function(d){
+            d = _.extend({
+                parent: attr.id,
+                id: quorra.uuid(),
+                type: 'circle',
+                text: '',
+                size: 15,
+                group: null,
+                rotate: 0,
+                'text-size': 13,
+                'text-position': {x: 0, y: 20},
+                'text-rotation': 0,
+                x: 0,
+                y: 0,
+                style: {},
+                click: function(){}
+            }, d);
+            d['text-position'] = _.extend({x: 0, y: 20}, d['text-position']);
+            d3.selectAll('.annotation#' + d.id).remove();
+            shapeAnnotation(
                 selection,
-                xScale(d.x) + d['text-position'].x,
-                yScale(d.y) - d['text-position'].y,
+                xScale(d.x),
+                yScale(d.y),
                 d
             ).attr("clip-path", "url(#clip)")
             .style("visibility", function(d){
                 return _.contains(attr.toggled, attr.group(d)) ? 'hidden' : 'visible';
             });
-        }
-        return;
-    });
+            if (d.text != ''){
+                textAnnotation(
+                    selection,
+                    xScale(d.x) + d['text-position'].x,
+                    yScale(d.y) - d['text-position'].y,
+                    d
+                ).attr("clip-path", "url(#clip)")
+                .style("visibility", function(d){
+                    return _.contains(attr.toggled, attr.group(d)) ? 'hidden' : 'visible';
+                });
+            }
+            return;
+        });
+
+        clearInterval(ival);
+    }, 100);
+
     return;
 }
 
