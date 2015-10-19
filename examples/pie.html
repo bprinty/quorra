@@ -46,6 +46,7 @@
 // regular pie
 var pie = quorra.pie()
     .radius(200)
+    .opacity(0.75)
     .lmargin({top: 40})
     .lshape("circle")
     .tooltip(false)
@@ -66,6 +67,7 @@ d3.select('#pie .plotarea')
 var hollowpie = quorra.pie()
     .legend(false)
     .radius(200)
+    .opacity(0.75)
     .inner(100)
     .color(['firebrick','forestgreen','steelblue']);
 

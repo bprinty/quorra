@@ -9,10 +9,12 @@ quorra.pie = function(attributes) {
     */
 
     // attributes
-    var attr = attributeConstructor('pie');
+    var attr = attributeConstructor();
     attr.aggregate = function(x){ return(x[0]); }
     attr.radius = "auto";
     attr.inner = "auto";
+    attr.margin = {"top": 0, "bottom": 0, "left": 0, "right": 0};
+    attr.lmargin = {"top": 15, "bottom": 0, "left": 0, "right": 0};
     attr = _.extend(attr, attributes);
 
 
@@ -22,8 +24,12 @@ quorra.pie = function(attributes) {
         if (typeof selection == "string") selection = d3.select(selection);
 
         // if height/width are auto, determine them from selection
-        var w = (attr.width == "auto") ? (parseInt(selection.style("width")) - attr.margin.left - attr.margin.right) : attr.width;
-        var h = (attr.height == "auto") ? (parseInt(selection.style("height")) - attr.margin.top - attr.margin.bottom) : attr.height;
+        var w = (attr.width == "auto") ? parseInt(selection.style("width")) : attr.width;
+        var h = (attr.height == "auto") ? parseInt(selection.style("height")) : attr.height;
+        w = w - attr.margin.left - attr.margin.right;
+        h = h - attr.margin.top - attr.margin.bottom;
+        
+
         var r = (attr.radius == "auto") ? (Math.min(w, h) / 2) : attr.radius;
         var ir = (attr.inner == "auto") ? 0 : attr.inner;
 
@@ -41,6 +47,8 @@ quorra.pie = function(attributes) {
         }
 
         // initialize canvas
+        // THIS NEEDS TO BE REFACTORED TO START USING
+        // THE initializeCanvas function
         var svg;
         if (selection.select("svg")[0][0] == null){
             svg = selection.append("svg");
@@ -48,66 +56,88 @@ quorra.pie = function(attributes) {
             svg = selection.select("svg");
         }
         svg = svg.attr("class", "quorra-pie")
-            .attr("id", quorra.uuid())
+            .attr("id", attr.id)
             .attr("width", w + attr.margin.left + attr.margin.right)
             .attr("height", h + attr.margin.top + attr.margin.bottom)
             .append("g")
-            .attr("transform", "translate(" + (w + attr.margin.left + attr.margin.right) / 2 + "," + (h + attr.margin.top + attr.margin.bottom) / 2 + ")");
-
-        var arc = d3.svg.arc()
-            .outerRadius(r)
-            .innerRadius(ir);
-
-        var pie = d3.layout.pie()
-            .sort(null)
-            .value(function(d){ return d.x; });
+            .attr("transform", "translate(" + (attr.margin.left + w / 2) + "," + (attr.margin.top + h /2) + ")");
 
         // coloring
         var color = parameterizeColorPallete(newdata, attr);
 
-        // construct legend
-        var legend = legendConstructor(svg, attr, w, h, color);
+        // bind attributes to controller
+        quorra.controller[attr.id] = {
+            x: attr.margin.left,
+            y: attr.margin.top,
+            left: attr.margin.left,
+            top: attr.margin.top,
+            width: w,
+            height: h,
+            xstack: [],
+            ystack: [],
+            xdrag: null,
+            ydrag: null,
+            svg: selection.select('svg'),
+            attr: attr,
+            annotate: false,
+            zoom: true,
+            pan: false,
+            color: color
+        }
 
-        // plot
-        var g = svg.selectAll(".arc")
-            .data(pie(newdata))
-            .enter().append("g")
-            .attr("class", function(d){
-                return "arc g_" + d.data.group;
-            })
-            .style("visibility", function(d){
-                return _.contains(attr.toggled, attr.group(d.data)) ? 'hidden' : 'visible';
-            });
+        quorra.controller[attr.id].render = function(xrange, yrange){
 
-        g.append("path")
-            .attr("d", arc)
-            .style("fill", function(d, i) { return color(attr.group(d.data, i)); })
-            .style("opacity", attr.opacity)
-            .on("mouseover", function(d, i){
-                d3.select(this).style("opacity", 0.25);
-                if (attr.tooltip == false) { return 0; }
-                attr.tooltip.html(attr.label(d.data, i))
-                    .style("opacity", 1)
-                    .style("left", (d3.event.pageX + 5) + "px")
-                    .style("top", (d3.event.pageY - 20) + "px");
-            }).on("mousemove", function(d){
-                if (attr.tooltip == false) { return 0; }
-                attr.tooltip
-                    .style("left", (d3.event.pageX + 5) + "px")
-                    .style("top", (d3.event.pageY - 20) + "px");
-            }).on("mouseout", function(d){
-                d3.select(this).style("opacity", attr.opacity);
-                if (attr.tooltip == false) { return 0; }
-                attr.tooltip.style("opacity", 0);
-            }).on("click", attr.labelclick);
+            var arc = d3.svg.arc()
+                .outerRadius(r)
+                .innerRadius(ir);
 
-        // expose editable attributes (user control)
-        go.svg = svg;
-        go.legend = legend;
-        go.arc = g;
-        go.innerWidth = w;
-        go.innerHeight = h;
+            var pie = d3.layout.pie()
+                .sort(null)
+                .value(function(d){ return d.x; });
+
+            // plot
+            var g = svg.selectAll(".arc")
+                .data(pie(newdata))
+                .enter().append("g")
+                .attr("class", function(d){
+                    return "arc g_" + d.data.group;
+                })
+                .style("visibility", function(d){
+                    return _.contains(attr.toggled, attr.group(d.data)) ? 'hidden' : 'visible';
+                });
+
+            g.append("path")
+                .attr("d", arc)
+                .style("fill", function(d, i) { return color(attr.group(d.data, i)); })
+                .style("opacity", attr.opacity)
+                .on("mouseover", function(d, i){
+                    d3.select(this).style("opacity", 0.25);
+                    if (attr.tooltip == false) { return 0; }
+                    attr.tooltip.html(attr.label(d.data, i))
+                        .style("opacity", 1)
+                        .style("left", (d3.event.pageX + 5) + "px")
+                        .style("top", (d3.event.pageY - 20) + "px");
+                }).on("mousemove", function(d){
+                    if (attr.tooltip == false) { return 0; }
+                    attr.tooltip
+                        .style("left", (d3.event.pageX + 5) + "px")
+                        .style("top", (d3.event.pageY - 20) + "px");
+                }).on("mouseout", function(d){
+                    d3.select(this).style("opacity", attr.opacity);
+                    if (attr.tooltip == false) { return 0; }
+                    attr.tooltip.style("opacity", 0);
+                }).on("click", attr.labelclick);
+        }
+
+        // render
+        quorra.controller[attr.id].render(attr.xrange, attr.yrange);
+
+        // enable components
+        if (attr.legend){
+            enableLegend(attr.id);
+        }
     }
+
 
     // bind attributes to constructor
     bindConstructorAttributes(go, attr);

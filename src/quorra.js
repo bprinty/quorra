@@ -93,6 +93,7 @@ attributeConstructor = function(id){
     return {
         // sizing
         id: (typeof id !== 'undefined') ?  id : quorra.uuid(),
+        plotname: "quorra_plot",
         width: "auto",
         height: "auto",
         margin: {"top": 20, "bottom": 40, "left": 40, "right": 20},
@@ -112,6 +113,7 @@ attributeConstructor = function(id){
         labelclick: function(d, i){},
         zoomable: false,
         annotatable: false,
+        exportable: false,
 
         // plot styling
         grid: false,
@@ -127,7 +129,7 @@ attributeConstructor = function(id){
         xposition: "outside",
         labelposition: "middle",
         labelpadding: {x: 0, y: 0},
-        opacity: 0.75,
+        opacity: 1,
         
         // legend
         legend: true,
@@ -447,6 +449,7 @@ annotatePlot = function(id){
     // operations, so we encapsulate it in a function and call it before
     // the timeout
     _.map(ctrl.attr.annotation, function(d){
+        d.id = quorra.uuid();
         var data = _.extend({
             parent: id,
             exists: false,
@@ -462,6 +465,7 @@ annotatePlot = function(id){
             x: 0,
             y: 0,
             style: {},
+            meta: {},
             click: function(){}
         }, d);
         data['text-position'] = _.extend({x: 0, y: 20}, data['text-position']);
@@ -543,7 +547,7 @@ enableLegend = function(id){
                 .attr("ry", 5)
                 .style("fill", ctrl.color)
                 .style("fill-opacity", function(d){
-                    return _.contains(ctrl.attr.toggled, d) ? 0 : 1;
+                    return _.contains(ctrl.attr.toggled, d) ? 0 : ctrl.attr.opacity;
                 });        
         }else if (ctrl.attr.lshape === "circle"){
             selector = leg.append("circle")
@@ -553,7 +557,7 @@ enableLegend = function(id){
                 .attr("r", 9)
                 .style("fill", ctrl.color)
                 .style("fill-opacity", function(d){
-                    return _.contains(ctrl.attr.toggled, d) ? 0 : 1;
+                    return _.contains(ctrl.attr.toggled, d) ? 0 : ctrl.attr.opacity;
                 });
         }
 
@@ -718,17 +722,14 @@ enableAnnotation = function(id){
         x: function(d){ return d.x; },
         y: function(d){ return d.y; },
         style: function(d){ return {}; },
-        click: function(d){}
+        meta: function(d){ return {}; },
+        click: function(d){},
+        add: function(d){}
     }, quorra.controller[id].attr.annotatable);
+
     
     var ctrl = quorra.controller[id];
-    var l = ctrl.xstack.length;
-    var xscale = ctrl.xstack[l-1];
-    var yscale = ctrl.ystack[l-1]
-    var xmap = d3.scale.linear().domain(xscale.range()).range(xscale.domain());
-    var ymap = d3.scale.linear().domain(yscale.range()).range(yscale.domain());
-    
-    quorra.controller[id].svg.on('click', function(){
+    ctrl.svg.on('click', function(){
         if ((quorra.keys.Shift && quorra.keys.A) || ctrl.annotate){
             var coordinates = d3.mouse(ctrl.svg.node());
             coordinates[0] = coordinates[0];
@@ -740,6 +741,12 @@ enableAnnotation = function(id){
                 coordinates[1] < ctrl.top){
                 return;
             }
+
+            var l = ctrl.xstack.length;
+            var xscale = ctrl.xstack[l-1];
+            var yscale = ctrl.ystack[l-1];
+            var xmap = d3.scale.linear().domain(xscale.range()).range(xscale.domain());
+            var ymap = d3.scale.linear().domain(yscale.range()).range(yscale.domain());
             var d = {
                 x: xmap(coordinates[0] - ctrl.left),
                 y: ymap(coordinates[1] - ctrl.top),
@@ -753,8 +760,8 @@ enableAnnotation = function(id){
 
             d.parent = id;
             d.click = triggers.click;
-            _.each(['id', 'type', 'text', 'style', 'size', 'group', 'text-size', 'text-position'], function(x){
-                d[x] = triggers[x](d);
+            _.each(['id', 'type', 'text', 'style', 'meta', 'size', 'group', 'text-size', 'text-position'], function(x){
+                d[x] = (typeof triggers[x] === "function") ? triggers[x](d) : triggers[x];
             });
             if (ctrl.attr.annotation){
                 ctrl.attr.annotation.push(d);
@@ -766,6 +773,7 @@ enableAnnotation = function(id){
                 ctrl.xstack[l-1].domain(),
                 ctrl.ystack[l-1].domain()
             );
+            triggers.add(d);
         }
     });
 }
@@ -780,6 +788,9 @@ enableGlyphs = function(id){
     }
     if (ctrl.attr.zoomable){
         gdata.push('zoom', 'pan', 'refresh');
+    }
+    if (ctrl.attr.exportable){
+        gdata.push('export');
     }
     
     // we have to use a set interval here, because
@@ -798,10 +809,19 @@ enableGlyphs = function(id){
                     return (ctrl[d]) ? 0.5 : 1;
                 }).on('mouseover', function(d){
                     d3.select(this).style('opacity', 0.5);
+                    ctrl.attr.tooltip.html(d)
+                            .style("opacity", 1)
+                            .style("left", (d3.event.pageX + 10) + "px")
+                            .style("top", (d3.event.pageY - 10) + "px");
+                }).on("mousemove", function(d){
+                    ctrl.attr.tooltip
+                        .style("left", (d3.event.pageX + 10) + "px")
+                        .style("top", (d3.event.pageY - 10) + "px");
                 }).on('mouseout', function(d){
                     if (!ctrl[d]){
                         d3.select(this).style('opacity', 1);
                     }
+                    ctrl.attr.tooltip.style("opacity", 0);
                 }).on('click', function(d){
                     switch(d){
                         case 'pan':
@@ -814,6 +834,7 @@ enableGlyphs = function(id){
                                 ctrl.pan = true;
                             }
                             break;
+
                         case 'zoom':
                             if (ctrl.pan){
                                 ctrl.svg.selectAll('.glyphbox#pan').style('opacity', 1);
@@ -824,14 +845,51 @@ enableGlyphs = function(id){
                                 ctrl.zoom = true;
                             }
                             break;
+
                         case 'refresh':
                             ctrl.xstack = [ctrl.xstack[0]]
                             ctrl.ystack = [ctrl.ystack[0]]
                             ctrl.render(ctrl.xstack[0].domain(), ctrl.ystack[0].domain());
                             break;
+
                         case 'annotate':
                             ctrl.annotate = !ctrl.annotate;
                             d3.select(this).style('opacity', (ctrl.annotate) ? 0.5 : 1);
+                            break;
+
+                        case 'export':
+                            // get svg and change attributes -- for some reason, it won't
+                            // render well if xmlns is not set
+                            var svg = ctrl.svg.attr({
+                                'xmlns': 'http://www.w3.org/2000/svg',
+                                'xmlns:xmlns:xlink': 'http://www.w3.org/1999/xlink',
+                                version: '1.1'
+                            }).node();
+                            var svgSize = svg.getBoundingClientRect();
+                            var svgData = new XMLSerializer().serializeToString(svg);
+
+                            // set up html5 canvas for image
+                            var canvas = document.createElement("canvas");
+                            canvas.width = svgSize.width;
+                            canvas.height = svgSize.height;
+                            var ctx = canvas.getContext("2d");
+
+                            // encode image in src tag
+                            var img = document.createElement("img");
+                            img.setAttribute("src", "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData))));
+
+                            // draw with canvas and export
+                            img.onload = function() {
+                                ctx.drawImage(img, 0, 0);
+                                var data = canvas.toDataURL("image/png");
+                                var a = document.createElement("a");
+                                a.download = ctrl.attr.plotname + ".png";
+                                a.href = data;
+                                document.body.appendChild(a);
+                                a.click();
+                                a.remove();
+                                canvas.remove();
+                            };
                             break;
                     }
                 });
@@ -858,28 +916,31 @@ enableGlyphs = function(id){
             .attr("class", "glyph")
             .attr("x", function(d){
                 var offset = (ctrl.attr.gshape === "square") ? 15 : 18;
+                offset = ctrl.width - offset - ctrl.attr.gmargin.right + ctrl.attr.gmargin.left;
                 switch(d){
-                    case 'pan': offset = offset - 1; break;
-                    case 'zoom': offset = offset; break;
-                    case 'refresh': offset = offset - 1; break;
-                    case 'annotate': offset = offset - 3; break;
+                    case 'pan': return offset + 1;
+                    case 'zoom': return offset;
+                    case 'refresh': return offset;
+                    case 'annotate': return offset + 3;
+                    case 'export': return offset + 1;
                 }
-                return ctrl.width - offset - ctrl.attr.gmargin.right + ctrl.attr.gmargin.left;
+                return 
             }).attr("y", function(d){
                 var offset = (ctrl.attr.gshape === "square") ? 17 : 13;
                 switch(d){
-                    case 'pan': offset = offset - 2; break;
-                    case 'zoom': break;
-                    case 'refresh': break;
-                    case 'annotate': break;
+                    case 'pan': return offset - 2;
+                    case 'zoom': return offset;
+                    case 'refresh': return offset;
+                    case 'annotate': return offset;
+                    case 'export': return offset;
                 }
-                return offset;
             }).text(function(d){
                 switch(d){
-                    case 'pan': return '↔'; break;
-                    case 'zoom': return '🔍'; break;
-                    case 'refresh': return '🔃'; break;
-                    case 'annotate': return 'A'; break;
+                    case 'pan': return '↔';
+                    case 'zoom': return '🔍';
+                    case 'refresh': return '🔃';
+                    case 'annotate': return 'A';
+                    case 'export': return '⇩';
                 }
             });
 
