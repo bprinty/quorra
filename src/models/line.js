@@ -11,6 +11,7 @@ quorra.line = function(attributes) {
     // attributes
     var attr = attributeConstructor();
     attr.points = 0;
+    attr.size = 3;
     attr.layout = "line";
     attr.interpolate = "linear";
     attr = _.extend(attr, attributes);
@@ -45,6 +46,8 @@ quorra.line = function(attributes) {
             ystack: [],
             xdrag: null,
             ydrag: null,
+            scale: 1,
+            time: Date.now(),
             svg: selection.select('svg'),
             attr: attr,
             annotate: false,
@@ -58,6 +61,9 @@ quorra.line = function(attributes) {
 
             // clean previous rendering
             svg.selectAll("*").remove();
+            if (attr.tooltip){
+                attr.tooltip.style("opacity", 0);
+            }
 
             // configure axes
             attr.xrange = xrange;
@@ -111,6 +117,7 @@ quorra.line = function(attributes) {
                         }
                     })
                     .style("stroke", color(ugrps[grp]))
+                    .style("stroke-width", attr.size)
                     .style("opacity", attr.opacity)
                     .style("visibility", function(d){
                         return _.contains(attr.toggled, attr.group(d[0])) ? 'hidden' : 'visible';
@@ -118,17 +125,23 @@ quorra.line = function(attributes) {
                     .attr("clip-path", "url(#clip)")
                     .on("mouseover", function(d, i){
                         d3.select(this).style("opacity", 0.25);
-                        attr.tooltip.html(d[0].group)
-                            .style("opacity", 1)
-                            .style("left", (d3.event.pageX + 5) + "px")
-                            .style("top", (d3.event.pageY - 20) + "px");
+                        if (attr.tooltip){
+                            attr.tooltip.html(d[0].group)
+                                .style("opacity", 1)
+                                .style("left", (d3.event.pageX + 5) + "px")
+                                .style("top", (d3.event.pageY - 20) + "px");
+                        }
                     }).on("mousemove", function(d){
-                        attr.tooltip
-                            .style("left", (d3.event.pageX + 5) + "px")
-                            .style("top", (d3.event.pageY - 20) + "px");
+                        if (attr.tooltip){
+                            attr.tooltip
+                                .style("left", (d3.event.pageX + 5) + "px")
+                                .style("top", (d3.event.pageY - 20) + "px");
+                        }
                     }).on("mouseout", function(d){
                         d3.select(this).style("opacity", attr.opacity);
-                        attr.tooltip.style("opacity", 0);
+                        if (attr.tooltip){
+                            attr.tooltip.style("opacity", 0);
+                        }
                     }).on("click", attr.groupclick);
 
             }
@@ -152,17 +165,23 @@ quorra.line = function(attributes) {
                     .attr("clip-path", "url(#clip)")
                     .on("mouseover", function(d, i){
                         d3.select(this).style("opacity", 0.25);
-                        attr.tooltip.html(attr.label(d, i))
-                            .style("opacity", 1)
-                            .style("left", (d3.event.pageX + 5) + "px")
-                            .style("top", (d3.event.pageY - 20) + "px");
+                        if (attr.tooltip){
+                            attr.tooltip.html(attr.label(d, i))
+                                .style("opacity", 1)
+                                .style("left", (d3.event.pageX + 5) + "px")
+                                .style("top", (d3.event.pageY - 20) + "px");
+                        }
                     }).on("mousemove", function(d){
-                        attr.tooltip
-                            .style("left", (d3.event.pageX + 5) + "px")
-                            .style("top", (d3.event.pageY - 20) + "px");
+                        if (attr.tooltip){
+                            attr.tooltip
+                                .style("left", (d3.event.pageX + 5) + "px")
+                                .style("top", (d3.event.pageY - 20) + "px");
+                        }
                     }).on("mouseout", function(d){
                         d3.select(this).style("opacity", attr.opacity);
-                        attr.tooltip.style("opacity", 0);
+                        if (attr.tooltip){
+                            attr.tooltip.style("opacity", 0);
+                        }
                     }).on("click", attr.labelclick);
             }
 
@@ -180,12 +199,12 @@ quorra.line = function(attributes) {
             enableLegend(attr.id);
         }
 
-        if (attr.zoomable){
-            enableZoom(attr.id);
-        }
-
         if (attr.annotatable){
             enableAnnotation(attr.id);
+        }
+
+        if (attr.zoomable){
+            enableZoom(attr.id);
         }
 
         if (attr.glyphs){

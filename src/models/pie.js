@@ -79,7 +79,6 @@ quorra.pie = function(attributes) {
             ydrag: null,
             svg: selection.select('svg'),
             attr: attr,
-            annotate: false,
             zoom: true,
             pan: false,
             color: color
@@ -112,20 +111,23 @@ quorra.pie = function(attributes) {
                 .style("opacity", attr.opacity)
                 .on("mouseover", function(d, i){
                     d3.select(this).style("opacity", 0.25);
-                    if (attr.tooltip == false) { return 0; }
-                    attr.tooltip.html(attr.label(d.data, i))
-                        .style("opacity", 1)
-                        .style("left", (d3.event.pageX + 5) + "px")
-                        .style("top", (d3.event.pageY - 20) + "px");
+                    if (attr.tooltip){
+                        attr.tooltip.html(attr.label(d.data, i))
+                            .style("opacity", 1)
+                            .style("left", (d3.event.pageX + 5) + "px")
+                            .style("top", (d3.event.pageY - 20) + "px");
+                    }
                 }).on("mousemove", function(d){
-                    if (attr.tooltip == false) { return 0; }
-                    attr.tooltip
-                        .style("left", (d3.event.pageX + 5) + "px")
-                        .style("top", (d3.event.pageY - 20) + "px");
+                    if (attr.tooltip){
+                        attr.tooltip
+                            .style("left", (d3.event.pageX + 5) + "px")
+                            .style("top", (d3.event.pageY - 20) + "px");
+                    }
                 }).on("mouseout", function(d){
                     d3.select(this).style("opacity", attr.opacity);
-                    if (attr.tooltip == false) { return 0; }
-                    attr.tooltip.style("opacity", 0);
+                    if (attr.tooltip){
+                        attr.tooltip.style("opacity", 0);
+                    }
                 }).on("click", attr.labelclick);
         }
 

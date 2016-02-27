@@ -46,7 +46,7 @@
         </div>
 
         <div id="line-editor" class="editor"> 
-// regular scatter
+// area plot
 var line = quorra.line()
     .width(600)
     .height(400)
@@ -57,6 +57,7 @@ var line = quorra.line()
     .margin({right: 100})
     .lposition("outside")
     .lmargin({left: 40})
+    .lorder(['Good', 'Evil'])
     .zoomable(true)
     .exportable(true)
     .xticks(10)
@@ -71,23 +72,14 @@ var line = quorra.line()
         group: 'Evil',
         x: 10,
         y: 15,
-        rotate: 90,
         click: function(d){
             console.log('Old Plot Annotation!');
+        },
+    }).annotatable({
+        type: 'triangle',
+        add: function(){
+            console.log('in!');
         }
-    })
-    .annotatable({
-        type: function(d){ return 'triangle'; },
-        x: function(d){
-            return d.x;
-        },
-        y: function(d){
-            return d.y;
-        },
-        click: function(d){
-            console.log('New Plot Annotation!');
-        },
-        group: function(d){ return 'Evil'; }
     });
 
 d3.select('#line .plotarea')

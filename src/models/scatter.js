@@ -48,11 +48,12 @@ quorra.scatter = function(attributes) {
             ystack: [],
             xdrag: null,
             ydrag: null,
+            scale: 1,
+            time: Date.now(),
             svg: selection.select('svg'),
             attr: attr,
-            annotate: false,
-            zoom: true,
-            pan: false,
+            zoom: false,
+            pan: true,
             color: color
         }
 
@@ -98,17 +99,23 @@ quorra.scatter = function(attributes) {
                 .attr("clip-path", "url(#clip)")
                 .on("mouseover", function(d, i){
                     d3.select(this).style("opacity", 0.25);
-                    attr.tooltip.html(attr.label(d, i))
-                        .style("opacity", 1)
-                        .style("left", (d3.event.pageX + 5) + "px")
-                        .style("top", (d3.event.pageY - 20) + "px");
+                    if (attr.tooltip){
+                        attr.tooltip.html(attr.label(d, i))
+                            .style("opacity", 1)
+                            .style("left", (d3.event.pageX + 5) + "px")
+                            .style("top", (d3.event.pageY - 20) + "px");
+                    }
                 }).on("mousemove", function(d){
-                    attr.tooltip
-                        .style("left", (d3.event.pageX + 5) + "px")
-                        .style("top", (d3.event.pageY - 20) + "px");
+                    if (attr.tooltip){
+                        attr.tooltip
+                            .style("left", (d3.event.pageX + 5) + "px")
+                            .style("top", (d3.event.pageY - 20) + "px");
+                    }
                 }).on("mouseout", function(d){
                     d3.select(this).style("opacity", attr.opacity);
-                    attr.tooltip.style("opacity", 0);
+                    if (attr.tooltip){
+                        attr.tooltip.style("opacity", 0);
+                    }
                 });
 
             // generating density ticks (if specified)
@@ -171,10 +178,6 @@ quorra.scatter = function(attributes) {
 
         if (attr.zoomable){
             enableZoom(attr.id);
-        }
-
-        if (attr.annotatable){
-            enableAnnotation(attr.id);
         }
 
         if (attr.glyphs){

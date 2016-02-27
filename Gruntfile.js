@@ -30,7 +30,9 @@ module.exports = function(grunt) {
                 },
                 src: [
                     'src/quorra.js',
+                    'src/events.js',
                     'src/utils.js',
+                    'src/stats.js',
                     'src/models/*.js'
                 ],
                 dest: 'dist/quorra.js'

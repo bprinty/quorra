@@ -86,6 +86,26 @@ d3.select('#stacked .plotarea')
         </div>
         <p class="pre-editor">Hit Cmd+Enter for changes to take effect.</p>
 
+
+        <div id="text" class="container">
+            <div class="plotarea"></div>
+        </div>
+
+        <div id="text-editor" class="editor">
+// bar with text labels
+var text = quorra.bar()
+    .width(600)
+    .height(400)
+    .yrange([0, 3])
+    .opacity(0.75)
+    .xlabel("X Axis Label")
+    .ylabel("Y Axis Label");
+
+d3.select('#text .plotarea')
+    .datum(textdata).call(stacked);
+        </div>
+        <p class="pre-editor">Hit Cmd+Enter for changes to take effect.</p>
+
     <script src="../lib/d3/d3.min.js"></script>
     <script src="../lib/underscore/underscore-min.js"></script>
     <script src="../dist/quorra.js"></script>
@@ -125,11 +145,25 @@ d3.select('#stacked .plotarea')
                 };
             }));
         }
+
+        // more data
+        var entries = 3;
+        x = ['Good', 'Evil', 'Okay'];
+        y = [1, 2, 1];
+        textdata = [];
+        for(var i=0; i<x.length; i++){
+            textdata.push({
+                x: x[i],
+                y: y[i]
+            });
+        }
+
     </script>
 
     <script>
         eval(parameterizeEditor('grouped-editor', '#grouped .plotarea svg'));
         eval(parameterizeEditor('stacked-editor', '#stacked .plotarea svg'));
+        eval(parameterizeEditor('text-editor', '#text .plotarea svg'));
     </script>
 
     </script>
