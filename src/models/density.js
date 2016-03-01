@@ -1,4 +1,4 @@
-quorra.density = function() {
+function Density(attributes) {
     /**
     quorra.density()
 
@@ -7,29 +7,22 @@ quorra.density = function() {
 
     @author <bprinty@gmail.com>
     */
+    var _this = this;
 
-    // attributes
-    var tooltip = d3.select("body").append("div")
-        .attr("id", "density-tooltip")
-        .attr("class", "tooltip")
-        .style("position", "absolute")
-        .style("opacity", 0);
+    // parent class initialization
+    Line.call(this, _.extend({
+        resolution: 10
+    }, attributes));
 
-    // generator
-    var go = quorra.line({
-            resolution: 10
-        })
-        .id('density')
-        .tooltip(tooltip)
-        .transform(function(data){
-        
+    // data transformation
+    _this.attr.transform = function(data) {
+
         // generate kde scaling function
         var format = d3.format(".04f");
-        var xScale = d3.scale.linear().range([0, go.innerWidth]);
-        var kde = kdeEstimator(epanechnikovKernel(9), xScale.ticks(go.resolution()));
+        var kde = kdeEstimator(epanechnikovKernel(9), d3.scale.linear().ticks(_this.attr.resolution));
 
         // rearranging data
-        var grps = _.unique(_.map(data, function(d){ return d.group; }));
+        var grps = _.uniquesort(data, _this.attr.group);
         var newdata = [];
         for (var grp in grps){
             var subdat = _.filter(data, function(d){ return d.group == grps[grp]; });
@@ -46,7 +39,11 @@ quorra.density = function() {
         }
 
         return newdata;
-    });
+    }
 
-    return go;
-};
+    return this.go;
+}
+
+Density.prototype = Object.create(Line.prototype);
+Density.prototype.constructor = Density;
+quorra.density = Density;

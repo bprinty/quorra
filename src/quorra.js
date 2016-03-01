@@ -14,12 +14,9 @@ function quorra() {
 
     @author <bprinty@gmail.com>
     */
-
 }
 
-
-// manager for all frames and plot metadata
-quorra.controller = {};
+quorra.plots = {};
 
 
 function QuorraPlot(attributes) {
@@ -29,30 +26,42 @@ function QuorraPlot(attributes) {
     this.go = function(selection) {
         
         // configure selection
-        this.selection = selection;
+        _this.selection = selection;
 
-        if (typeof this.selection === 'string') this.selection = d3.select(this.selection);
+        if (typeof _this.selection === 'string') _this.selection = d3.select(_this.selection);
 
-        if (this.selection.select("svg")[0][0] == null){
-            this.svg = this.selection.append("svg");
+        if (_this.selection.select("svg")[0][0] == null){
+            _this.svg = _this.selection.append("svg");
         } else {
-            this.svg = this.selection.select("svg");
+            _this.svg = _this.selection.select("svg");
         }
 
-        // create svg
-        this.svg
-            .attr("id", _this.attr.id)
+        // calculate basic dimensions
+        var width = (_this.attr.width == "auto") ? parseInt(_this.selection.style("width")) : _this.attr.width;
+        var height = (_this.attr.height == "auto") ? parseInt(_this.selection.style("height")) : _this.attr.height;
+        _this.innerwidth = width - _this.attr.margin.left - _this.attr.margin.right;
+        _this.innerheight = height - _this.attr.margin.top - _this.attr.margin.bottom;
+
+        // create svg and relevant plot areas
+        _this.svg = _this.svg.attr("id", _this.attr.id)
             .attr("class", _this.attr.class)
             .attr("width", _this.attr.width)
             .attr("height", _this.attr.height)
-            .on("click", _this.attr.plotclick)
-            .append("g")
+            .on("click", _this.attr.plotclick);
+
+        // segment sections of canvas (makes axis rendering easier)
+        _this.plotarea = _this.svg.append('g')
             .attr("transform", "translate(" + _this.attr.margin.left + "," + _this.attr.margin.top + ")");
+            
+        _this.plotarea.append("clipPath")
+            .attr("id", "clip").append("rect")
+            .attr("width", _this.innerwidth)
+            .attr("height", _this.innerheight);
 
         // configure/transform data -- figure out how to run
         // this whenever the selection-bound data is changed, and
         // not every time
-        _this.data = _this.attr.transform(this.selection.data()[0]);
+        _this.data = _this.attr.transform(_this.selection.data()[0]);
         if (typeof _this.data[0].x === 'string') {
             _this.domain = _.uniquesort(_this.data, _this.attr.x);
         } else {
@@ -85,8 +94,8 @@ function QuorraPlot(attributes) {
         }
 
         // configure color pallette
-        this.pallette = (_this.attr.color === "auto") ? d3.scale.category10() : d3.scale.ordinal().range(_this.attr.color);
-        this.pallette = this.pallette.domain(_.uniquesort(_this.data, _this.attr.group));
+        _this.pallette = (_this.attr.color === "auto") ? d3.scale.category10() : d3.scale.ordinal().range(_this.attr.color);
+        _this.pallette = _this.pallette.domain(_.uniquesort(_this.data, _this.attr.group));
 
         // initialize interaction data
         _this.xstack = [];
@@ -120,21 +129,15 @@ function QuorraPlot(attributes) {
             _this.attr.yrange = yrange;
             // recompute scaling
         }
-        this.axes();
-        this.plot();
+        _this.axes();
+        _this.plot();
         if (_this.attr.annotation) {
-            this.annotate();
+            _this.annotate();
         }
     };
     
     // rendering methods
     this.axes = function() {
-        
-        // calculate plot dimensions
-        var width = (_this.attr.width == "auto") ? parseInt(_this.selection.style("width")) : _this.attr.width;
-        var height = (_this.attr.height == "auto") ? parseInt(_this.selection.style("height")) : _this.attr.height;
-        _this.innerwidth = width - _this.attr.margin.left - _this.attr.margin.right - _this.attr.labelpadding.y;
-        _this.innerheight = height - _this.attr.margin.top - _this.attr.margin.bottom - _this.attr.labelpadding.x;
 
         // parameterize axes scaling
         var domain = _this.attr.xrange === "auto" ? _this.domain : _this.attr.xrange;
@@ -150,17 +153,17 @@ function QuorraPlot(attributes) {
         } else {
             _this.xscale = d3.scale.linear()
                 .domain(domain)
-                .range([0, _this.innerwidth]);
+                .range([0, _this.innerwidth]).nice();
         }
         if (typeof _this.data[0].y === 'string') {
-            _this.xscale = d3.scale.ordinal()
+            _this.yscale = d3.scale.ordinal()
                 .domain(range)
                 .range([0, _this.innerheight])
-                .rangePoints([0, _this.innerheight], 1);
+                .rangePoints([_this.innerheight, 0], 1);
         } else {
-            _this.xscale = d3.scale.linear()
+            _this.yscale = d3.scale.linear()
                 .domain(range)
-                .range([0, _this.innerheight]);
+                .range([ _this.innerheight, 0]).nice();
         }
 
         // tick formatting
@@ -183,12 +186,13 @@ function QuorraPlot(attributes) {
 
         // configure grid (if specified)
         if (_this.attr.grid) {
-            _this.xaxis = _this.xaxis.tickSize(-_this.innerwidth, 0, 0);
-            _this.yaxis = _this.yaxis.tickSize(-_this.innerheight, 0, 0);
+            _this.xaxis = _this.xaxis.tickSize(-_this.innerheight, 0, 0);
+            _this.yaxis = _this.yaxis.tickSize(-_this.innerwidth, 0, 0);
         }
 
         // x axis
-        _this.go.svg.append("g")
+        _this.plotarea
+            .append("g")
             .attr("class", "x axis")
             .attr("transform", "translate(0," + _this.innerheight + ")")
             .call(_this.xaxis)
@@ -214,7 +218,8 @@ function QuorraPlot(attributes) {
                 .text(_this.attr.xlabel);
 
         // y axis
-        _this.go.svg.append("g")
+        _this.plotarea
+            .append("g")
             .attr("class", "y axis")
             .call(_this.yaxis)
             .append("text")
@@ -224,14 +229,14 @@ function QuorraPlot(attributes) {
                     if (_this.attr.labelposition == "end"){
                         return 0;
                     }else if (_this.attr.labelposition == "middle"){
-                        return -innerHeight / 2;
+                        return -_this.innerheight / 2;
                     }else if (_this.attr.labelposition == "beginning"){
-                        return -innerHeight;
+                        return -_this.innerheight;
                     }
                 }).attr("y", function(){
                     if (_this.attr.yposition == "inside"){
                         return 6 + _this.attr.labelpadding.y;
-                    }else if(attr.yposition === "outside"){
+                    }else if(_this.attr.yposition === "outside"){
                         return -40 + _this.attr.labelpadding.y;
                     }
                 })
@@ -239,20 +244,13 @@ function QuorraPlot(attributes) {
                 .style("text-anchor", _this.attr.labelposition)
                 .text(_this.attr.ylabel);
 
-        // clip plot area
-        _this.go.svg.append("clipPath")
-            .attr("id", "clip")
-            .append("rect")
-            .attr("width", _this.innerwidth)
-            .attr("height", _this.innerheight);
-
         // configure stack for interaction
         _this.xstack.push(_this.xscale);
         _this.ystack.push(_this.yscale);
     };
 
     this.plot = function() {
-
+        console.log('To be implemented by models ...');
     };
 
     this.annotate = function() {
@@ -365,7 +363,18 @@ function QuorraPlot(attributes) {
         };
     });
 
+    // add instantiated plot to plot list
+    quorra.plots[this.attr.id] = this;
+
     return this.go;
+}
+
+function PlotAnnotation(type) {
+    if (typeof tyep === 'undefined') type = 'circle';
+
+    if (type == 'text') {
+
+    }
 }
 
 QuorraPlot.prototype.textAnnotation = function(svg, x, y, data){
@@ -455,104 +464,7 @@ QuorraPlot.prototype.shapeAnnotation = function(svg, x, y, data) {
 }
 
 
-QuorraPlot.prototype.parameterizeAxes = function(selection, data, attr, innerWidth, innerHeight){
-    /**
-    QuorraPlot.prototype.parameterizeAxes()
 
-    Parameterize axes for plot based on data and attributes.
-    */
-
-    // x scaling
-    var xScale, xGroups;
-    if (typeof data[0].x === 'string') {
-        xGroups = _.unique(_.map(selection.data()[0], attr.x));
-        xScale = d3.scale.ordinal().range([0, innerWidth]);
-        xScale.domain(xGroups).rangePoints(xScale.range(), 1);
-    }else{
-        xScale = d3.scale.linear().range([0, innerWidth]);
-        // manually set the domain here because it needs to 
-        // be aware of the data object (histogram plots)
-        // and x axis tweaks for histogram objects
-        if (attr.xrange === "auto"){
-            var xmax;
-            if (typeof attr.bins === 'undefined') {
-                xmax = _.max(_.map(data, attr.x));
-            } else {
-                xmax = _.max(xScale.ticks(attr.bins));
-            }
-            xScale.domain([
-                _.min(_.map(data, attr.x)),
-                xmax
-            ]).nice();            
-        }else{
-            xScale.domain(attr.xrange);
-        }
-    }
-
-    // y scaling
-    var yScale, yGroups;
-    if (typeof data[0].y === 'string') {
-        yGroups = _.unique(_.map(data, attr.y));
-        yScale = d3.scale.ordinal().range([innerHeight, 0]);
-        yScale.domain(yGroups).rangePoints(yScale.range(), 1);
-    }else{
-        yScale = d3.scale.linear().range([innerHeight, 0]);
-        // manually set the domain here because it needs to 
-        // be aware of the data object (histogram plots)
-        if (attr.yrange === "auto"){
-            if (attr.layout === 'stacked'){
-                // for some reason, underscore's map function won't 
-                // work for accessing the d.y0 property -- so we have
-                // to do it another way
-                var ux = _.unique(_.map(data, attr.x));
-                var marr = _.map(ux, function(d){
-                    var nd =_.filter(
-                            data,
-                            function(g){ return attr.x(g) == d; }
-                        );
-                    var tmap = _.map(nd, function(g){ return attr.y(g); });
-                    return _.reduce(tmap, function(a, b){ return a + b; }, 0);
-                });
-                var max = _.max(marr);
-            }else{
-                var max = _.max(_.map(data, attr.y));
-            }
-            yScale.domain([
-                _.min(_.map(data, attr.y)),
-                max
-            ]).nice();
-        }else{
-            yScale.domain(attr.yrange);
-        }
-    }
-
-    // tick formatting
-    var xAxis = d3.svg.axis().scale(xScale).orient(attr.xorient);
-    if (attr.xticks != "auto") {
-        xAxis = xAxis.ticks(attr.xticks);
-    }
-    var yAxis = d3.svg.axis().scale(yScale).orient(attr.yorient);
-    if (attr.yticks != "auto") {
-        yAxis = yAxis.ticks(attr.yticks);
-    }
-
-    // number formatting
-    if (attr.xformat != "auto"){
-        xAxis = xAxis.tickFormat(attr.xformat);
-    }
-    if (attr.yformat != "auto"){
-        yAxis = yAxis.tickFormat(attr.yformat);
-    }
-
-    return {
-        xGroups: xGroups,
-        yGroups: yGroups,
-        xScale: xScale,
-        yScale: yScale,
-        xAxis: xAxis,
-        yAxis: yAxis
-    }
-}
 
 
 
@@ -1317,6 +1229,3 @@ QuorraPlot.prototype.enableGlyphs = function(id){
     }
 
 }
-
-
-quorra.plot = QuorraPlot;
