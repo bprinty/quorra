@@ -3,6 +3,7 @@
 Common utilities used across plot generators.
 
 @author <bprinty@gmail.com>
+
 */
 
 
@@ -62,6 +63,13 @@ quorra.uuid = function() {
 // underscore additions
 _.center = function(x, bounds){
     return _.min([_.max([x, bounds[0]]), bounds[1]]);
+}
+
+_.uniquesort = function(x, func) {
+    if (typeof func === 'undefined') {
+        func = function(x){ return x; };
+    }
+    return _.unique(_.map(x, func)).sort();
 }
 
 

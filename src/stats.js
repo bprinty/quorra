@@ -4,6 +4,7 @@ Statistical functions used throughout quorra, including methods
 for kernel density estimation.
 
 @author <bprinty@gmail.com>
+
 */
 
 

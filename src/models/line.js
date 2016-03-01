@@ -17,7 +17,7 @@ quorra.line = function(attributes) {
     attr = _.extend(attr, attributes);
 
     // generator
-    function go(selection){
+    function go(selection) {
         // format selection
         if (typeof selection == "string") selection = d3.select(selection);
 

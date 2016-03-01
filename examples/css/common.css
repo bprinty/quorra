@@ -6,7 +6,7 @@ body {
 }
 
 h1 {
-    font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue";
+    font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
     font-weight: 100;
 }
 
@@ -31,7 +31,7 @@ h1 {
 }
 
 p.pre-editor {
-    font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue";
+    font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
     width: 600px;
     font-weight: 100;
     font-size: 12px;
