@@ -11,6 +11,7 @@ function Scatter(attributes) {
 
     // plot-specific attributes
     QuorraPlot.call(this, _.extend({
+        class: "quorra-scatter",
         lm: false,
         xdensity: false,
         ydensity: false,
@@ -18,6 +19,7 @@ function Scatter(attributes) {
         yjitter: 0,
         size: 5,
     }, attributes));
+    this.type = "scatter";
 
     // overwrite render method
     this.plot = function() {

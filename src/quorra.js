@@ -26,31 +26,32 @@ function QuorraPlot(attributes) {
     this.go = function(selection) {
         
         // configure selection
-        _this.selection = selection;
+        this.object = _this;
+        _this.attr.container = (_this.attr.container === null) ? selection : _this.attr.selection;
 
-        if (typeof _this.selection === 'string') _this.selection = d3.select(_this.selection);
+        if (typeof _this.attr.container === 'string') _this.attr.container = d3.select(_this.attr.container);
 
-        if (_this.selection.select("svg")[0][0] == null){
-            _this.svg = _this.selection.append("svg");
+        if (_this.attr.container.select("svg")[0][0] == null){
+            _this.attr.svg = (_this.attr.svg === null) ? _this.attr.container.append("svg") : _this.attr.svg;
         } else {
-            _this.svg = _this.selection.select("svg");
+            _this.attr.svg = _this.attr.container.select("svg");
         }
 
         // calculate basic dimensions
-        var width = (_this.attr.width == "auto") ? parseInt(_this.selection.style("width")) : _this.attr.width;
-        var height = (_this.attr.height == "auto") ? parseInt(_this.selection.style("height")) : _this.attr.height;
+        var width = (_this.attr.width == "auto") ? parseInt(_this.attr.container.style("width")) : _this.attr.width;
+        var height = (_this.attr.height == "auto") ? parseInt(_this.attr.container.style("height")) : _this.attr.height;
         _this.innerwidth = width - _this.attr.margin.left - _this.attr.margin.right;
         _this.innerheight = height - _this.attr.margin.top - _this.attr.margin.bottom;
 
         // create svg and relevant plot areas
-        _this.svg = _this.svg.attr("id", _this.attr.id)
+        _this.attr.svg = _this.attr.svg.attr("id", _this.attr.id)
             .attr("class", _this.attr.class)
-            .attr("width", _this.attr.width)
-            .attr("height", _this.attr.height)
+            .attr("width", width)
+            .attr("height", height)
             .on("click", _this.attr.plotclick);
 
         // segment sections of canvas (makes axis rendering easier)
-        _this.plotarea = _this.svg.append('g')
+        _this.plotarea = _this.attr.svg.append('g')
             .attr("transform", "translate(" + _this.attr.margin.left + "," + _this.attr.margin.top + ")");
             
         _this.plotarea.append("clipPath")
@@ -61,7 +62,7 @@ function QuorraPlot(attributes) {
         // configure/transform data -- figure out how to run
         // this whenever the selection-bound data is changed, and
         // not every time
-        _this.data = _this.attr.transform(_this.selection.data()[0]);
+        _this.data = _this.attr.transform(_this.attr.container.data()[0]);
         if (typeof _this.data[0].x === 'string') {
             _this.domain = _.uniquesort(_this.data, _this.attr.x);
         } else {
@@ -131,6 +132,10 @@ function QuorraPlot(attributes) {
         }
         _this.axes();
         _this.plot();
+        _this.xstack.push(_this.xscale);
+        _this.ystack.push(_this.yscale);
+        _this.xdrag = _this.xscale;
+        _this.ydrag = _this.yscale;
         if (_this.attr.annotation) {
             _this.annotate();
         }
@@ -142,7 +147,10 @@ function QuorraPlot(attributes) {
         // parameterize axes scaling
         var domain = _this.attr.xrange === "auto" ? _this.domain : _this.attr.xrange;
         var range = _this.attr.yrange === "auto" ? _this.range : _this.attr.yrange;
-        
+        if (_this.type == 'histogram') {
+            domain[1] = domain[1] + (domain[1] - domain[0])/(_this.attr.bins-1);
+        }
+
         // TODO: allow users to pass in arbitrary scaling function
         //       i.e. d3.scale.log()
         if (typeof _this.data[0].x === 'string') {
@@ -170,6 +178,8 @@ function QuorraPlot(attributes) {
         _this.xaxis = d3.svg.axis().scale(_this.xscale).orient(_this.attr.xorient);
         if (_this.attr.xticks != "auto") {
             _this.xaxis = _this.xaxis.ticks(_this.attr.xticks);
+        } else if (_this.type === 'histogram') {
+            _this.xaxis = _this.xaxis.ticks(_this.attr.bins);
         }
         _this.yaxis = d3.svg.axis().scale(_this.yscale).orient(_this.attr.yorient);
         if (_this.attr.yticks != "auto") {
@@ -243,10 +253,6 @@ function QuorraPlot(attributes) {
                 .attr("dy", ".71em")
                 .style("text-anchor", _this.attr.labelposition)
                 .text(_this.attr.ylabel);
-
-        // configure stack for interaction
-        _this.xstack.push(_this.xscale);
-        _this.ystack.push(_this.yscale);
     };
 
     this.plot = function() {
@@ -254,18 +260,179 @@ function QuorraPlot(attributes) {
     };
 
     this.annotate = function() {
+        _.map(_this.attr.annotation, function(d) {
+
+            // configure attributes
+            var data = _.extend({
+                parent: _this.attr.id,
+                exists: false,
+                id: quorra.uuid(),
+                type: 'text',
+                text: '',
+                hovertext: '',
+                xfixed: false,
+                yfixed: false,
+                size: 15,
+                group: null,
+                rotate: 0,
+                'text-size': 13,
+                'text-position': {x: 0, y: 20},
+                'text-margin': {x: 0, y: 0},
+                'text-rotation': 0,
+                x: 0,
+                y: 0,
+                width: 0,
+                height: 0,
+                style: {
+                    opacity: 1,
+                },
+                meta: {},
+                click: function(){},
+            }, d);
+            data['text-position'] = _.extend({x: 0, y: 20}, data['text-position']);
+            data['text-margin'] = _.extend({x: 0, y: 0}, data['text-margin']);
+            data['style'] = _.extend({opacity: 1}, data['style']);
+
+            if (data.type == 'square') {
+                var annot = squareAnnotation(_this, data);
+                data['text-margin'].y = data['text-margin'].y - (data.size / 2) - 5;
+            } else if (data.type == 'rectangle') {
+                var annot = rectangleAnnotation(_this, data);
+                data['text-margin'].x = data['text-margin'].x + (_this.xscale(data.width) / 2);
+                data['text-margin'].y = data['text-margin'].y - 5;
+            } else if (data.type == 'circle') {
+                var annot = circleAnnotation(_this, data);
+                data['text-margin'].y = data['text-margin'].y - (data.size / 2) - 5;
+            } else if (data.type == 'triangle') {
+                var annot = triangleAnnotation(_this, data);
+                data['text-margin'].x = data['text-margin'].x + (data.size / 2) - data.text.length*2;
+                data['text-margin'].y = data['text-margin'].y - (data.size / 2) - 5;
+            }
+            annot.attr("clip-path", "url(#clip)")
+            .style("visibility", function(d){
+                return _.contains(_this.attr.toggled, _this.attr.group(d)) ? 'hidden' : 'visible';
+            }).on('mouseover', function(d){
+                d3.select(this).style('opacity', 0.75*d.style.opacity);
+                if (_this.attr.tooltip) {
+                    _this.attr.tooltip.html(d.hovertext)
+                        .style("opacity", 1)
+                        .style("left", (d3.event.pageX + 5) + "px")
+                        .style("top", (d3.event.pageY - 20) + "px");
+                }
+            }).on('mousemove', function(){
+                if (_this.attr.tooltip) {
+                    _this.attr.tooltip
+                        .style("left", (d3.event.pageX + 5) + "px")
+                        .style("top", (d3.event.pageY - 20) + "px");
+                }
+            }).on('mouseout', function(d){
+                d3.select(this).style('opacity', d.style.opacity);
+                if (_this.attr.tooltip) {
+                    _this.attr.tooltip.style("opacity", 0);
+                }
+            }).on('click', function(d){
+                d.click(d);
+            });
+            if (data.text !== '') {
+                var annot = textAnnotation(_this, data);
+                annot.attr("clip-path", "url(#clip)")
+                .style("visibility", function(d){
+                    return _.contains(_this.attr.toggled, _this.attr.group(d)) ? 'hidden' : 'visible';
+                }).on('mouseover', function(){
+                    d3.select(this).style('opacity', 0.75);
+                }).on('mouseout', function(){
+                    d3.select(this).style('opacity', 1);
+                }).on('click', function(d){
+                    d.click(d);
+                });
+            }
+
+        });
+    };
+
+    this.drawlegend = function() {
+        var data = _this.pallette.domain();
+        if (_this.attr.lorder.length == data.length) {
+            data = _this.attr.lorder;
+        }
+
+        var leg = _this.attr.svg
+            .append("g")
+            .attr("transform", "translate(" + (_this.attr.width - _this.attr.margin.right) + "," + _this.attr.margin.top + ")")
+            .selectAll(".legend")
+            .data(data)
+            .enter().append("g")
+            .attr("class", "legend")
+            .attr("id", _this.attr.id + "-legend")
+            .attr("transform", function(d, i) { return "translate(0," + (_this.attr.lmargin.top + i * 20) + ")"; });
+
+        if (_this.attr.lshape === "square") {
+            var selector = leg.append("rect")
+                .attr("class", "selector")
+                .attr("x", 20 + _this.attr.lmargin.left)
+                .attr("y", _this.attr.lmargin.top)
+                .attr("width", 18)
+                .attr("height", 18)
+                .attr("rx", 5)
+                .attr("ry", 5)
+                .style("fill", _this.pallette)
+                .style("fill-opacity", function(d) {
+                    return _.contains(_this.attr.toggled, d) ? 0 : _this.attr.opacity;
+                });
+        } else if (_this.attr.lshape === "circle") {
+            var selector = leg.append("circle")
+                .attr("class", "selector")
+                .attr("cx", 20 + _this.attr.lmargin.left)
+                .attr("cy", 8 + _this.attr.lmargin.top)
+                .attr("r", 9)
+                .style("fill", _this.pallette)
+                .style("fill-opacity", function(d) {
+                    return _.contains(_this.attr.toggled, d) ? 0 : _this.attr.opacity;
+                });
+        }
+
+        if (_this.attr.toggle){
+            selector.on("mouseover", function(d, i){
+                d3.select(this).style('opacity', 0.75);
+            }).on("mouseout", function(d, i){
+                d3.select(this).style('opacity', 1);
+            }).on("click", function(d, i){
+                if (d3.select(this).style('fill-opacity') == 0){
+                    d3.select(this).style('fill-opacity', _.contains(_this.attr.toggled, d) ? _this.attr.opacity: 0);
+                    _this.attr.svg.selectAll(".g_" + d).style('visibility', 'visible');
+                    _this.attr.toggled = _.without(_this.attr.toggled, d);
+                }else{
+                    d3.select(this).style('fill-opacity', 0);
+                    _this.attr.svg.selectAll(".g_" + d).style('visibility', 'hidden');
+                    _this.attr.toggled = _.union(_this.attr.toggled, [d]);
+                }
+            });
+        }
+
+        leg.append("text")
+            .attr("x", function(){
+                if (_this.attr.lposition === "inside"){
+                    return 18 + _this.attr.lmargin.left;
+                }else if (_this.attr.lposition === "outside"){
+                    return 40 + _this.attr.lmargin.left;
+                }        
+            })
+            .attr("y", 9)
+            .attr("dy", ".35em")
+            .style("text-anchor", function() {
+                if (_this.attr.lposition === "inside") {
+                    return "end";
+                }else if (_this.attr.lposition === "outside") {
+                    return "beginning";
+                }
+            }).text(function(d) { return d; });
+    };
+
+    this.drawglyphs = function() {
 
     };
 
     this.enablezoom = function() {
-
-    };
-
-    this.drawlegend = function() {
-
-    };
-
-    this.drawglyphs = function() {
 
     };
 
@@ -274,10 +441,12 @@ function QuorraPlot(attributes) {
     this.attr = {
         // sizing
         plotname: "quorra-plot",
-        class: "quorra-plot",
+        type: "quorra-plot",
         width: "auto",
         height: "auto",
         margin: {"top": 20, "bottom": 40, "left": 40, "right": 40},
+        container: null,
+        svg: null,
         
         // data rendering
         x: function(d, i) { return d.x; },
@@ -326,7 +495,7 @@ function QuorraPlot(attributes) {
         gshape: "circle",
         
         // additional display
-        annotation: false
+        annotation: []
     };
 
     // plot tooltip -- maybe include this as an object attribure
@@ -352,6 +521,9 @@ function QuorraPlot(attributes) {
             // maintain non-overridden object arguments
             if (typeof value === 'object' && i != 'tooltip') {
                 if (typeof _this.attr[i] === 'object') {
+                    if (Array.isArray(_this.attr[i]) && ! Array.isArray(value)) {
+                        value = [value];
+                    }
                     _this.attr[i] = _.extend(_this.attr[i], value);
                 } else {
                     _this.attr[i] = value;
@@ -369,208 +541,7 @@ function QuorraPlot(attributes) {
     return this.go;
 }
 
-function PlotAnnotation(type) {
-    if (typeof tyep === 'undefined') type = 'circle';
 
-    if (type == 'text') {
-
-    }
-}
-
-QuorraPlot.prototype.textAnnotation = function(svg, x, y, data){
-    /** 
-    QuorraPlot.prototype.textAnnotation()
-
-    Plot textual annotation creation.
-    */
-
-    var cl = (data.group == null) ? 'annotation text' : 'annotation text g_' + data.group;
-    var text = svg.selectAll('.annotation.text#' + data.id)
-        .data([data]).enter()
-        .append('text')
-        .attr('id', data.id)
-        .attr('class', cl)
-        .attr('x', x)
-        .attr('y', y)
-        .style("font-size", data['text-size'])
-        .style("text-anchor", "middle")
-        .text(data.text);
-
-    return text;
-}
-
-
-QuorraPlot.prototype.shapeAnnotation = function(svg, x, y, data) {
-    /**
-    QuorraPlot.prototype.shapeAnnotation()
-
-    Plot shape annotation creation.
-    */
-
-    var cl = (data.group == null) ? 'annotation ' + data.type : 'annotation ' + data.type + ' g_' + data.group;
-    if (data.type == 'square'){
-        var annot = svg.selectAll('.annotation.square#' + data.id)
-            .data([data]).enter()
-            .append('rect')
-            .attr('transform', 'rotate(' + data.rotate + ' ' + x + ' ' + y + ')')
-            .attr('id', data.id)
-            .attr('class', cl)
-            .attr('width', data.size)
-            .attr('height', data.size)
-            .attr('x', x - data.size / 2)
-            .attr('y', y - data.size / 2);
-    }else if (data.type == 'circle'){
-        var annot = svg.selectAll('.annotation.circle#' + data.id)
-            .data([data]).enter()
-            .append('circle')
-            .attr('id', data.id)
-            .attr('class', cl)
-            .attr('r', data.size / 2)
-            .attr('cx', x)
-            .attr('cy', y);
-    }else if (data.type == 'triangle'){
-        var annot = svg.selectAll('.annotation.triangle#' + data.id)
-            .data([data]).enter()
-            .append('path')
-            .attr('transform', 'rotate(' + data.rotate + ' ' + x + ' ' + y + ')')
-            .attr('id', data.id)
-            .attr('class', cl)
-            .attr('d', function(d){
-                return [
-                'M' + (x - (d.size / 2)) + ',' + (y - (d.size / 2)),
-                'L' + (x + (d.size / 2)) + ',' + (y - (d.size / 2)),
-                'L' + x + ',' + (y + (d.size / 2)),
-                'Z'].join('');
-            });
-    }else if (data.type == 'rectangle'){
-        var annot = svg.selectAll('.annotation.rectangle#' + data.id)
-            .data([data]).enter()
-            .append('rect')
-            .attr('transform', 'rotate(' + data.rotate + ' ' + x + ' ' + y + ')')
-            .attr('id', data.id)
-            .attr('class', cl)
-            .attr('width', data.xwidth)
-            .attr('height', data.xheight)
-            .attr('x', x)
-            .attr('y', y);
-    }
-
-    // styling
-    for (i in data.style){
-        annot.style(i, data.style[i]);
-    }
-    
-    return annot;
-}
-
-
-
-
-
-
-QuorraPlot.prototype.annotatePlot = function(id){
-    /**
-    QuorraPlot.prototype.initializeCanvas()
-
-    Initialze canvas for quorra plot and return svg selection.
-    */
-
-    var ctrl = quorra.controller[id];
-    if (!Array.isArray(ctrl.attr.annotation)){
-        ctrl.attr.annotation = [ctrl.attr.annotation]
-    }
-
-    // we have to use a set interval here, because
-    // sometimes the plot isn't rendered before this method is called
-    // we also need to try and render it before the timeout for panning
-    // operations, so we encapsulate it in a function and call it before
-    // the timeout
-    _.map(ctrl.attr.annotation, function(d){
-        d.id = quorra.uuid();
-        var data = _.extend({
-            parent: id,
-            exists: false,
-            id: quorra.uuid(),
-            type: 'circle',
-            text: '',
-            hovertext: '',
-            xfixed: false,
-            yfixed: false,
-            size: 15,
-            group: null,
-            rotate: 0,
-            'text-size': 13,
-            'text-position': {x: 0, y: 20},
-            'text-rotation': 0,
-            x: 0,
-            width: 0,
-            y: 0,
-            height: 0,
-            style: {
-                opacity: 1,
-            },
-            meta: {},
-            click: function(){},
-        }, d);
-        data['text-position'] = _.extend({x: 0, y: 20}, data['text-position']);
-        data['style'] = _.extend({opacity: 1}, data['style']);
-        ctrl.svg.select('g').selectAll('.annotation#' + data.id).remove();
-        var xscale = data.xfixed ? ctrl.xstack[0] : ctrl.xdrag;
-        var yscale = data.yfixed ? ctrl.ystack[0] : ctrl.ydrag;
-        data.xwidth = Math.abs(xscale(data.width) - xscale(0));
-        data.xheight = Math.abs(yscale(data.height) - yscale(0));
-        shapeAnnotation(
-            ctrl.svg.select('g'),
-            xscale(d.x),
-            yscale(d.y),
-            data
-        ).attr("clip-path", "url(#clip)")
-        .style("visibility", function(d){
-            return _.contains(ctrl.attr.toggled, ctrl.attr.group(d)) ? 'hidden' : 'visible';
-        }).on('mouseover', function(d){
-            d3.select(this).style('opacity', 0.75*d.style.opacity);
-            if (ctrl.attr.tooltip){
-                ctrl.attr.tooltip.html(d.hovertext)
-                    .style("opacity", 1)
-                    .style("left", (d3.event.pageX + 5) + "px")
-                    .style("top", (d3.event.pageY - 20) + "px");
-            }
-        }).on('mousemove', function(){
-            if (ctrl.attr.tooltip){
-                ctrl.attr.tooltip
-                    .style("left", (d3.event.pageX + 5) + "px")
-                    .style("top", (d3.event.pageY - 20) + "px");
-            }
-        }).on('mouseout', function(){
-            d3.select(this).style('opacity', d.style.opacity);
-            if (ctrl.attr.tooltip){
-                ctrl.attr.tooltip.style("opacity", 0);
-            }
-        }).on('click', function(d){
-            d.click(d);
-        });
-        if (data.text != ''){
-            textAnnotation(
-                ctrl.svg.select('g'),
-                xscale(d.x) + data['text-position'].x,
-                yscale(d.y) - data['text-position'].y,
-                data
-            ).attr("clip-path", "url(#clip)")
-            .style("visibility", function(d){
-                return _.contains(ctrl.attr.toggled, ctrl.attr.group(d)) ? 'hidden' : 'visible';
-            }).on('mouseover', function(){
-                d3.select(this).style('opacity', 0.75);
-            }).on('mouseout', function(){
-                d3.select(this).style('opacity', 1);
-            }).on('click', function(d){
-                d.click(d);
-            });
-        }
-        return;
-    });
-
-    return;
-}
 
 
 QuorraPlot.prototype.enableLegend = function(id){
@@ -584,86 +555,7 @@ QuorraPlot.prototype.enableLegend = function(id){
     // sometimes the plot isn't rendered before this method is called
     var ival = setInterval(function(){
         
-        if (d3.select('#' + id)[0][0] == null){
-            return;
-        }
-        var ctrl = quorra.controller[id];
-        var data = ctrl.color.domain();
-        if (ctrl.attr.lorder.length == data.length){
-            data = ctrl.attr.lorder;
-        }
-
-        var leg = ctrl.svg
-            .append("g")
-            .attr("transform", "translate(" + ctrl.attr.margin.left + "," + ctrl.attr.margin.top + ")")
-            .selectAll(".legend")
-            .data(data)
-            .enter().append("g")
-            .attr("class", "legend")
-            .attr("id", id + "-legend")
-            .attr("transform", function(d, i) { return "translate(0," + (ctrl.attr.lmargin.top + i * 20) + ")"; });
-
-        var selector
-        if (ctrl.attr.lshape === "square"){
-            selector = leg.append("rect")
-                .attr("class", "selector")
-                .attr("x", ctrl.width - 18 - ctrl.attr.lmargin.right + ctrl.attr.lmargin.left)
-                .attr("width", 18)
-                .attr("height", 18)
-                .attr("rx", 5)
-                .attr("ry", 5)
-                .style("fill", ctrl.color)
-                .style("fill-opacity", function(d){
-                    return _.contains(ctrl.attr.toggled, d) ? 0 : ctrl.attr.opacity;
-                });        
-        }else if (ctrl.attr.lshape === "circle"){
-            selector = leg.append("circle")
-                .attr("class", "selector")
-                .attr("cx", ctrl.width - 10 - ctrl.attr.lmargin.right + ctrl.attr.lmargin.left)
-                .attr("cy", 8)
-                .attr("r", 9)
-                .style("fill", ctrl.color)
-                .style("fill-opacity", function(d){
-                    return _.contains(ctrl.attr.toggled, d) ? 0 : ctrl.attr.opacity;
-                });
-        }
-
-        if (ctrl.attr.toggle){
-            selector.on("mouseover", function(d, i){
-                d3.select(this).style('opacity', 0.75);
-            }).on("mouseout", function(d, i){
-                d3.select(this).style('opacity', 1);
-            }).on("click", function(d, i){
-                if (d3.select(this).style('fill-opacity') == 0){
-                    d3.select(this).style('fill-opacity', 1);
-                    ctrl.svg.selectAll(".g_" + d).style('visibility', 'visible');
-                    ctrl.attr.toggled = _.without(ctrl.attr.toggled, d);
-                }else{
-                    d3.select(this).style('fill-opacity', 0);
-                    ctrl.svg.selectAll(".g_" + d).style('visibility', 'hidden');
-                    ctrl.attr.toggled = _.union(ctrl.attr.toggled, [d]);
-                }
-            });
-        }
-
-        leg.append("text")
-            .attr("x", function(){
-                if (ctrl.attr.lposition === "inside"){
-                    return ctrl.width - 24 - ctrl.attr.lmargin.right + ctrl.attr.lmargin.left;
-                }else if (ctrl.attr.lposition === "outside"){
-                    return ctrl.width + 2 - ctrl.attr.lmargin.right + ctrl.attr.lmargin.left;
-                }        
-            })
-            .attr("y", 9)
-            .attr("dy", ".35em")
-            .style("text-anchor", function(){
-                if (ctrl.attr.lposition === "inside"){
-                    return "end";
-                }else if (ctrl.attr.lposition === "outside"){
-                    return "beginning";
-                }
-            })
-            .text(function(d) { return d; });
+        
 
         clearInterval(ival);
     }, 100);

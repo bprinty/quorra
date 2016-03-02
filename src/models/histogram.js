@@ -11,9 +11,11 @@ function Histogram(attributes) {
 
     // parent class initialization
     Bar.call(this, _.extend({
+        class: "quorra-histogram",
         bins: 10,
         display: 'counts' // fraction, percent, counts
     }, attributes));
+    this.type = "histogram";
 
     // data transformation
     _this.attr.transform = function(data) {
@@ -39,9 +41,9 @@ function Histogram(attributes) {
             var subdat = _.filter(data, function(d){ return d.group == grps[grp]; });
             var newgrp = histogram(_.map(subdat, function(d){ return d.x }));
             newgrp = _.map(newgrp, function(d){
-                if (_this.attr.display == 'counts'){
+                if (_this.attr.display == 'counts') {
                     d.y = d.y*subdat.length;
-                } else if (_this.attr.display == 'percent'){
+                } else if (_this.attr.display == 'percent') {
                     d.y = d.y;
                 }
                 return {

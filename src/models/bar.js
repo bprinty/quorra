@@ -11,8 +11,10 @@ function Bar(attributes) {
 
     // plot-specific attributes
     QuorraPlot.call(this, _.extend({
+        class: "quorra-bar",
         layout: "stacked"
     }, attributes));
+    this.type = "bar";
 
     // overwrite render method
     this.plot = function() {

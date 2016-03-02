@@ -56,7 +56,6 @@ var line = quorra.line()
     .opacity(0.75)
     .margin({right: 100})
     .lposition("outside")
-    .lmargin({left: 40})
     .lorder(['Good', 'Evil'])
     .zoomable(true)
     .exportable(true)
@@ -66,16 +65,38 @@ var line = quorra.line()
     .xlabel("X Axis Label")
     .ylabel("Y Axis Label")
     .color(['firebrick','steelblue'])
-    .annotation({
-        type: 'triangle',
-        text: 'annotation',
-        group: 'Evil',
-        x: 10,
-        y: 15,
-        click: function(d){
-            console.log('Old Plot Annotation!');
+    .annotation([
+        {
+            type: 'rectangle',
+            text: 'rect',
+            group: 'Evil',
+            width: 3,
+            height: 2,
+            x: 10,
+            y: 15,
         },
-    }).annotatable({
+        {
+            type: 'square',
+            text: 'square',
+            group: 'Evil',
+            x: 14,
+            y: 15,
+        },
+        {
+            type: 'circle',
+            text: 'circle',
+            group: 'Evil',
+            x: 25,
+            y: 15,
+        },
+        {
+            type: 'triangle',
+            text: 'tri',
+            group: 'Evil',
+            x: 20,
+            y: 15,
+        }
+    ]).annotatable({
         type: 'triangle',
         add: function(){
             console.log('in!');

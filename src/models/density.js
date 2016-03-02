@@ -11,8 +11,10 @@ function Density(attributes) {
 
     // parent class initialization
     Line.call(this, _.extend({
+        class: "quorra-density",
         resolution: 10
     }, attributes));
+    this.type = "density";
 
     // data transformation
     _this.attr.transform = function(data) {

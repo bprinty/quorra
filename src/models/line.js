@@ -11,11 +11,13 @@ function Line(attributes) {
 
     // plot-specific attributes
     QuorraPlot.call(this, _.extend({
+        class: "quorra-line",
         points: 0,
         size: 3,
         layout: "line",
         interpolate: "linear"
     }, attributes));
+    this.type = "line";
 
     // overwrite render method
     this.plot = function() {
