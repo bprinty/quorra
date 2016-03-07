@@ -115,5 +115,7 @@ function Bar(attributes) {
 
 Bar.prototype = Object.create(QuorraPlot.prototype);
 Bar.prototype.constructor = Bar;
-quorra.bar = Bar;
+quorra.bar = function(attributes) {
+    return new Bar(attributes);
+};
 

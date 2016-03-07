@@ -134,4 +134,6 @@ function Line(attributes) {
 
 Line.prototype = Object.create(QuorraPlot.prototype);
 Line.prototype.constructor = Line;
-quorra.line = Line;
+quorra.line = function(attributes) {
+    return new Line(attributes);
+};

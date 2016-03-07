@@ -65,4 +65,7 @@ function Histogram(attributes) {
 
 Histogram.prototype = Object.create(Bar.prototype);
 Histogram.prototype.constructor = Histogram;
-quorra.histogram = Histogram;
+quorra.histogram = function(attributes) {
+    return new Histogram(attributes);
+};
+

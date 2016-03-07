@@ -115,4 +115,6 @@ function Scatter(attributes) {
 
 Scatter.prototype = Object.create(QuorraPlot.prototype);
 Scatter.prototype.constructor = Scatter;
-quorra.scatter = Scatter;
+quorra.scatter = function(attributes) {
+    return new Scatter(attributes);
+};

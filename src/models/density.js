@@ -48,4 +48,6 @@ function Density(attributes) {
 
 Density.prototype = Object.create(Line.prototype);
 Density.prototype.constructor = Density;
-quorra.density = Density;
+quorra.density = function(attributes) {
+    return new Density(attributes);
+};

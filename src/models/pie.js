@@ -103,4 +103,6 @@ function Pie(attributes) {
 
 Pie.prototype = Object.create(QuorraPlot.prototype);
 Pie.prototype.constructor = Pie;
-quorra.pie = Pie;
+quorra.pie = function(attributes) {
+    return new Pie(attributes);
+};
