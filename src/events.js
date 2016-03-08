@@ -97,3 +97,28 @@ document.onkeyup = function (e) {
         }
     }
 };
+
+
+// return processed mouse coordinates from selection
+function mouse(sel, left, top){
+    if (typeof left === 'undefined') left = 0;
+    if (typeof top === 'undefined') top = 0;
+    var coordinates = d3.mouse(sel.node());
+    var res = {};
+    res.x = coordinates[0] - left;
+    res.y = coordinates[1] - top;
+    res.scale = (d3.event.type == 'zoom') ? d3.event.scale : 1;
+    return res;
+}
+
+
+// return ratio of domain/range for scaling zoom
+function zoomscale(scale){
+    var d = scale.domain();
+    var r = scale.range();
+    var dx = Math.abs(d[1] - d[0]);
+    var dr = Math.abs(r[1] - r[0]);
+    return dx/dr;
+}
+
+

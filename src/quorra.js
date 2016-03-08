@@ -46,8 +46,7 @@ function QuorraPlot(attributes) {
         _this.attr.svg = _this.attr.svg.attr("id", _this.attr.id)
             .attr("class", _this.attr.class)
             .attr("width", width)
-            .attr("height", height)
-            .on("click", _this.attr.plotclick);
+            .attr("height", height);
 
         // set up clip path for windowing display
         _this.attr.svg.append("clipPath")
@@ -60,19 +59,20 @@ function QuorraPlot(attributes) {
             .attr("class", "plotarea")
             .attr("transform", "translate(" + _this.attr.margin.left + "," + _this.attr.margin.top + ")");            
 
-        // configure/transform data -- figure out how to run
-        // this whenever the selection-bound data is changed, and
-        // not every time
+        // perform provided data transformations
         _this.data = _this.attr.transform(_this.attr.container.data()[0]);
+        
+        // get x domain and range
         if (typeof _this.data[0].x === 'string') {
             _this.domain = _.uniquesort(_this.data, _this.attr.x);
         } else {
-            // get max based on histogram binning
             _this.domain = [
                 _.min(_.map(_this.data, _this.attr.x)),
                 _.max(_.map(_this.data, _this.attr.x))
             ];
         }
+
+        // get y domain and range
         if (typeof _this.data[0].y === 'string') {
             _this.range = _.uniquesort(_this.data, _this.attr.y);
         } else {
@@ -118,11 +118,6 @@ function QuorraPlot(attributes) {
             _this.drawlegend();
         }
 
-        // draw glyph elements
-        if (_this.attr.glyphs) {
-            _this.drawglyphs();
-        }
-
         // enable interaction (if specified)
         if (_this.attr.zoomable) {
             _this.enablezoom();
@@ -130,27 +125,37 @@ function QuorraPlot(attributes) {
         if (_this.attr.annotatable) {
             _this.enableannotation();
         }
+
+        // draw glyph elements
+        if (_this.attr.glyphs) {
+            _this.drawglyphs();
+        }
     };
 
     this.redraw = function(xrange, yrange, cache) {
+        // configure window
         if (typeof xrange !== 'undefined') {
             _this.attr.xrange = xrange;
-            // recompute scaling
         }
         if (typeof yrange !== 'undefined') {
             _this.attr.yrange = yrange;
-            // recompute scaling
         }
         if (typeof cache === 'undefined') {
             cache = true;
         }
+
+        // remove old plot and render new elements
         _this.plotarea.selectAll("*").remove();
         _this.axes();
         _this.plot();
+
+        // add axis properties to stack
         if (cache) {
             _this.xstack.push(_this.xscale);
             _this.ystack.push(_this.yscale);
         }
+
+        // draw annotation
         if (_this.attr.annotation) {
             _this.annotate();
         }
@@ -166,6 +171,7 @@ function QuorraPlot(attributes) {
             domain[1] = domain[1] + (domain[1] - domain[0])/(_this.attr.bins-1);
         }
 
+        // set up scaling for axes
         // TODO: allow users to pass in arbitrary scaling function
         //       i.e. d3.scale.log()
         if (typeof _this.data[0].x === 'string') {
@@ -280,8 +286,8 @@ function QuorraPlot(attributes) {
 
     this.annotate = function() {
         _.map(_this.attr.annotation, function(d) {
-
-            // configure attributes
+            
+            // configure attributes for annotation
             var data = _.extend({
                 parent: _this.attr.id,
                 exists: false,
@@ -302,31 +308,71 @@ function QuorraPlot(attributes) {
                 y: 0,
                 width: 0,
                 height: 0,
-                style: {
-                    opacity: 1,
-                },
-                meta: {},
-                click: function(){},
+                draggable: false,
+                events: {},
+                style: {},
+                meta: {}
             }, d);
             data['text-position'] = _.extend({x: 0, y: 20}, data['text-position']);
             data['text-margin'] = _.extend({x: 0, y: 0}, data['text-margin']);
             data['style'] = _.extend({opacity: 1}, data['style']);
+            data['events'] = _.extend({
+                drag: function(){},
+                dragstart: function(){},
+                dragend: function(){},
+                click: function(){}
+            }, data['events']);
 
+            // create wrapper element for annotation groups
+            _this.plotarea.selectAll('.annotation#' + data.id).remove();
+            var asel = _this.plotarea.append('g')
+                .attr('class', 'annotation')
+                .attr('id', _this.attr.id)
+            
+            // enable drag behavior for annotation (if available and specified)
+            if (data.draggable && !_this.attr.zoomable) {
+                var drag = d3.behavior.drag()
+                    .on("dragstart", function() {
+                        // probably nothing ...
+                        data.events.dragstart();
+                    }).on("dragend", function() {
+                        
+                        // take current location of annotation
+                        
+                        // update annotation in _this.attr.annotation
+                        
+                        // re-render plot with new annotation coordinates
+                        data.events.dragend();
+                    }).on("drag", function() {
+                        // STOPPED HERE ... SOMETHING IS FUNKY WITH THE WAY THE MOUSE IS
+                        // PULLING COORDINATES -- THIS NEEDS TO BE FIXED SO THE ANNOTATION
+                        // CAN BE DRAGGED AROUND
+                        var movement = mouse(_this.attr.svg, _this.attr.margin.left + _this.attr.margin.right, _this.innerheight - _this.attr.margin.top - _this.attr.margin.bottom);
+                        d3.select(this).attr('transform', 'translate(' + movement.x + ',' + movement.y + ')');
+                        data.events.drag();
+                    });
+
+                asel.call(drag);
+            }
+
+            // create specific annotation object
             if (data.type == 'square') {
-                var annot = squareAnnotation(_this, data);
+                var annot = squareAnnotation(_this, data, asel);
                 data['text-margin'].y = data['text-margin'].y - (data.size / 2) - 5;
             } else if (data.type == 'rectangle') {
-                var annot = rectangleAnnotation(_this, data);
+                var annot = rectangleAnnotation(_this, data, asel);
                 data['text-margin'].x = data['text-margin'].x + data.text.length*2 + 2;
                 data['text-margin'].y = data['text-margin'].y - 5;
             } else if (data.type == 'circle') {
-                var annot = circleAnnotation(_this, data);
+                var annot = circleAnnotation(_this, data, asel);
                 data['text-margin'].y = data['text-margin'].y - (data.size / 2) - 5;
             } else if (data.type == 'triangle') {
-                var annot = triangleAnnotation(_this, data);
+                var annot = triangleAnnotation(_this, data, asel);
                 data['text-margin'].x = data['text-margin'].x + (data.size / 2) - data.text.length*2;
                 data['text-margin'].y = data['text-margin'].y - (data.size / 2) - 5;
             }
+
+            // extend annotation object with mouseover events
             annot.attr("clip-path", "url(#clip)")
             .style("visibility", function(d){
                 return _.contains(_this.attr.toggled, _this.attr.group(d)) ? 'hidden' : 'visible';
@@ -338,7 +384,7 @@ function QuorraPlot(attributes) {
                         .style("left", (d3.event.pageX + 5) + "px")
                         .style("top", (d3.event.pageY - 20) + "px");
                 }
-            }).on('mousemove', function(){
+            }).on('mousemove', function(d){
                 if (_this.attr.tooltip) {
                     _this.attr.tooltip
                         .style("left", (d3.event.pageX + 5) + "px")
@@ -349,35 +395,40 @@ function QuorraPlot(attributes) {
                 if (_this.attr.tooltip) {
                     _this.attr.tooltip.style("opacity", 0);
                 }
-            }).on('click', function(d){
-                d.click(d);
-            });
+            }).on('click', data.events.click);
+
+            // add text description to annotation (if specified)
             if (data.text !== '') {
-                var annot = textAnnotation(_this, data);
+                var annot = textAnnotation(_this, data, asel);
                 annot.attr("clip-path", "url(#clip)")
                 .style("visibility", function(d){
                     return _.contains(_this.attr.toggled, _this.attr.group(d)) ? 'hidden' : 'visible';
-                }).on('mouseover', function(){
+                }).on('mouseover', function(d){
                     d3.select(this).style('opacity', 0.75);
-                }).on('mouseout', function(){
+                }).on('mouseout', function(d){
                     d3.select(this).style('opacity', 1);
-                }).on('click', function(d){
-                    d.click(d);
-                });
+                }).on('click', data.events.click);
             }
 
         });
     };
 
     this.drawlegend = function() {
+
+        // set up pallette ordering
         var data = _this.pallette.domain();
         if (_this.attr.lorder.length == data.length) {
             data = _this.attr.lorder;
         }
 
+        // compute width and height for scaling
+        var width = (_this.attr.width == "auto") ? parseInt(_this.attr.container.style("width")) : _this.attr.width;
+        var height = (_this.attr.height == "auto") ? parseInt(_this.attr.container.style("height")) : _this.attr.height;
+
+        // create container for legend
         var leg = _this.attr.svg
             .append("g")
-            .attr("transform", "translate(" + (_this.attr.width - _this.attr.margin.right) + "," + _this.attr.margin.top + ")")
+            .attr("transform", "translate(" + (width - _this.attr.margin.right) + "," + _this.attr.margin.top + ")")
             .selectAll(".legend")
             .data(data)
             .enter().append("g")
@@ -385,10 +436,11 @@ function QuorraPlot(attributes) {
             .attr("id", _this.attr.id + "-legend")
             .attr("transform", function(d, i) { return "translate(0," + (_this.attr.lmargin.top + i * 20) + ")"; });
 
+        // draw group shape
         if (_this.attr.lshape === "square") {
             var selector = leg.append("rect")
                 .attr("class", "selector")
-                .attr("x", 20 + _this.attr.lmargin.left)
+                .attr("x", 5 + _this.attr.lmargin.left)
                 .attr("y", _this.attr.lmargin.top)
                 .attr("width", 18)
                 .attr("height", 18)
@@ -410,6 +462,7 @@ function QuorraPlot(attributes) {
                 });
         }
 
+        // enable toggling events for turning on/off groups
         if (_this.attr.toggle){
             selector.on("mouseover", function(d, i){
                 d3.select(this).style('opacity', 0.75);
@@ -428,15 +481,17 @@ function QuorraPlot(attributes) {
             });
         }
 
+        // add group descriptor
         leg.append("text")
             .attr("x", function(){
                 if (_this.attr.lposition === "inside"){
-                    return 18 + _this.attr.lmargin.left;
+                    return 5 + _this.attr.lmargin.left;
                 }else if (_this.attr.lposition === "outside"){
-                    return 40 + _this.attr.lmargin.left;
+                    var pad = (_this.attr.lshape === "square") ? 0 : 7;
+                    return 27 + _this.attr.lmargin.left + pad;
                 }        
             })
-            .attr("y", 9)
+            .attr("y", 9 + _this.attr.lmargin.top)
             .attr("dy", ".35em")
             .style("text-anchor", function() {
                 if (_this.attr.lposition === "inside") {
@@ -492,7 +547,7 @@ function QuorraPlot(attributes) {
             .append('path')
             .attr('d', 'M864 0c88.364 0 160 71.634 160 160 0 36.020-11.91 69.258-32 96l-64 64-224-224 64-64c26.742-20.090 59.978-32 96-32zM64 736l-64 288 288-64 592-592-224-224-592 592zM715.578 363.578l-448 448-55.156-55.156 448-448 55.156 55.156z');
  
-        // adding glyphs
+        // adding glyphs to buffer
         var gdata = [];
         if (_this.attr.annotatable) {
             gdata.push('annotate');
@@ -504,15 +559,16 @@ function QuorraPlot(attributes) {
             gdata.push('export');
         }
 
+        // drawing glyphs and setting up click events
         var gly = _this.attr.svg.append("g")
                 .attr("transform", "translate(" + (_this.innerwidth + _this.attr.margin.left + 7) + "," + (_this.innerheight - _this.attr.margin.bottom - gdata.length * 22 + 52) + ")")
                 .selectAll(".glyphbox")
                 .data(gdata)
                 .enter().append("g")
                 .attr("class", "glyphbox")
-                .attr("id", function(d){ return d; })
+                .attr("id", function(d) { return d; })
                 .attr("transform", function(d, i) { return "translate(0," + (i * 25) + ")"; })
-                .on('mouseover', function(d){
+                .on('mouseover', function(d) {
                     d3.select(this).style('opacity', 0.5);
                     if (_this.attr.tooltip){
                         _this.attr.tooltip.html(d)
@@ -520,28 +576,30 @@ function QuorraPlot(attributes) {
                                 .style("left", (d3.event.pageX + 10) + "px")
                                 .style("top", (d3.event.pageY - 10) + "px");
                     }
-                }).on("mousemove", function(d){
+                }).on("mousemove", function(d) {
                     if (_this.attr.tooltip){
                         _this.attr.tooltip
                             .style("left", (d3.event.pageX + 10) + "px")
                             .style("top", (d3.event.pageY - 10) + "px");
                     }
-                }).on('mouseout', function(d){
+                }).on('mouseout', function(d) {
                     d3.select(this).style('opacity', 1);
                     if (_this.attr.tooltip){
                         _this.attr.tooltip.style("opacity", 0);
                     }
-                }).on('click', function(d){
+                }).on('click', function(d) {
                     switch(d){
 
                         case 'zoom':
                             _this.enabled.zoom = !_this.enabled.zoom;
+                            this.enabled.pan = !_this.enabled.pan;
                             d3.select(this).selectAll('.glyph')
                                 .style('stroke-width', (_this.enabled.zoom) ? 3 : 1);
                             break;
 
                         case 'pan':
                             _this.enabled.pan = !_this.enabled.pan;
+                            _this.enabled.zoom = !_this.enabled.zoom;
                             d3.select(this).selectAll('.glyph')
                                 .style('stroke-width', (_this.enabled.pan) ? 3 : 1);
                             break;
@@ -603,10 +661,12 @@ function QuorraPlot(attributes) {
                                 canvas.remove();
                                 document.body.removeChild(cln);
                             };
+                            _this.attr.events.export();
                             break;
                     }
                 });
         
+        // drawing glyph outline
         if (_this.attr.gshape === "square"){
             gly.append("rect")
                 .attr("class", "glyph")
@@ -624,6 +684,8 @@ function QuorraPlot(attributes) {
                 .attr("r", 11)
                 .style("fill", "transparent"); 
         }
+
+        // rendering icons
         gly.append('svg')
             .attr('width', 22).attr('height', 22)
             .append("use")
@@ -639,67 +701,9 @@ function QuorraPlot(attributes) {
                     case 'annotate': return '#glyph-annotate';
                 }
             });
-
-        // set glyph highlight on shift event (for zoom)
-        if (_this.attr.zoomable){
-            quorra.events.Shift.down = function(){
-                d3.selectAll('.glyphbox#pan')
-                    .selectAll('.glyph')
-                    .style('stroke-width', 3);
-                _.each(Object.keys(quorra.plots), function(key){
-                    quorra.plots[key].enabled.pan = true;
-                });
-            }
-            quorra.events.Shift.up = function(){
-                d3.selectAll('.glyphbox#pan')
-                    .selectAll('.glyph')
-                    .style('stroke-width', 1);
-                _.each(Object.keys(quorra.plots), function(key) {
-                    quorra.plots[key].enabled.pan = false;
-                });
-            }
-        }
-        if (_this.attr.annotatable){
-            quorra.events.ShiftA.down = function(){
-                d3.selectAll('.glyphbox#annotate')
-                    .selectAll('.glyph')
-                    .style('stroke-width', 3);
-                _.each(Object.keys(quorra.plots), function(key){
-                    quorra.plots[key].enabled.annotate = true;
-                });
-            }
-            quorra.events.ShiftA.up = function(){
-                d3.selectAll('.glyphbox#annotate')
-                    .selectAll('.glyph')
-                    .style('stroke-width', 1);
-                _.each(Object.keys(quorra.plots), function(key){
-                    quorra.plots[key].enabled.annotate = false;
-                });
-            }
-        }
-
     };
 
     this.enablezoom = function() {
-
-        // return processed mouse coordinates
-        function mouse(){
-            var coordinates = d3.mouse(_this.attr.svg.node());
-            var res = {};
-            res.x = coordinates[0] - _this.attr.margin.left;
-            res.y = coordinates[1] - _this.attr.margin.top;
-            res.scale = (d3.event.type == 'zoom') ? d3.event.scale : 1;
-            return res;
-        }
-
-        // return ratio of domain/range for scaling zoom
-        function zoomscale(scale){
-            var d = scale.domain();
-            var r = scale.range();
-            var dx = Math.abs(d[1] - d[0]);
-            var dr = Math.abs(r[1] - r[0]);
-            return dx/dr;
-        }
 
         // check if data is within plot boundaries
         function withinBounds(motion){
@@ -731,15 +735,18 @@ function QuorraPlot(attributes) {
         // set up drag behavior
         var drag = d3.behavior.drag()
             .origin(function(d){ return d; })
-            .on("dragstart", function() {
-                var movement = mouse();
+            .on("dragstart", function(d) {
+                var movement = mouse(_this.attr.svg, _this.attr.margin.left, _this.attr.margin.top);
                 _this.zoomdata.x = movement.x;
                 _this.zoomdata.y = movement.y;
-            }).on("dragend", function() {
+                if(_this.enabled.pan) {
+                    _this.attr.events.panstart(d);
+                }
+            }).on("dragend", function(d) {
                 viewbox.attr('d', '');
-                var movement = mouse();
+                var movement = mouse(_this.attr.svg, _this.attr.margin.left, _this.attr.margin.top);
                 
-                if (!_this.enabled.pan || !withinBounds(movement)) {
+                if (_this.enabled.zoom) {
                     var changed = false;
                     var l = _this.xstack.length;
 
@@ -774,11 +781,14 @@ function QuorraPlot(attributes) {
                     // only trigger event if something changed
                     if (changed) {
                         _this.redraw(xval, yval, true);
+                        _this.attr.events.zoom(d);
                     }
+                } else if(_this.enabled.pan) {
+                    _this.attr.events.panend(d);
                 }
-            }).on("drag", function() {
-                var movement = mouse();
-                if (!_this.enabled.pan) {
+            }).on("drag", function(d) {
+                var movement = mouse(_this.attr.svg, _this.attr.margin.left, _this.attr.margin.top);
+                if (_this.enabled.zoom) {
                     if (_this.zoomdata.y > _this.innerheight) {
                         movement.y = 0;
                     }
@@ -792,7 +802,7 @@ function QuorraPlot(attributes) {
                         'L' + movement.x + ',' + _this.zoomdata.y,
                         'Z'
                     ].join(''));
-                } else if(withinBounds(movement)) {
+                } else if(_this.enabled.pan && withinBounds(movement)) {
                     viewbox.attr('d', '');
                     var xmap = d3.scale.linear().domain(_this.xscale.range()).range(_this.xscale.domain());
                     var ymap = d3.scale.linear().domain(_this.yscale.range()).range(_this.yscale.domain());
@@ -802,6 +812,7 @@ function QuorraPlot(attributes) {
                     var l = _this.xstack.length;
                     _this.xscale = d3.scale.linear().domain(xval).range(_this.xstack[l-1].range());
                     _this.yscale = d3.scale.linear().domain(yval).range(_this.ystack[l-1].range());
+                    _this.attr.events.pan(d);
                 }
             });
 
@@ -885,6 +896,27 @@ function QuorraPlot(attributes) {
         .on("touchstart.zoom", null)
         .on("touchmove.zoom", null)
         .on("touchend.zoom", null);
+
+        // set up events for toggling enabled flags
+        quorra.events.Shift.down = function() {
+            d3.selectAll('.glyphbox#pan')
+                .selectAll('.glyph')
+                .style('stroke-width', 3);
+            _.each(Object.keys(quorra.plots), function(key){
+                quorra.plots[key].enabled.pan = true;
+                quorra.plots[key].enabled.zoom = false;
+            });
+        };
+        quorra.events.Shift.up = function() {
+            d3.selectAll('.glyphbox#pan')
+                .selectAll('.glyph')
+                .style('stroke-width', 1);
+            _.each(Object.keys(quorra.plots), function(key) {
+                quorra.plots[key].enabled.pan = false;
+                quorra.plots[key].enabled.zoom = true;
+            });
+        };
+
     };
 
     this.enableannotation = function() {
@@ -904,9 +936,16 @@ function QuorraPlot(attributes) {
             y: function(d){ return d.y; },
             style: function(d){ return {}; },
             meta: function(d){ return {}; },
-            click: function(d){},
-            add: function(d){}
+            draggable: false,
+            events: {}
         }, _this.attr.annotatable);
+        triggers['events'] = _.extend({
+            dragstart: function(){},
+            drag: function(){},
+            dragend: function(){},
+            click: function(){},
+            add: function(d){}
+        }, triggers['events']);
 
         // enable annotation on click event
         _this.attr.svg.on('click', function(){
@@ -933,19 +972,37 @@ function QuorraPlot(attributes) {
                 }
 
                 d.parent = _this.attr.id;
-                d.click = triggers.click;
-                _.each(['id', 'type', 'text', 'style', 'meta', 'size', 'group', 'text-size', 'text-position'], function(x){
+                _.each(['id', 'type', 'text', 'style', 'meta', 'size', 'group', 'text-size', 'text-position', 'draggable'], function(x){
                     d[x] = (typeof triggers[x] === "function") ? triggers[x](d) : triggers[x];
                 });
+                d.events = triggers.events;
                 if (_this.attr.annotation){
                     _this.attr.annotation.push(d);
                 }else{
                     _this.attr.annotation = [d];
                 }
                 _this.annotate();
-                triggers.add(d);
+                triggers.events.add(d);
             }
         });
+
+        // set up key bindings for events
+        quorra.events.ShiftA.down = function() {
+            d3.selectAll('.glyphbox#annotate')
+                .selectAll('.glyph')
+                .style('stroke-width', 3);
+            _.each(Object.keys(quorra.plots), function(key){
+                quorra.plots[key].enabled.annotate = true;
+            });
+        };
+        quorra.events.ShiftA.up = function() {
+            d3.selectAll('.glyphbox#annotate')
+                .selectAll('.glyph')
+                .style('stroke-width', 1);
+            _.each(Object.keys(quorra.plots), function(key){
+                quorra.plots[key].enabled.annotate = false;
+            });
+        };
     };
 
 
@@ -956,7 +1013,7 @@ function QuorraPlot(attributes) {
         type: "quorra-plot",
         width: "auto",
         height: "auto",
-        margin: {"top": 20, "bottom": 40, "left": 40, "right": 40},
+        margin: {},
         container: null,
         svg: null,
         
@@ -976,6 +1033,7 @@ function QuorraPlot(attributes) {
         zoomable: false,
         annotatable: false,
         exportable: false,
+        events: {},
 
         // plot styling
         grid: false,
@@ -990,13 +1048,13 @@ function QuorraPlot(attributes) {
         xlabel: "",
         ylabel: "",
         labelposition: "middle",
-        labelpadding: {x: 0, y: 0},
+        labelpadding: {},
         opacity: 1,
         
         // legend
         legend: true,
-        lmargin: {"top": 0, "bottom": 0, "left": 0, "right": 0},
-        lposition: "inside",
+        lmargin: {},
+        lposition: "outside",
         lshape: "square",
         lorder: [],
         toggle: true,
@@ -1017,8 +1075,22 @@ function QuorraPlot(attributes) {
         .style("position", "absolute")
         .style("opacity", 0);
 
+    // extend simple attributes
     this.attr = _.extend(this.attr, attributes);
 
+    // extending nested attributes
+    this.attr.labelpadding = _.extend({x: 0, y: 0}, this.attr.labelpadding);
+    this.attr.margin = _.extend({"top": 20, "bottom": 40, "left": 40, "right": 65}, this.attr.margin);
+    this.attr.lmargin = _.extend({"top": 0, "bottom": 0, "left": 0, "right": 0}, this.attr.lmargin);
+    this.attr.events = _.extend({
+        zoom: function(){},
+        pan: function(){},
+        panstart: function(){},
+        panend: function(){},
+        export: function(){}
+    }, this.attr.events);
+
+    // configure unique identifier for plot
     this.attr.id = (typeof this.attr.id !== 'undefined') ?  this.attr.id : quorra.uuid();
 
     // binding attributes to constructor function

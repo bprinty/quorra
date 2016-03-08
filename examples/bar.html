@@ -72,10 +72,8 @@ var stacked = quorra.bar()
     .width(600)
     .height(400)
     .opacity(0.75)
-    .margin({"top": 20, "bottom": 40, "left": 40, "right": 100})
     .lposition("outside")
     .lshape("circle")
-    .lmargin({"top": 0, "left": 40, "right": 0})
     .layout('stacked')
     .xlabel("X Axis Label")
     .ylabel("Y Axis Label")
@@ -83,26 +81,6 @@ var stacked = quorra.bar()
 
 d3.select('#stacked .plotarea')
     .datum(data).call(stacked);
-        </div>
-        <p class="pre-editor">Hit Cmd+Enter for changes to take effect.</p>
-
-
-        <div id="text" class="container">
-            <div class="plotarea"></div>
-        </div>
-
-        <div id="text-editor" class="editor">
-// bar with text labels
-var text = quorra.bar()
-    .width(600)
-    .height(400)
-    .yrange([0, 3])
-    .opacity(0.75)
-    .xlabel("X Axis Label")
-    .ylabel("Y Axis Label");
-
-d3.select('#text .plotarea')
-    .datum(textdata).call(stacked);
         </div>
         <p class="pre-editor">Hit Cmd+Enter for changes to take effect.</p>
 
@@ -163,7 +141,6 @@ d3.select('#text .plotarea')
     <script>
         eval(parameterizeEditor('grouped-editor', '#grouped .plotarea svg'));
         eval(parameterizeEditor('stacked-editor', '#stacked .plotarea svg'));
-        eval(parameterizeEditor('text-editor', '#text .plotarea svg'));
     </script>
 
     </script>

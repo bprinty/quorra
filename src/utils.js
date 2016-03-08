@@ -60,12 +60,12 @@ quorra.uuid = function() {
 };
 
 
-textAnnotation = function(plot, data) {
+// annotation creation
+textAnnotation = function(plot, data, sel) {
     var cl = (data.group == null) ? 'annotation text' : 'annotation text g_' + data.group;
-    var annot = plot.plotarea.selectAll('.annotation.text#' + data.id)
+    var annot = sel.selectAll('.annotation.text')
         .data([data]).enter()
         .append('text')
-        .attr('id', data.id)
         .attr('class', cl)
         .attr('x', plot.xscale(data.x) + data['text-margin'].x)
         .attr('y', plot.yscale(data.y) + data['text-margin'].y)
@@ -77,15 +77,14 @@ textAnnotation = function(plot, data) {
 }
 
 
-squareAnnotation = function(plot, data) {
+squareAnnotation = function(plot, data, sel) {
     var cl = (data.group == null) ? 'annotation square': 'annotation square' + ' g_' + data.group;
     var x = plot.xscale(data.x);
     var y = plot.yscale(data.y);
-    var annot = plot.plotarea.selectAll('.annotation.square#' + data.id)
+    var annot = sel.selectAll('.annotation.square')
         .data([data]).enter()
         .append('rect')
         .attr('transform', 'rotate(' + data.rotate + ' ' + x + ' ' + y + ')')
-        .attr('id', data.id)
         .attr('class', cl)
         .attr('width', data.size)
         .attr('height', data.size)
@@ -96,17 +95,16 @@ squareAnnotation = function(plot, data) {
 }
 
 
-rectangleAnnotation = function(plot, data) {
+rectangleAnnotation = function(plot, data, sel) {
     var cl = (data.group == null) ? 'annotation rectangle': 'annotation rectangle' + ' g_' + data.group;
     var x = plot.xscale(data.x);
     var y = plot.yscale(data.y);
     var xwidth = Math.abs(plot.xscale(data.width) - plot.xscale(0));
     var xheight = Math.abs(plot.yscale(data.height) - plot.yscale(0));
-    var annot = plot.plotarea.selectAll('.annotation.rectangle#' + data.id)
+    var annot = sel.selectAll('.annotation.rectangle')
         .data([data]).enter()
         .append('rect')
         .attr('transform', 'rotate(' + data.rotate + ' ' + x + ' ' + y + ')')
-        .attr('id', data.id)
         .attr('class', cl)
         .attr('width', xwidth)
         .attr('height', xheight)
@@ -117,12 +115,11 @@ rectangleAnnotation = function(plot, data) {
 }
 
 
-circleAnnotation = function(plot, data) {
+circleAnnotation = function(plot, data, sel) {
     var cl = (data.group == null) ? 'annotation circle': 'annotation circle' + ' g_' + data.group;
-    var annot = plot.plotarea.selectAll('.annotation.circle#' + data.id)
+    var annot = sel.selectAll('.annotation.circle')
         .data([data]).enter()
         .append('circle')
-        .attr('id', data.id)
         .attr('class', cl)
         .attr('r', data.size / 2)
         .attr('cx', plot.xscale(data.x))
@@ -132,15 +129,14 @@ circleAnnotation = function(plot, data) {
 }
 
 
-triangleAnnotation = function(plot, data) {
+triangleAnnotation = function(plot, data, sel) {
     var cl = (data.group == null) ? 'annotation triangle': 'annotation triangle' + ' g_' + data.group;
     var x = plot.xscale(data.x);
     var y = plot.yscale(data.y);
-    var annot = plot.plotarea.selectAll('.annotation.triangle#' + data.id)
+    var annot = sel.selectAll('.annotation.triangle')
         .data([data]).enter()
         .append('path')
         .attr('transform', 'rotate(' + data.rotate + ' ' + x + ' ' + y + ')')
-        .attr('id', data.id)
         .attr('class', cl)
         .attr('d', function(d){
             return [

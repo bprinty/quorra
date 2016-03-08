@@ -15,8 +15,6 @@ function Pie(attributes) {
         aggregate: function(x){ return(x[0]); },
         radius: "auto",
         inner: "auto",
-        margin: {"top": 0, "bottom": 0, "left": 0, "right": 0},
-        lmargin: {"top": 15, "bottom": 0, "left": 0, "right": 0}
     }, attributes));
     this.type = "pie";
 

@@ -51,8 +51,6 @@
         <div id="scatter-editor" class="editor">
 // regular scatter
 var scatter = quorra.scatter()
-    .width(600)
-    .height(400)
     .grid(true)
     .opacity(0.75)
     .lshape("circle")
@@ -74,14 +72,11 @@ d3.select('#scatter .plotarea')
         <div id="jitter-editor" class="editor">
 // grouped scatter with jitter
 var jitter = quorra.scatter()
-    .width(600)
-    .height(400)
     .xjitter(100)
     .opacity(0.75)
     .lposition("outside")
     .lshape("circle")
     .zoomable(true)
-    .lmargin({"top": 0, "left": 40, "right": 0})
     .ydensity(true)
     .xlabel("Group")
     .ylabel("Y Axis Label")
