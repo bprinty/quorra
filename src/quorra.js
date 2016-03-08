@@ -216,58 +216,62 @@ function QuorraPlot(attributes) {
         }
 
         // x axis
-        _this.plotarea
-            .append("g")
-            .attr("class", "x axis")
-            .attr("transform", "translate(0," + _this.innerheight + ")")
-            .call(_this.xaxis)
-            .append("text")
-                .attr("class", "label")
-                .attr("x", function(x){
-                    if (_this.attr.labelposition == "end"){
-                        return _this.innerwidth;
-                    }else if (_this.attr.labelposition == "middle"){
-                        return _this.innerwidth / 2;
-                    }else if (_this.attr.labelposition == "beginning"){
-                        return 0;
-                    }
-                })
-                .attr("y", function(){
-                    if (_this.attr.xposition == "inside"){
-                        return -6 + _this.attr.labelpadding.x;
-                    }else if(_this.attr.xposition === "outside"){
-                        return 35 + _this.attr.labelpadding.x;
-                    }
-                })
-                .style("text-anchor", _this.attr.labelposition)
-                .text(_this.attr.xlabel);
+        if (_this.attr.xaxis !== "hidden") {
+            _this.plotarea
+                .append("g")
+                .attr("class", "x axis")
+                .attr("transform", "translate(0," + _this.innerheight + ")")
+                .call(_this.xaxis)
+                .append("text")
+                    .attr("class", "label")
+                    .attr("x", function(x){
+                        if (_this.attr.labelposition == "end"){
+                            return _this.innerwidth;
+                        }else if (_this.attr.labelposition == "middle"){
+                            return _this.innerwidth / 2;
+                        }else if (_this.attr.labelposition == "beginning"){
+                            return 0;
+                        }
+                    })
+                    .attr("y", function(){
+                        if (_this.attr.xaxis == "inside"){
+                            return -6 + _this.attr.labelpadding.x;
+                        }else if(_this.attr.xaxis === "outside"){
+                            return 35 + _this.attr.labelpadding.x;
+                        }
+                    })
+                    .style("text-anchor", _this.attr.labelposition)
+                    .text(_this.attr.xlabel);
+        }
 
         // y axis
-        _this.plotarea
-            .append("g")
-            .attr("class", "y axis")
-            .call(_this.yaxis)
-            .append("text")
-                .attr("class", "label")
-                .attr("transform", "rotate(-90)")
-                .attr("x", function(x){
-                    if (_this.attr.labelposition == "end"){
-                        return 0;
-                    }else if (_this.attr.labelposition == "middle"){
-                        return -_this.innerheight / 2;
-                    }else if (_this.attr.labelposition == "beginning"){
-                        return -_this.innerheight;
-                    }
-                }).attr("y", function(){
-                    if (_this.attr.yposition == "inside"){
-                        return 6 + _this.attr.labelpadding.y;
-                    }else if(_this.attr.yposition === "outside"){
-                        return -40 + _this.attr.labelpadding.y;
-                    }
-                })
-                .attr("dy", ".71em")
-                .style("text-anchor", _this.attr.labelposition)
-                .text(_this.attr.ylabel);
+        if (_this.attr.yaxis !== "hidden") {
+            _this.plotarea
+                .append("g")
+                .attr("class", "y axis")
+                .call(_this.yaxis)
+                .append("text")
+                    .attr("class", "label")
+                    .attr("transform", "rotate(-90)")
+                    .attr("x", function(x){
+                        if (_this.attr.labelposition == "end"){
+                            return 0;
+                        }else if (_this.attr.labelposition == "middle"){
+                            return -_this.innerheight / 2;
+                        }else if (_this.attr.labelposition == "beginning"){
+                            return -_this.innerheight;
+                        }
+                    }).attr("y", function(){
+                        if (_this.attr.yaxis == "inside"){
+                            return 6 + _this.attr.labelpadding.y;
+                        }else if(_this.attr.yaxis === "outside"){
+                            return -40 + _this.attr.labelpadding.y;
+                        }
+                    })
+                    .attr("dy", ".71em")
+                    .style("text-anchor", _this.attr.labelposition)
+                    .text(_this.attr.ylabel);
+        }
     };
 
     this.plot = function() {
@@ -641,8 +645,7 @@ function QuorraPlot(attributes) {
             quorra.events.Shift.down = function(){
                 d3.selectAll('.glyphbox#pan')
                     .selectAll('.glyph')
-                    .style('stroke', 'forestgreen')
-                    .style('stroke-width', 2);
+                    .style('stroke-width', 3);
                 _.each(Object.keys(quorra.plots), function(key){
                     quorra.plots[key].enabled.pan = true;
                 });
@@ -650,7 +653,6 @@ function QuorraPlot(attributes) {
             quorra.events.Shift.up = function(){
                 d3.selectAll('.glyphbox#pan')
                     .selectAll('.glyph')
-                    .style('stroke', '#555')
                     .style('stroke-width', 1);
                 _.each(Object.keys(quorra.plots), function(key) {
                     quorra.plots[key].enabled.pan = false;
@@ -661,8 +663,7 @@ function QuorraPlot(attributes) {
             quorra.events.ShiftA.down = function(){
                 d3.selectAll('.glyphbox#annotate')
                     .selectAll('.glyph')
-                    .style('stroke', 'forestgreen')
-                    .style('stroke-width', 2);
+                    .style('stroke-width', 3);
                 _.each(Object.keys(quorra.plots), function(key){
                     quorra.plots[key].enabled.annotate = true;
                 });
@@ -670,7 +671,6 @@ function QuorraPlot(attributes) {
             quorra.events.ShiftA.up = function(){
                 d3.selectAll('.glyphbox#annotate')
                     .selectAll('.glyph')
-                    .style('stroke', '#555')
                     .style('stroke-width', 1);
                 _.each(Object.keys(quorra.plots), function(key){
                     quorra.plots[key].enabled.annotate = false;
@@ -871,7 +871,7 @@ function QuorraPlot(attributes) {
         //     });
 
         // enable double click for jumping up on the stack
-        _this.attr.svg.on('dblclick', function(){
+        _this.attr.svg.on('dblclick', function() {
             var l = _this.xstack.length;
             if (l > 1){
                 _this.xstack.pop();
@@ -879,8 +879,7 @@ function QuorraPlot(attributes) {
                 l = l - 1;
             }
             _this.redraw(_this.xstack[l-1].domain(), _this.ystack[l-1].domain(), false);
-        })
-        .call(drag) // .call(zoom)
+        }).call(drag) // .call(zoom)
         .on("dblclick.zoom", null)
         .on("mousedown.zoom", null)
         .on("touchstart.zoom", null)
@@ -982,14 +981,14 @@ function QuorraPlot(attributes) {
         grid: false,
         xticks: "auto",
         yticks: "auto",
+        xaxis: "outside",
+        yaxis: "outside",
         xformat: "auto",
         yformat: "auto",
         xorient: "bottom",
         yorient: "left",
         xlabel: "",
         ylabel: "",
-        yposition: "outside",
-        xposition: "outside",
         labelposition: "middle",
         labelpadding: {x: 0, y: 0},
         opacity: 1,
