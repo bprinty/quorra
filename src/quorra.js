@@ -216,7 +216,7 @@ function QuorraPlot(attributes) {
         }
 
         // x axis
-        if (_this.attr.xaxis !== "hidden") {
+        if (_this.attr.xaxis !== "hidden" && _this.attr.xaxis != false) {
             _this.plotarea
                 .append("g")
                 .attr("class", "x axis")
@@ -245,7 +245,7 @@ function QuorraPlot(attributes) {
         }
 
         // y axis
-        if (_this.attr.yaxis !== "hidden") {
+        if (_this.attr.yaxis !== "hidden" && _this.attr.yaxis != false) {
             _this.plotarea
                 .append("g")
                 .attr("class", "y axis")
