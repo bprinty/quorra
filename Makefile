@@ -9,7 +9,7 @@
 # ------
 DIST_PATH = dist
 TESTS     = 
-VERSION   = `python -c 'import json; print json.load(open("package.json", "r"))["version"]'`
+VERSION   = `python -c 'import json; print json.load(open("bower.json", "r"))["version"]'`
 
 
 # targets

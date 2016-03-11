@@ -6,15 +6,14 @@
 
 module.exports = function(grunt) {
     
-    var _pkg = grunt.file.readJSON('package.json');
+    var _pkg = grunt.file.readJSON('bower.json');
     grunt.initConfig({
         pkg: _pkg,
         concat: {
             css: {
                 options: {
                     separator: '\n',
-                    banner: '/* quorra version ' + _pkg.version + ' (' + _pkg.url + ') ' +
-                        '<%= grunt.template.today("yyyy-mm-dd") %> */\n'
+                    banner: '/* quorra version ' + _pkg.version + ' (' + _pkg.homepage + ') */\n'
                 },
                 src: [
                     'src/css/*.css'
@@ -24,8 +23,7 @@ module.exports = function(grunt) {
             js: {
                 options: {
                     separator: '',
-                    banner: '/* quorra version ' + _pkg.version + ' (' + _pkg.url + ') ' +
-                        '<%= grunt.template.today("yyyy-mm-dd") %> */\n' + '(function(){\n',
+                    banner: '/* quorra version ' + _pkg.version + ' (' + _pkg.homepage + ') */\n' + '(function(){\n',
                     footer: '\n\nquorra.version = "' + _pkg.version + '";\n\nwindow.quorra = quorra;\n\n})();'
                 },
                 src: [
@@ -40,26 +38,13 @@ module.exports = function(grunt) {
         },
         uglify: {
             options: {
-                banner: '/* quorra version ' + _pkg.version + ' (' + _pkg.url + ') ' +
+                banner: '/* quorra version ' + _pkg.version + ' (' + _pkg.homepage + ') ' +
                     '<%= grunt.template.today("yyyy-mm-dd") %> */\n'
             },
             js: {
                 files: {
                     'dist/quorra.min.js': ['dist/quorra.js']
                 }
-            }
-        },
-        replace: {
-            version: {
-                src: [
-                    'package.json',
-                    'bower.json'
-                ],
-                overwrite: true,
-                replacements: [{
-                    from: /(version?\s?=?\:?\s\')([\d\.]*)\'/gi,
-                    to: '$1' + _pkg.version + "'"
-                }]
             }
         },
         jshint: {
