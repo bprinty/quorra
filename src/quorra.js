@@ -784,6 +784,8 @@ function QuorraPlot(attributes) {
                         _this.attr.events.zoom(d);
                     }
                 } else if(_this.enabled.pan) {
+                    _this.xstack.push(_this.xscale);
+                    _this.ystack.push(_this.yscale);
                     _this.attr.events.panend(d);
                 }
             }).on("drag", function(d) {
@@ -1125,3 +1127,92 @@ function QuorraPlot(attributes) {
     return this.go;
 }
 
+
+// annotation creation methods
+textAnnotation = function(plot, data, sel) {
+    var cl = (data.group == null) ? 'annotation text' : 'annotation text g_' + data.group;
+    var annot = sel.selectAll('.annotation.text')
+        .data([data]).enter()
+        .append('text')
+        .attr('class', cl)
+        .attr('x', plot.xscale(data.x) + data['text-margin'].x)
+        .attr('y', plot.yscale(data.y) + data['text-margin'].y)
+        .style("font-size", data['text-size'])
+        .style("text-anchor", "middle")
+        .text(data.text);
+    _.map(data.style, function(i){ annot.style(i, data.style[i]); });
+    return annot;
+}
+
+
+squareAnnotation = function(plot, data, sel) {
+    var cl = (data.group == null) ? 'annotation square': 'annotation square' + ' g_' + data.group;
+    var x = plot.xscale(data.x);
+    var y = plot.yscale(data.y);
+    var annot = sel.selectAll('.annotation.square')
+        .data([data]).enter()
+        .append('rect')
+        .attr('transform', 'rotate(' + data.rotate + ' ' + x + ' ' + y + ')')
+        .attr('class', cl)
+        .attr('width', data.size)
+        .attr('height', data.size)
+        .attr('x', x - data.size / 2)
+        .attr('y', y - data.size / 2);
+    _.map(data.style, function(i){ annot.style(i, data.style[i]); });
+    return annot;
+}
+
+
+rectangleAnnotation = function(plot, data, sel) {
+    var cl = (data.group == null) ? 'annotation rectangle': 'annotation rectangle' + ' g_' + data.group;
+    var x = plot.xscale(data.x);
+    var y = plot.yscale(data.y);
+    var xwidth = Math.abs(plot.xscale(data.width) - plot.xscale(0));
+    var xheight = Math.abs(plot.yscale(data.height) - plot.yscale(0));
+    var annot = sel.selectAll('.annotation.rectangle')
+        .data([data]).enter()
+        .append('rect')
+        .attr('transform', 'rotate(' + data.rotate + ' ' + x + ' ' + y + ')')
+        .attr('class', cl)
+        .attr('width', xwidth)
+        .attr('height', xheight)
+        .attr('x', x)
+        .attr('y', y);
+    _.map(data.style, function(i){ annot.style(i, data.style[i]); });
+    return annot;
+}
+
+
+circleAnnotation = function(plot, data, sel) {
+    var cl = (data.group == null) ? 'annotation circle': 'annotation circle' + ' g_' + data.group;
+    var annot = sel.selectAll('.annotation.circle')
+        .data([data]).enter()
+        .append('circle')
+        .attr('class', cl)
+        .attr('r', data.size / 2)
+        .attr('cx', plot.xscale(data.x))
+        .attr('cy', plot.yscale(data.y));
+    _.map(data.style, function(i){ annot.style(i, data.style[i]); });
+    return annot;
+}
+
+
+triangleAnnotation = function(plot, data, sel) {
+    var cl = (data.group == null) ? 'annotation triangle': 'annotation triangle' + ' g_' + data.group;
+    var x = plot.xscale(data.x);
+    var y = plot.yscale(data.y);
+    var annot = sel.selectAll('.annotation.triangle')
+        .data([data]).enter()
+        .append('path')
+        .attr('transform', 'rotate(' + data.rotate + ' ' + x + ' ' + y + ')')
+        .attr('class', cl)
+        .attr('d', function(d){
+            return [
+            'M' + (x - (d.size / 2)) + ',' + (y - (d.size / 2)),
+            'L' + (x + (d.size / 2)) + ',' + (y - (d.size / 2)),
+            'L' + x + ',' + (y + (d.size / 2)),
+            'Z'].join('');
+        });
+    _.map(data.style, function(i){ annot.style(i, data.style[i]); });
+    return annot;
+}
