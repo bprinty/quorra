@@ -1,4 +1,4 @@
-/* quorra version 0.0.1 (http://bprinty.github.io/quorra) 2016-03-11 */
+/* quorra version 0.0.1 (http://github.com/bprinty/quorra) */
 (function(){
 /**
 
