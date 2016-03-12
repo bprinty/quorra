@@ -28,7 +28,7 @@ build:
 
 
 .PHONY: test
-test:
+test: build
 	mocha-phantomjs tests/tests.html 
 
 
