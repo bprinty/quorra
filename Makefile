@@ -29,7 +29,7 @@ build:
 
 .PHONY: test
 test:
-	# run javascript-based tests
+	mocha-phantomjs tests/tests.html 
 
 
 clean:
