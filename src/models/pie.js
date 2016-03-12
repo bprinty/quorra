@@ -32,9 +32,6 @@ function Pie(attributes) {
         width = width - _this.attr.margin.left - _this.attr.margin.right;
         height = height - _this.attr.margin.top - _this.attr.margin.bottom;
 
-        console.log(width);
-        console.log(height);
-
         var r = (_this.attr.radius == "auto") ? (Math.min(width, height) / 2) : _this.attr.radius;
         var ir = (_this.attr.inner == "auto") ? 0 : _this.attr.inner;
 

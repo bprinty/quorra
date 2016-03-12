@@ -15,8 +15,6 @@ quorra.seed = function(value){
     quorra.seed()
 
     Set seed for reproducable random number generation. 
-
-    @author <bprinty@gmail.com>
     */
 
     if (!arguments.length) return seed;
@@ -29,8 +27,6 @@ quorra.random = function() {
     quorra.random()
 
     Random number generation using internal seed. 
-
-    @author <bprinty@gmail.com>
     */
 
     if (typeof seed === 'undefined') seed = 42;
@@ -44,8 +40,6 @@ quorra.uuid = function() {
     quorra.uuid()
 
     Generate random uuid with seed. 
-
-    @author <bprinty@gmail.com>
     */
 
     function uk() {
@@ -58,6 +52,57 @@ quorra.uuid = function() {
         uk() + uk() + uk()
     ].join('-');
 };
+
+
+quorra.export = function(svg, filename) {
+    /**
+    quorra.export()
+    
+    Export contents of svg to .png, with styling.
+    */
+    var sel = svg.attr({
+        'xmlns': 'http://www.w3.org/2000/svg',
+        version: '1.1'
+    }).node();
+    var cln = sel.cloneNode(true);
+    document.body.appendChild(cln);
+
+    // set styling for elements
+    d3.select(cln).style('background-color', '#fff');
+    d3.select(cln).selectAll('.glyphbox').remove();
+    d3.select(cln).selectAll('text').style('font-weight', 300).style('font-size', '12px').style('font-family', '"HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif');
+    d3.select(cln).selectAll('.axis line').style('stroke', '#bbb').style('fill', 'none').style('shape-rendering', 'crispEdges');
+    d3.select(cln).selectAll('.axis path').style('stroke', '#bbb').style('fill', 'none').style('shape-rendering', 'crispEdges');
+    d3.select(cln).selectAll('.axis .tick line').style('stroke', '#bbb').style('opacity', 0.5);
+    d3.select(cln).selectAll('.xtick').style('stroke-width', '1.5px');
+    d3.select(cln).selectAll('.ytick').style('stroke-width', '1.5px');
+
+    // set up html5 canvas for image
+    var canvas = document.createElement("canvas");
+    var ctx = canvas.getContext("2d");
+
+    // encode image in src tag
+    var svgSize = cln.getBoundingClientRect();
+    var svgData = new XMLSerializer().serializeToString(cln);
+    canvas.width = svgSize.width;
+    canvas.height = svgSize.height;
+    var img = document.createElement("img");
+    img.setAttribute("src", "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData))));
+
+    // draw with canvas and export
+    img.onload = function() {
+        ctx.drawImage(img, 0, 0);
+        var data = canvas.toDataURL("image/png");
+        var a = document.createElement("a");
+        a.download = filename + ".png";
+        a.href = data;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        canvas.remove();
+        document.body.removeChild(cln);
+    };
+}
 
 
 // underscore additions

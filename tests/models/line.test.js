@@ -1,19 +1,21 @@
 /**
 
-Tests for common quorra functionality.
+Tests for line model.
  
 @author <bprinty@gmail.com>
 */
 
 describe("line.js", function () {
 
+  var base = null;
+  var data = null;
   before(function() {
+      
       // config
       quorra.debug = false;
 
       // simulate data
       var entries = 50;
-      quorra.seed(123);
       x = _.range(entries).map(function(d) { return d; });
       y = _.range(entries).map(function(d) { return quorra.random() * d; });
       group = _.range(entries).map(function(d) {
@@ -46,6 +48,7 @@ describe("line.js", function () {
 
       var line = quorra.line()
         .bind('#' + id)
+        .id(id)
         .data(data)
         .opacity(0.75)
         .xrange([5, 40])
@@ -62,7 +65,7 @@ describe("line.js", function () {
 
       quorra.render(line);
 
-      expect(2).to.be.equal(2);
+      validate(id);
   });
 
   it("area", function () {
@@ -71,6 +74,7 @@ describe("line.js", function () {
 
       var line = quorra.line()
         .bind('#' + id)
+        .id(id)
         .data(data)
         .opacity(0.75)
         .xrange([5, 40])
@@ -90,7 +94,7 @@ describe("line.js", function () {
 
       quorra.render(line);
 
-      expect(2).to.be.equal(2);
+      validate(id);
   });
 
 });

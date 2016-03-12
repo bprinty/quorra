@@ -81,7 +81,7 @@ function Scatter(attributes) {
                 .attr("y2", function(d, i) { return _this.innerheight-10; })
                 .attr("stroke", function(d, i){ return _this.pallette(_this.attr.group(d, i)); })
                 .style("opacity", _this.attr.opacity)
-                .style("visibility", function(d){
+                .style("visibility", function(d, i){
                     return _.contains(_this.attr.toggled, _this.attr.group(d, i)) ? 'hidden' : 'visible';
                 });
         }
@@ -100,7 +100,7 @@ function Scatter(attributes) {
                 .attr("y2", function(d, i) { return _this.yscale(_this.attr.y(d, i)); })
                 .attr("stroke", function(d, i){ return _this.pallette(_this.attr.group(d, i)); })
                 .style("opacity", _this.attr.opacity)
-                .style("visibility", function(d){
+                .style("visibility", function(d, i){
                     return _.contains(_this.attr.toggled, _this.attr.group(d, i)) ? 'hidden' : 'visible';
                 });
         }
