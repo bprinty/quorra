@@ -48,6 +48,8 @@
         <div id="grouped-editor" class="editor">  
 // grouped bar
 var grouped = quorra.histogram()
+    .bind('#grouped .plotarea')
+    .data(data)
     .width(600)
     .height(400)
     .opacity(0.75)
@@ -59,8 +61,7 @@ var grouped = quorra.histogram()
     .ylabel("Counts")
     .color(['firebrick','steelblue']);
 
-d3.select("#grouped .plotarea")
-    .datum(data).call(grouped);
+quorra.render(grouped);
         </div>
         <p class="pre-editor">Hit Cmd+Enter for changes to take effect.</p>
         
@@ -71,6 +72,8 @@ d3.select("#grouped .plotarea")
         <div id="stacked-editor" class="editor">  
 // stacked bar
 var stacked = quorra.histogram()
+    .bind('#stacked .plotarea')
+    .data(data)
     .width(600)
     .height(400)
     .layout("stacked")
@@ -86,8 +89,7 @@ var stacked = quorra.histogram()
     .labelpadding({y: -10})
     .color(['firebrick','steelblue']);
 
-d3.select("#stacked .plotarea")
-    .datum(data).call(stacked);
+quorra.render(stacked);
         </div>
         <p class="pre-editor">Hit Cmd+Enter for changes to take effect.</p>
 

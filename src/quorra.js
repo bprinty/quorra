@@ -6,39 +6,90 @@ quorra base
 
 */
 
+
 function quorra() {
     /**
     quorra()
 
     Base class for all visualization components.
-
-    @author <bprinty@gmail.com>
     */
 }
 
+quorra.debug = true;
+quorra.error = function(text) {
+    /**
+    quorra.error()
+
+    Class for managing error reporting.
+    */
+    console.log('ERROR: ' + text);
+}
+
+quorra.log = function(text) {
+    /**
+    quorra.log()
+
+    Class for managing logging.
+    */
+    if (quorra.debug) {
+        console.log('DEBUG: ' + text);
+    }
+}
+
+quorra.render = function(generator) {
+    /**
+    quorra.render()
+    
+    Render created plot object.
+    */
+    quorra.log('rendering element');
+    var obj = generator();
+    if (typeof generator['parent'] === 'undefined') {
+        quorra.plots[generator.id()] = obj;
+    }
+    return obj;
+}
+
+quorra.annotation = function(plot, attributes) {
+    /**
+    quorra.annotation()
+
+    Render annotation for plot.
+    */
+    quorra.log('creating plot annotation');
+    return new Annotation(plot, attributes);
+}
+
+
 quorra.plots = {};
-
-
 function QuorraPlot(attributes) {
+    /**
+    QuorraPlot()
+
+    Object for managing plot rendering, and extending
+    common functionality across all plot models.
+    */
+    quorra.log('instantiating quorra plot object');
+
+    if (typeof attributes == 'undefined') attributes = {};
     var _this = this;
 
     // constructor
     this.go = function(selection) {
+        quorra.log('running generator function');
         
         // configure selection
-        _this.attr.container = (_this.attr.container === null) ? selection : _this.attr.selection;
+        if (typeof selection === 'undefined') selection = _this.attr.bind;
+        _this.selection = (typeof selection === 'string') ? d3.select(selection) : selection;
 
-        if (typeof _this.attr.container === 'string') _this.attr.container = d3.select(_this.attr.container);
-
-        if (_this.attr.container.select("svg")[0][0] == null){
-            _this.attr.svg = (_this.attr.svg === null) ? _this.attr.container.append("svg") : _this.attr.svg;
-        } else {
-            _this.attr.svg = _this.attr.container.select("svg");
+        if (_this.selection.select("svg")[0][0] != null){
+            _this.selection.select("svg").selectAll('*').remove();
         }
+        _this.attr.svg = (_this.attr.svg === null) ? _this.selection.append("svg") : _this.attr.svg;
 
         // calculate basic dimensions
-        var width = (_this.attr.width == "auto") ? parseInt(_this.attr.container.style("width")) : _this.attr.width;
-        var height = (_this.attr.height == "auto") ? parseInt(_this.attr.container.style("height")) : _this.attr.height;
+        var width = (_this.attr.width == "auto") ? parseInt(_this.selection.style("width")) : _this.attr.width;
+        var height = (_this.attr.height == "auto") ? parseInt(_this.selection.style("height")) : _this.attr.height;
         _this.innerwidth = width - _this.attr.margin.left - _this.attr.margin.right;
         _this.innerheight = height - _this.attr.margin.top - _this.attr.margin.bottom;
 
@@ -57,10 +108,10 @@ function QuorraPlot(attributes) {
         // segment sections of canvas (makes axis rendering easier)
         _this.plotarea = _this.attr.svg.append('g')
             .attr("class", "plotarea")
-            .attr("transform", "translate(" + _this.attr.margin.left + "," + _this.attr.margin.top + ")");            
+            .attr("transform", "translate(" + _this.attr.margin.left + "," + _this.attr.margin.top + ")");
 
         // perform provided data transformations
-        _this.data = _this.attr.transform(_this.attr.container.data()[0]);
+        _this.data = _this.attr.transform(_this.attr.data);
         
         // get x domain and range
         if (typeof _this.data[0].x === 'string') {
@@ -110,9 +161,6 @@ function QuorraPlot(attributes) {
         _this.xstack = [];
         _this.ystack = [];
         
-        // draw plot
-        _this.redraw();
-
         // create legend (if specified)
         if (_this.attr.legend) {
             _this.drawlegend();
@@ -130,9 +178,16 @@ function QuorraPlot(attributes) {
         if (_this.attr.glyphs) {
             _this.drawglyphs();
         }
+
+        // draw plot
+        _this.redraw();
+
+        return _this;
     };
 
     this.redraw = function(xrange, yrange, cache) {
+        quorra.log('redrawing plot');
+
         // configure window
         if (typeof xrange !== 'undefined') {
             _this.attr.xrange = xrange;
@@ -163,6 +218,7 @@ function QuorraPlot(attributes) {
     
     // rendering methods
     this.axes = function() {
+        quorra.log('redrawing axes');
 
         // parameterize axes scaling
         var domain = _this.attr.xrange === "auto" ? _this.domain : _this.attr.xrange;
@@ -285,135 +341,15 @@ function QuorraPlot(attributes) {
     };
 
     this.annotate = function() {
+        quorra.log('drawing plot annotation');
+
         _.map(_this.attr.annotation, function(d) {
-            
-            // configure attributes for annotation
-            var data = _.extend({
-                parent: _this.attr.id,
-                exists: false,
-                id: quorra.uuid(),
-                type: 'text',
-                text: '',
-                hovertext: '',
-                xfixed: false,
-                yfixed: false,
-                size: 15,
-                group: null,
-                rotate: 0,
-                'text-size': 13,
-                'text-position': {x: 0, y: 20},
-                'text-margin': {x: 0, y: 0},
-                'text-rotation': 0,
-                x: 0,
-                y: 0,
-                width: 0,
-                height: 0,
-                draggable: false,
-                events: {},
-                style: {},
-                meta: {}
-            }, d);
-            data['text-position'] = _.extend({x: 0, y: 20}, data['text-position']);
-            data['text-margin'] = _.extend({x: 0, y: 0}, data['text-margin']);
-            data['style'] = _.extend({opacity: 1}, data['style']);
-            data['events'] = _.extend({
-                drag: function(){},
-                dragstart: function(){},
-                dragend: function(){},
-                click: function(){}
-            }, data['events']);
-
-            // create wrapper element for annotation groups
-            _this.plotarea.selectAll('.annotation#' + data.id).remove();
-            var asel = _this.plotarea.append('g')
-                .attr('class', 'annotation')
-                .attr('id', _this.attr.id)
-            
-            // enable drag behavior for annotation (if available and specified)
-            if (data.draggable && !_this.attr.zoomable) {
-                var drag = d3.behavior.drag()
-                    .on("dragstart", function() {
-                        // probably nothing ...
-                        data.events.dragstart();
-                    }).on("dragend", function() {
-                        
-                        // take current location of annotation
-                        
-                        // update annotation in _this.attr.annotation
-                        
-                        // re-render plot with new annotation coordinates
-                        data.events.dragend();
-                    }).on("drag", function() {
-                        // STOPPED HERE ... SOMETHING IS FUNKY WITH THE WAY THE MOUSE IS
-                        // PULLING COORDINATES -- THIS NEEDS TO BE FIXED SO THE ANNOTATION
-                        // CAN BE DRAGGED AROUND
-                        var movement = mouse(_this.attr.svg, _this.attr.margin.left + _this.attr.margin.right, _this.innerheight - _this.attr.margin.top - _this.attr.margin.bottom);
-                        d3.select(this).attr('transform', 'translate(' + movement.x + ',' + movement.y + ')');
-                        data.events.drag();
-                    });
-
-                asel.call(drag);
-            }
-
-            // create specific annotation object
-            if (data.type == 'square') {
-                var annot = squareAnnotation(_this, data, asel);
-                data['text-margin'].y = data['text-margin'].y - (data.size / 2) - 5;
-            } else if (data.type == 'rectangle') {
-                var annot = rectangleAnnotation(_this, data, asel);
-                data['text-margin'].x = data['text-margin'].x + data.text.length*2 + 2;
-                data['text-margin'].y = data['text-margin'].y - 5;
-            } else if (data.type == 'circle') {
-                var annot = circleAnnotation(_this, data, asel);
-                data['text-margin'].y = data['text-margin'].y - (data.size / 2) - 5;
-            } else if (data.type == 'triangle') {
-                var annot = triangleAnnotation(_this, data, asel);
-                data['text-margin'].x = data['text-margin'].x + (data.size / 2) - data.text.length*2;
-                data['text-margin'].y = data['text-margin'].y - (data.size / 2) - 5;
-            }
-
-            // extend annotation object with mouseover events
-            annot.attr("clip-path", "url(#clip)")
-            .style("visibility", function(d){
-                return _.contains(_this.attr.toggled, _this.attr.group(d)) ? 'hidden' : 'visible';
-            }).on('mouseover', function(d){
-                d3.select(this).style('opacity', 0.75*d.style.opacity);
-                if (_this.attr.tooltip) {
-                    _this.attr.tooltip.html(d.hovertext)
-                        .style("opacity", 1)
-                        .style("left", (d3.event.pageX + 5) + "px")
-                        .style("top", (d3.event.pageY - 20) + "px");
-                }
-            }).on('mousemove', function(d){
-                if (_this.attr.tooltip) {
-                    _this.attr.tooltip
-                        .style("left", (d3.event.pageX + 5) + "px")
-                        .style("top", (d3.event.pageY - 20) + "px");
-                }
-            }).on('mouseout', function(d){
-                d3.select(this).style('opacity', d.style.opacity);
-                if (_this.attr.tooltip) {
-                    _this.attr.tooltip.style("opacity", 0);
-                }
-            }).on('click', data.events.click);
-
-            // add text description to annotation (if specified)
-            if (data.text !== '') {
-                var annot = textAnnotation(_this, data, asel);
-                annot.attr("clip-path", "url(#clip)")
-                .style("visibility", function(d){
-                    return _.contains(_this.attr.toggled, _this.attr.group(d)) ? 'hidden' : 'visible';
-                }).on('mouseover', function(d){
-                    d3.select(this).style('opacity', 0.75);
-                }).on('mouseout', function(d){
-                    d3.select(this).style('opacity', 1);
-                }).on('click', data.events.click);
-            }
-
+            quorra.render(d);
         });
     };
 
     this.drawlegend = function() {
+        quorra.log('drawing plot legend');
 
         // set up pallette ordering
         var data = _this.pallette.domain();
@@ -422,8 +358,8 @@ function QuorraPlot(attributes) {
         }
 
         // compute width and height for scaling
-        var width = (_this.attr.width == "auto") ? parseInt(_this.attr.container.style("width")) : _this.attr.width;
-        var height = (_this.attr.height == "auto") ? parseInt(_this.attr.container.style("height")) : _this.attr.height;
+        var width = (_this.attr.width == "auto") ? parseInt(_this.selection.style("width")) : _this.attr.width;
+        var height = (_this.attr.height == "auto") ? parseInt(_this.selection.style("height")) : _this.attr.height;
 
         // create container for legend
         var leg = _this.attr.svg
@@ -463,12 +399,12 @@ function QuorraPlot(attributes) {
         }
 
         // enable toggling events for turning on/off groups
-        if (_this.attr.toggle){
+        if (_this.attr.toggle) {
             selector.on("mouseover", function(d, i){
                 d3.select(this).style('opacity', 0.75);
             }).on("mouseout", function(d, i){
                 d3.select(this).style('opacity', 1);
-            }).on("click", function(d, i){
+            }).on("click", function(d, i) {
                 if (d3.select(this).style('fill-opacity') == 0){
                     d3.select(this).style('fill-opacity', _.contains(_this.attr.toggled, d) ? _this.attr.opacity: 0);
                     _this.attr.svg.selectAll(".g_" + d).style('visibility', 'visible');
@@ -503,6 +439,7 @@ function QuorraPlot(attributes) {
     };
 
     this.drawglyphs = function() {
+        quorra.log('drawing plot glyphs');
 
         // all glyphs pulled from https://icomoon.io/app
         // refresh glyph
@@ -704,6 +641,7 @@ function QuorraPlot(attributes) {
     };
 
     this.enablezoom = function() {
+        quorra.log('enabling zoom events');
 
         // check if data is within plot boundaries
         function withinBounds(motion){
@@ -734,18 +672,20 @@ function QuorraPlot(attributes) {
 
         // set up drag behavior
         var drag = d3.behavior.drag()
-            .origin(function(d){ return d; })
+            // .origin(function(d){ return d; })
             .on("dragstart", function(d) {
-                var movement = mouse(_this.attr.svg, _this.attr.margin.left, _this.attr.margin.top);
-                _this.zoomdata.x = movement.x;
-                _this.zoomdata.y = movement.y;
+                var movement = mouse(_this.attr.svg);
+                _this.zoomdata.x = movement.x - _this.attr.margin.left;
+                _this.zoomdata.y = movement.y - _this.attr.margin.top;
                 if(_this.enabled.pan) {
                     _this.attr.events.panstart(d);
                 }
             }).on("dragend", function(d) {
                 viewbox.attr('d', '');
-                var movement = mouse(_this.attr.svg, _this.attr.margin.left, _this.attr.margin.top);
-                
+                var movement = mouse(_this.attr.svg);
+                movement.x = movement.x - _this.attr.margin.left;
+                movement.y = movement.y - _this.attr.margin.top;
+
                 if (_this.enabled.zoom) {
                     var changed = false;
                     var l = _this.xstack.length;
@@ -789,7 +729,9 @@ function QuorraPlot(attributes) {
                     _this.attr.events.panend(d);
                 }
             }).on("drag", function(d) {
-                var movement = mouse(_this.attr.svg, _this.attr.margin.left, _this.attr.margin.top);
+                var movement = mouse(_this.attr.svg);
+                movement.x = movement.x - _this.attr.margin.left;
+                movement.y = movement.y - _this.attr.margin.top;
                 if (_this.enabled.zoom) {
                     if (_this.zoomdata.y > _this.innerheight) {
                         movement.y = 0;
@@ -823,7 +765,9 @@ function QuorraPlot(attributes) {
         // BE PUT INTO MAKING THIS AN OPTION AND MAKING IT COMPATIBLE WITH THE CURRENT CODE
         // var zoom = d3.behavior.zoom()
         //     .on("zoom", function(){
-        //         var movement = mouse();
+        //         var movement = mouse(_this.attr.svg);
+        //         movement.x = movement.x - _this.attr.margin.left;
+        //         movement.y = movement.y - _this.attr.margin.top;
         //         var time = Date.now();
 
         //         // correcting for touchpad/mousewheel discrepencies
@@ -922,6 +866,7 @@ function QuorraPlot(attributes) {
     };
 
     this.enableannotation = function() {
+        quorra.log('enabling annotation events');
 
         // set up default attributes for new annotation
         var triggers = _.extend({
@@ -952,7 +897,7 @@ function QuorraPlot(attributes) {
         // enable annotation on click event
         _this.attr.svg.on('click', function(){
             if (_this.enabled.annotate) {
-                var coordinates = d3.mouse(_this.attr.svg.node());
+                var coordinates = mouse(_this.attr.svg);
                 if (coordinates[0] > (_this.innerwidth + _this.attr.margin.left) ||
                     coordinates[0] < _this.attr.margin.left ||
                     coordinates[1] > (_this.innerheight + _this.attr.margin.top) ||
@@ -974,7 +919,7 @@ function QuorraPlot(attributes) {
                 }
 
                 d.parent = _this.attr.id;
-                _.each(['id', 'type', 'text', 'style', 'meta', 'size', 'group', 'text-size', 'text-position', 'draggable'], function(x){
+                _.each(['id', 'type', 'text', 'style', 'meta', 'size', 'group', 'text-size', 'text-position', 'events'], function(x){
                     d[x] = (typeof triggers[x] === "function") ? triggers[x](d) : triggers[x];
                 });
                 d.events = triggers.events;
@@ -1009,17 +954,19 @@ function QuorraPlot(attributes) {
 
 
     // tuneable plot attributes
-    this.attr = {
+    this.attr = extend({
         // sizing
+        id: quorra.uuid(),
         plotname: "quorra-plot",
         type: "quorra-plot",
         width: "auto",
         height: "auto",
-        margin: {},
-        container: null,
+        margin: {"top": 20, "bottom": 40, "left": 40, "right": 65},
         svg: null,
+        bind: 'body',
         
         // data rendering
+        data: [],
         x: function(d, i) { return d.x; },
         y: function(d, i) { return d.y; },
         group: function(d, i){ return (typeof d.group === 'undefined') ? 0 : d.group; },
@@ -1035,7 +982,23 @@ function QuorraPlot(attributes) {
         zoomable: false,
         annotatable: false,
         exportable: false,
-        events: {},
+        events: {
+            zoom: function() {
+                quorra.log('zoom event');
+            },
+            pan: function() {
+                quorra.log('pan event');
+            },
+            panstart: function() {
+                quorra.log('pan start event');
+            },
+            panend: function() {
+                quorra.log('pan end event');
+            },
+            export: function() {
+                quorra.log('export event');
+            }
+        },
 
         // plot styling
         grid: false,
@@ -1050,12 +1013,12 @@ function QuorraPlot(attributes) {
         xlabel: "",
         ylabel: "",
         labelposition: "middle",
-        labelpadding: {},
+        labelpadding: {x: 0, y: 0},
         opacity: 1,
         
         // legend
         legend: true,
-        lmargin: {},
+        lmargin: {"top": 0, "bottom": 0, "left": 0, "right": 0},
         lposition: "outside",
         lshape: "square",
         lorder: [],
@@ -1066,153 +1029,44 @@ function QuorraPlot(attributes) {
         glyphs: true,
         gshape: "circle",
         
-        // additional display
-        annotation: []
-    };
-
-    // plot tooltip -- maybe include this as an object attribure
-    this.attr.tooltip = d3.select("body").append("div")
-        .attr("id", this.attr.id)
-        .attr("class", "tooltip")
-        .style("position", "absolute")
-        .style("opacity", 0);
-
-    // extend simple attributes
-    this.attr = _.extend(this.attr, attributes);
-
-    // extending nested attributes
-    this.attr.labelpadding = _.extend({x: 0, y: 0}, this.attr.labelpadding);
-    this.attr.margin = _.extend({"top": 20, "bottom": 40, "left": 40, "right": 65}, this.attr.margin);
-    this.attr.lmargin = _.extend({"top": 0, "bottom": 0, "left": 0, "right": 0}, this.attr.lmargin);
-    this.attr.events = _.extend({
-        zoom: function(){},
-        pan: function(){},
-        panstart: function(){},
-        panend: function(){},
-        export: function(){}
-    }, this.attr.events);
-
-    // configure unique identifier for plot
-    this.attr.id = (typeof this.attr.id !== 'undefined') ?  this.attr.id : quorra.uuid();
+    }, attributes);
 
     // binding attributes to constructor function
-    Object.keys(_this.attr).forEach(function(i) {
-        _this.go[i] = function(value) {
-            if (!arguments.length) return _this.attr[i];
-
-            // binding a tooltip requires removal of the previous
-            if (i === 'tooltip') {
-                _this.attr[i].remove();
+    parameterize(_this.attr, _this.go);
+    _this.go.__parent__ = _this;
+    
+    // managing specialized attributes
+    _this.go.tooltip = function(value) {
+        if (!arguments.length) return _this.attr.tooltip;
+        if (value == true) {
+            _this.attr.tooltip = d3.select("body").append("div")
+                .attr("class", "tooltip")
+                .style("position", "absolute")
+                .style("opacity", 0);
+        } else if (value != false) {
+            _this.attr.tooltip = value;
+        }
+        return _this.go;
+    };
+    _this.go.annotation = function(value) {
+        if (!arguments.length) return _.map(_this.attr.annotation, function(d){ return d.__parent__.attr; });
+        _this.attr.annotation = _.map(value, function(d) {
+            if (typeof d != 'function') {
+                d = quorra.annotation(d).bind(_this.go);
             }
-            // maintain non-overridden object arguments
-            if (typeof value === 'object' && i != 'tooltip') {
-                if (typeof _this.attr[i] === 'object') {
-                    if (Array.isArray(_this.attr[i]) && ! Array.isArray(value)) {
-                        value = [value];
-                    }
-                    _this.attr[i] = _.extend(_this.attr[i], value);
-                } else {
-                    _this.attr[i] = value;
-                }
-            } else {
-                _this.attr[i] = value;
-            }
-            return _this.go;
-        };
-    });
-
-    // add instantiated plot to plot list
-    quorra.plots[this.attr.id] = this;
+            return d;
+        });
+        return _this.go;
+    };
+    _this.go.add = function(value) {
+        if (typeof _this.attr.annotation == 'undefined') {
+            _this.attr.annotation = [value];
+        } else {
+            _this.attr.annotation.push(value);
+        }
+        return _this.go;
+    }
 
     return this.go;
 }
 
-
-// annotation creation methods
-textAnnotation = function(plot, data, sel) {
-    var cl = (data.group == null) ? 'annotation text' : 'annotation text g_' + data.group;
-    var annot = sel.selectAll('.annotation.text')
-        .data([data]).enter()
-        .append('text')
-        .attr('class', cl)
-        .attr('x', plot.xscale(data.x) + data['text-margin'].x)
-        .attr('y', plot.yscale(data.y) + data['text-margin'].y)
-        .style("font-size", data['text-size'])
-        .style("text-anchor", "middle")
-        .text(data.text);
-    _.map(data.style, function(i){ annot.style(i, data.style[i]); });
-    return annot;
-}
-
-
-squareAnnotation = function(plot, data, sel) {
-    var cl = (data.group == null) ? 'annotation square': 'annotation square' + ' g_' + data.group;
-    var x = plot.xscale(data.x);
-    var y = plot.yscale(data.y);
-    var annot = sel.selectAll('.annotation.square')
-        .data([data]).enter()
-        .append('rect')
-        .attr('transform', 'rotate(' + data.rotate + ' ' + x + ' ' + y + ')')
-        .attr('class', cl)
-        .attr('width', data.size)
-        .attr('height', data.size)
-        .attr('x', x - data.size / 2)
-        .attr('y', y - data.size / 2);
-    _.map(data.style, function(i){ annot.style(i, data.style[i]); });
-    return annot;
-}
-
-
-rectangleAnnotation = function(plot, data, sel) {
-    var cl = (data.group == null) ? 'annotation rectangle': 'annotation rectangle' + ' g_' + data.group;
-    var x = plot.xscale(data.x);
-    var y = plot.yscale(data.y);
-    var xwidth = Math.abs(plot.xscale(data.width) - plot.xscale(0));
-    var xheight = Math.abs(plot.yscale(data.height) - plot.yscale(0));
-    var annot = sel.selectAll('.annotation.rectangle')
-        .data([data]).enter()
-        .append('rect')
-        .attr('transform', 'rotate(' + data.rotate + ' ' + x + ' ' + y + ')')
-        .attr('class', cl)
-        .attr('width', xwidth)
-        .attr('height', xheight)
-        .attr('x', x)
-        .attr('y', y);
-    _.map(data.style, function(i){ annot.style(i, data.style[i]); });
-    return annot;
-}
-
-
-circleAnnotation = function(plot, data, sel) {
-    var cl = (data.group == null) ? 'annotation circle': 'annotation circle' + ' g_' + data.group;
-    var annot = sel.selectAll('.annotation.circle')
-        .data([data]).enter()
-        .append('circle')
-        .attr('class', cl)
-        .attr('r', data.size / 2)
-        .attr('cx', plot.xscale(data.x))
-        .attr('cy', plot.yscale(data.y));
-    _.map(data.style, function(i){ annot.style(i, data.style[i]); });
-    return annot;
-}
-
-
-triangleAnnotation = function(plot, data, sel) {
-    var cl = (data.group == null) ? 'annotation triangle': 'annotation triangle' + ' g_' + data.group;
-    var x = plot.xscale(data.x);
-    var y = plot.yscale(data.y);
-    var annot = sel.selectAll('.annotation.triangle')
-        .data([data]).enter()
-        .append('path')
-        .attr('transform', 'rotate(' + data.rotate + ' ' + x + ' ' + y + ')')
-        .attr('class', cl)
-        .attr('d', function(d){
-            return [
-            'M' + (x - (d.size / 2)) + ',' + (y - (d.size / 2)),
-            'L' + (x + (d.size / 2)) + ',' + (y - (d.size / 2)),
-            'L' + x + ',' + (y + (d.size / 2)),
-            'Z'].join('');
-        });
-    _.map(data.style, function(i){ annot.style(i, data.style[i]); });
-    return annot;
-}

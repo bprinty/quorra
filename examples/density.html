@@ -48,6 +48,8 @@
         <div id="density-editor" class="editor"> 
 // regular scatter
 var density = quorra.density()
+    .bind('#density .plotarea')
+    .data(data)
     .width(600)
     .height(400)
     .grid(true)
@@ -60,8 +62,7 @@ var density = quorra.density()
     .ylabel("Density")
     .color(['firebrick','steelblue']);
 
-d3.select('#density .plotarea')
-    .datum(data).call(density);
+quorra.render(density);
         </div>
         <p class="pre-editor">Hit Cmd+Enter for changes to take effect.</p>
         
@@ -72,6 +73,8 @@ d3.select('#density .plotarea')
         <div id="lowdensity-editor" class="editor"> 
 // regular scatter
 var lowdensity = quorra.density()
+    .bind('#lowdensity .plotarea')
+    .data(data)
     .width(600)
     .height(400)
     .opacity(0.75)
@@ -86,8 +89,7 @@ var lowdensity = quorra.density()
     .ylabel("Density")
     .color(['firebrick','steelblue']);
 
-d3.select('#lowdensity .plotarea')
-    .datum(data).call(lowdensity);
+quorra.render(lowdensity);
         </div>
         <p class="pre-editor">Hit Cmd+Enter for changes to take effect.</p>
     

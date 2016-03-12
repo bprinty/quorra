@@ -52,88 +52,66 @@ var line = quorra.line()
     .data(data)
     .width(600)
     .height(400)
-    .grid(true)
-    .layout('area')
-    .yticks(10)
     .opacity(0.75)
-    .lposition("outside")
-    .lorder(['Good', 'Evil'])
+    .points(5)
     // .zoomable(true)
-    .exportable(true)
-    .xticks(10)
-    .gshape("square")
-    .interpolate("cardinal")
     .xlabel("X Axis Label")
     .ylabel("Y Axis Label")
     .color(['firebrick','steelblue'])
-    .events({
-        pan: function() { console.log('panning!'); },
-        panstart: function() { console.log('pan start!'); },
-        panend: function() { console.log('pan end!'); },
-        zoom: function() { console.log('zoomed!'); },
-        export: function() { console.log('exported!'); }
-    }).annotation([
+    .annotation([
         {
             type: 'rectangle',
             text: 'rect',
             group: 'Evil',
-            width: 10,
-            height: 10,
-            x: 10,
+            width: 5,
+            height: 5,
+            x: 5,
             y: 15,
-            draggable: true,
-            events: {
-                click: function() { console.log('clicked rect!'); },
-                drag: function() { console.log('dragging rect!'); },
-                dragstart: function() { console.log('start dragging rect!'); },
-                dragend: function() { console.log('stop dragging rect!'); }
-            }
         },
         {
             type: 'triangle',
             draggable: true,
             size: 20,
-            x: 10,
+            rotate: 90,
+            x: 25,
+            y: 20
+        },
+        {
+            type: 'circle',
+            draggable: true,
+            size: 20,
+            x: 15,
+            y: 20
+        },
+         {
+             type: 'square',
+             draggable: true,
+             size: 20,
+             x: 20,
+             y: 20
+         },
+        {
+            type: 'text',
+            draggable: true,
+            size: 20,
+            x: 30,
             y: 20
         }
-    ]).annotatable({
-        type: 'triangle',
-        add: function(){
-            console.log('in!');
-        }
-    });
+    ]);
 
+var square = quorra.annotation()
+    .bind(line)
+    .type('square')
+    .text('rect').group('Evil')
+    .x(10).y(15).size(10)
+    .draggable(true)
+    .style({
+        'fill': 'steelblue'
+    });
+line.add(square);
 quorra.render(line);
 
-        </div>
-        <p class="pre-editor">Hit Cmd+Enter for changes to take effect.</p>
-
-        <div id="pointline" class="container">
-            <div class="plotarea"></div>
-        </div>
-
-        <div id="pointline-editor" class="editor"> 
-// line with points
-var pointline = quorra.line()
-    .bind('#pointline .plotarea')
-    .data(data)
-    .width(600)
-    .height(400)
-    .opacity(0.75)
-    .xrange([5, 40])
-    .lposition("outside")
-    .lshape("circle")
-    .labelposition("end")
-    .yaxis("inside")
-    .xaxis("outside")
-    .zoomable(true)
-    .points(5)
-    .xlabel("X Axis Label")
-    .ylabel("Y Axis Label")
-    .color(['firebrick','steelblue']);
-
-quorra.render(pointline)
-        </div>
+    </div>
         <p class="pre-editor">Hit Cmd+Enter for changes to take effect.</p>
 
     </div>
@@ -165,7 +143,6 @@ quorra.render(pointline)
 
     <script>
         eval(parameterizeEditor('line-editor', '#line .plotarea svg'));
-        eval(parameterizeEditor('pointline-editor', '#pointline .plotarea svg'));
     </script>
 
   </body>

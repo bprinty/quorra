@@ -8,9 +8,10 @@ function Density(attributes) {
     @author <bprinty@gmail.com>
     */
     var _this = this;
+    if (typeof attributes == 'undefined') attributes = {};
 
     // parent class initialization
-    Line.call(this, _.extend({
+    Line.call(this, extend({
         class: "quorra-density",
         resolution: 10
     }, attributes));

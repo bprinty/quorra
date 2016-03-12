@@ -8,9 +8,10 @@ function Histogram(attributes) {
     @author <bprinty@gmail.com>
     */
     var _this = this;
+    if (typeof attributes == 'undefined') attributes = {};
 
     // parent class initialization
-    Bar.call(this, _.extend({
+    Bar.call(this, extend({
         class: "quorra-histogram",
         bins: 10,
         display: 'counts' // fraction, percent, counts

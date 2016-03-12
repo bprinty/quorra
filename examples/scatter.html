@@ -51,6 +51,8 @@
         <div id="scatter-editor" class="editor">
 // regular scatter
 var scatter = quorra.scatter()
+    .bind('#scatter .plotarea')
+    .data(data)
     .grid(true)
     .opacity(0.75)
     .lshape("circle")
@@ -60,8 +62,7 @@ var scatter = quorra.scatter()
     .ylabel("Y Axis Label")
     .color(['firebrick','steelblue']);
 
-d3.select('#scatter .plotarea')
-    .datum(data).call(scatter);
+quorra.render(scatter);
         </div>
         <p class="pre-editor">Hit Cmd+Enter for changes to take effect.</p>
 
@@ -72,6 +73,8 @@ d3.select('#scatter .plotarea')
         <div id="jitter-editor" class="editor">
 // grouped scatter with jitter
 var jitter = quorra.scatter()
+    .bind('#jitter .plotarea')
+    .data(data2)
     .xjitter(100)
     .opacity(0.75)
     .lposition("outside")
@@ -82,8 +85,7 @@ var jitter = quorra.scatter()
     .ylabel("Y Axis Label")
     .color(['firebrick','steelblue']);
 
-d3.select('#jitter .plotarea')
-    .datum(data2).call(jitter);
+quorra.render(jitter);
         </div>
         <p class="pre-editor">Hit Cmd+Enter for changes to take effect.</p>
         

@@ -72,3 +72,66 @@ _.uniquesort = function(x, func) {
     return _.unique(_.map(x, func)).sort();
 }
 
+
+// common generator object utilities
+parameterize = function(attributes, generator) {
+    /**
+    parameterize()
+
+    Add getters and setters to generator functions for
+    specified attributes
+    */
+
+    // binding attributes to constructor function
+    Object.keys(attributes).forEach(function(i) {
+        generator[i] = function(value) {
+            if (!arguments.length) return attributes[i];
+
+            // binding a tooltip requires removal of the previous
+            if (i === 'tooltip') {
+                attributes[i].remove();
+            }
+            // maintain non-overridden object arguments
+            if (typeof value === 'object' && i != 'tooltip') {
+                if (typeof attributes[i] === 'object') {
+                    if (Array.isArray(attributes[i]) && ! Array.isArray(value)) {
+                        value = [value];
+                    }
+                    attributes[i] = _.extend(attributes[i], value);
+                } else {
+                    attributes[i] = value;
+                }
+            } else {
+                attributes[i] = value;
+            }
+            return generator;
+        };
+    });
+}
+
+extend = function(stock, custom) {
+    /**
+    extend()
+
+    Recursively extend attributes with specified parameters.
+    */
+    _.map(Object.keys(custom), function(d) {
+        if (typeof stock[d] === 'undefined') {
+            stock[d] = custom[d];
+        }
+    });
+
+    _.map(Object.keys(stock), function(d) {
+        if (typeof custom[d] != 'undefined') {
+            if (typeof stock[d] == "object" && ! Array.isArray(stock[d]) && stock[d] != null) {
+                stock[d] = extend(stock[d], custom[d]);
+            } else if (Array.isArray(stock[d]) && !Array.isArray(custom[d])) { 
+                stock[d] = [custom[d]];
+            } else {
+                stock[d] = custom[d];
+            }
+        }
+    });
+    return stock;
+}
+

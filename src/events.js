@@ -100,13 +100,11 @@ document.onkeyup = function (e) {
 
 
 // return processed mouse coordinates from selection
-function mouse(sel, left, top){
-    if (typeof left === 'undefined') left = 0;
-    if (typeof top === 'undefined') top = 0;
+function mouse(sel){
     var coordinates = d3.mouse(sel.node());
     var res = {};
-    res.x = coordinates[0] - left;
-    res.y = coordinates[1] - top;
+    res.x = coordinates[0];
+    res.y = coordinates[1];
     res.scale = (d3.event.type == 'zoom') ? d3.event.scale : 1;
     return res;
 }

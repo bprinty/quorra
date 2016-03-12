@@ -8,9 +8,10 @@ function Line(attributes) {
     @author <bprinty@gmail.com>
     */
     var _this = this;
+    if (typeof attributes == 'undefined') attributes = {};
 
     // plot-specific attributes
-    QuorraPlot.call(this, _.extend({
+    QuorraPlot.call(this, extend({
         class: "quorra-line",
         points: 0,
         size: 3,

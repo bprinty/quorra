@@ -8,9 +8,10 @@ function Pie(attributes) {
     @author <bprinty@gmail.com>
     */
     var _this = this;
+    if (typeof attributes == 'undefined') attributes = {};
 
     // plot-specific attributes
-    QuorraPlot.call(this, _.extend({
+    QuorraPlot.call(this, extend({
         class: "quorra-pie",
         aggregate: function(x){ return(x[0]); },
         radius: "auto",
@@ -26,8 +27,8 @@ function Pie(attributes) {
     this.plot = function() {
 
         // if height/width are auto, determine them from selection
-        var width = (_this.attr.width == "auto") ? parseInt(_this.attr.container.style("width")) : _this.attr.width;
-        var height = (_this.attr.height == "auto") ? parseInt(_this.attr.container.style("height")) : _this.attr.height;
+        var width = (_this.attr.width == "auto") ? parseInt(_this.selection.style("width")) : _this.attr.width;
+        var height = (_this.attr.height == "auto") ? parseInt(_this.selection.style("height")) : _this.attr.height;
         width = width - _this.attr.margin.left - _this.attr.margin.right;
         height = height - _this.attr.margin.top - _this.attr.margin.bottom;
 

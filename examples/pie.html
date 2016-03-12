@@ -45,6 +45,8 @@
         <div id="pie-editor" class="editor">        
 // regular pie
 var pie = quorra.pie()
+    .bind('#pie .plotarea')
+    .data(data)
     .radius(200)
     .opacity(0.75)
     .lshape("circle")
@@ -52,8 +54,7 @@ var pie = quorra.pie()
     .color(['firebrick','forestgreen','steelblue'])
     .aggregate(function(x){ return(x.length); });
 
-d3.select('#pie .plotarea')
-    .datum(data).call(pie);
+quorra.render(pie);
         </div>
         <p class="pre-editor">Hit Cmd+Enter for changes to take effect.</p>
 
@@ -64,18 +65,18 @@ d3.select('#pie .plotarea')
         <div id="hollowpie-editor" class="editor"> 
 // hollow pie
 var hollowpie = quorra.pie()
-    .legend(false)
+    .bind('#hollowpie .plotarea')
+    .data([
+        {x: 50, group: "Good", label: "Good"},
+        {x: 150, group: "Evil", label: "Evil"},
+        {x: 20, group: "Okay", label: "Okay"}
+    ]).legend(false)
     .radius(200)
     .opacity(0.75)
     .inner(100)
     .color(['firebrick','forestgreen','steelblue']);
 
-d3.select('#hollowpie .plotarea')
-    .datum([
-        {x: 50, group: "Good", label: "Good"},
-        {x: 150, group: "Evil", label: "Evil"},
-        {x: 20, group: "Okay", label: "Okay"}
-    ]).call(hollowpie);
+quorra.render(hollowpie);
         </div>
         <p class="pre-editor">Hit Cmd+Enter for changes to take effect.</p>
     </div>
