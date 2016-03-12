@@ -1,19 +1,4 @@
 {
-  "name": "quorra",
-  "version": "0.0.1",
-  "description": "A reusable visualization API built on top of d3.js",
-  "url": "http://bprinty.github.io/quorra",
-  "main": "build/quorra.js",
-  "scripts": {
-    "test": "grunt"
-  },
-  "repository": {
-    "type": "git",
-    "url": "http://bprinty.github.io/quorra"
-  },
-  "keywords": ["d3", "visualization", "plotting", "graph", "data", "charts"],
-  "readmeFilename": "README.rst",
-  "license": "MIT",
   "peerDependencies": {
     "d3": "^3.0.2",
     "underscore": "^1.8.2"
@@ -26,6 +11,9 @@
     "grunt-contrib-jshint": "^0.11.0",
     "grunt-contrib-uglify": "~0.2.0",
     "grunt-contrib-watch": "~0.3.1",
-    "grunt-text-replace": "^0.4.0"
+    "grunt-text-replace": "^0.4.0",
+    "chai": "1.10.0",
+    "mocha": "2.1.0",
+    "mocha-phantomjs": "4.0.2"
   }
 }
