@@ -50,17 +50,6 @@ quorra.render = function(generator) {
     return obj;
 }
 
-quorra.annotation = function(plot, attributes) {
-    /**
-    quorra.annotation()
-
-    Render annotation for plot.
-    */
-    quorra.log('creating plot annotation');
-    return new Annotation(plot, attributes);
-}
-
-
 quorra.plots = {};
 function QuorraPlot(attributes) {
     /**

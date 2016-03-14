@@ -214,5 +214,6 @@ function Annotation(attributes) {
 }
 
 quorra.annotation = function(attributes) {
+    quorra.log('creating plot annotation');
     return new Annotation(attributes);
 };
