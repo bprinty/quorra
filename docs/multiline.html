@@ -11,16 +11,18 @@
 
     <!-- custom styles -->
     <style>
-        body {
-            padding-top: 10px;
-        }
-        #multiline {
-            width: 800px;
-            height: 500px;
+        #multiline,
+        #pointline {
+            width: 600px;
+            height: 400px;
+            margin-bottom: 20px;
+            margin-top: 40px;
+            margin-left: auto;
+            margin-right: auto;
         }
         #multiline .plotarea {
-            width: 700px;
-            height: 500px;
+            width: 600px;
+            height: 400px;
         }
     </style>
   </head>
@@ -44,25 +46,33 @@
             x = _.range(entries).map(function(d){ return quorra.random()*i; })
             for(var j=0; j<x.length; j++){
                 data.push({
-                    x: x[j],
+                    x: 'Set' + i,
+                    y: x[j],
                     group: 'Group' + i,
                     label: 'Sample' + j
                 });
             }
         }
-        var redblue = d3.scale.ordinal().domain(['Evil', 'Good']).range(['firebrick','steelblue']);
 
         // regular scatter
         var multiline = quorra.multiline()
+            .bind('#multiline .plotarea')
+            .data(data)
+            .annotation({
+                'type': 'rect',
+                'width': 5,
+                'height': 3
+            })
+            .legend(false)
+            .margin({'right': 10})
             .width(500)
             .height(400)
-            .opacity(0.75)
-            .groupticks(10)
-            // .grouplabels(['Group 1', 'Group 2', 'Group 3', 'Group 4', 'Group 5'])
-            .color(redblue);
+            .opacity(0.75);
 
-        d3.select('#multiline .plotarea')
-            .datum(data).call(multiline);
+        quorra.render(multiline);
+
+        // d3.select('#multiline .plotarea')
+        //     .datum(data).call(multiline);
 
 
     </script>

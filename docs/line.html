@@ -91,6 +91,7 @@ var line = quorra.line()
         },
         {
             type: 'triangle',
+            text: function(d){ return d3.format('.2f')(d.x); },
             draggable: true,
             size: 20,
             x: 10,
@@ -98,6 +99,9 @@ var line = quorra.line()
         }
     ]).annotatable({
         type: 'triangle',
+        size: 20,
+        draggable: true,
+        text: function(d){ return d3.format('.2f')(d.x); },
         add: function(){
             console.log('in!');
         }

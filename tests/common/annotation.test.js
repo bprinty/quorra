@@ -68,20 +68,24 @@ describe("annotation.js", function () {
             },
             {
                 type: 'triangle',
+                text: function(d){ return d3.format('.2f')(d.x); },
                 size: 20,
                 rotate: 90,
+                draggable: true,
                 x: 25,
                 y: 20
             },
             {
                 type: 'circle',
                 draggable: true,
+                text: function(d){ return d3.format('.2f')(d.x); },
                 r: 10,
                 x: 15,
                 y: 20
             },
             {
                 type: 'text',
+                text: 'test',
                 draggable: true,
                 size: 20,
                 x: 30,
@@ -134,7 +138,6 @@ describe("annotation.js", function () {
 
       checkplot(id);
       var square = d3.select('svg#' + id).selectAll('.annotation.rect');
-      console.log(square.select('rect'));
       d3expect(square.select('rect'));
       d3expect(square.select('text'));
   });

@@ -815,68 +815,38 @@ function QuorraPlot(attributes) {
     this.enableannotation = function() {
         quorra.log('enabling annotation events');
 
-        // set up default attributes for new annotation
-        var triggers = _.extend({
-            id: function(d){ return quorra.uuid(); },
-            type: function(d){ return 'circle'; },
-            text: function(d){ return (_this.attr.xformat == "auto") ? d3.format(".2f")(d.x) : _this.attr.xformat(d.x); },
-            size: function(d){ return 15; },
-            group: function(d){ return null; },
-            rotate: function(d){ return 0; },
-            'text-size': function(d){ return 13; },
-            'text-position': function(d){ return {x: 0, y: 20}; },
-            'text-rotation': function(d){ return 0; },
-            x: function(d){ return d.x; },
-            y: function(d){ return d.y; },
-            style: function(d){ return {}; },
-            meta: function(d){ return {}; },
-            draggable: false,
-            events: {}
-        }, _this.attr.annotatable);
-        triggers['events'] = _.extend({
-            dragstart: function(){},
-            drag: function(){},
-            dragend: function(){},
-            click: function(){},
-            add: function(d){}
-        }, triggers['events']);
-
         // enable annotation on click event
         _this.attr.svg.on('click', function(){
             if (_this.enabled.annotate) {
                 var coordinates = mouse(_this.attr.svg);
-                if (coordinates[0] > (_this.innerwidth + _this.attr.margin.left) ||
-                    coordinates[0] < _this.attr.margin.left ||
-                    coordinates[1] > (_this.innerheight + _this.attr.margin.top) ||
-                    coordinates[1] < _this.attr.margin.top) {
+                if (coordinates.x > (_this.innerwidth + _this.attr.margin.left) ||
+                    coordinates.x < _this.attr.margin.left ||
+                    coordinates.y > (_this.innerheight + _this.attr.margin.top) ||
+                    coordinates.y < _this.attr.margin.top) {
                     return;
                 }
 
                 var xmap = d3.scale.linear().domain(_this.xscale.range()).range(_this.xscale.domain());
                 var ymap = d3.scale.linear().domain(_this.yscale.range()).range(_this.yscale.domain());
                 var d = {
-                    x: xmap(coordinates[0] - _this.attr.margin.left),
-                    y: ymap(coordinates[1] - _this.attr.margin.top),
+                    x: xmap(coordinates.x - _this.attr.margin.left),
+                    y: ymap(coordinates.y - _this.attr.margin.top),
                 }
                 for (i in _this.attr.annotation){
                     var annot = _this.attr.annotation[i];
-                    if ((Math.abs(_this.xscale(annot.x) - _this.xscale(d.x)) < 20) && (Math.abs(_this.yscale(annot.y) - _this.yscale(d.y)) < 20)){
+                    if (
+                        (Math.abs(_this.xscale(annot.x()) - _this.xscale(d.x)) < 20) &&
+                        (Math.abs(_this.yscale(annot.y()) - _this.yscale(d.y)) < 20)
+                    ){
                         return;
                     }
                 }
 
-                d.parent = _this.attr.id;
-                _.each(['id', 'type', 'text', 'style', 'meta', 'size', 'group', 'text-size', 'text-position', 'events'], function(x){
-                    d[x] = (typeof triggers[x] === "function") ? triggers[x](d) : triggers[x];
-                });
-                d.events = triggers.events;
-                if (_this.attr.annotation){
-                    _this.attr.annotation.push(d);
-                }else{
-                    _this.attr.annotation = [d];
-                }
+                var obj = quorra.annotation(_this.attr.annotatable)
+                    .bind(_this.go).x(d.x).y(d.y);
+                _this.attr.annotation.push(obj);
                 _this.annotate();
-                triggers.events.add(d);
+                obj.events().add(d);
             }
         });
 
@@ -975,6 +945,9 @@ function QuorraPlot(attributes) {
         // glyphs
         glyphs: true,
         gshape: "circle",
+
+        // placeholder
+        annotation: []
         
     }, attributes);
 

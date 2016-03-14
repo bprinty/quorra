@@ -67,9 +67,6 @@ function Annotation(attributes) {
                     ycoord = movement.y - _this.plot.attr.margin.top - yoffset;
 
                     // translate annotation object
-                    console.log(ycoord);
-                    console.log(_this.plot.innerheight);
-                    console.log(_this.plot.attr.margin);
                     var xmotion = _.center(xcoord, [0, _this.plot.innerwidth - 2*xoffset]);
                     var ymotion = _.center(ycoord, [0, _this.plot.innerheight - 2*yoffset]);
                     d3.select(this).attr('transform', 'translate(' + (xmotion - x) + ',' + (ymotion - y) + ')');
@@ -88,7 +85,6 @@ function Annotation(attributes) {
         }
 
         // extend annotation object with specific shape
-        var tmargin = {x: _this.attr.tmargin.x, y: _this.attr.tmargin.y};
         if (_this.attr.type == 'rect') {
             asel.selectAll('.rect').data([_this.attr]).enter()
                 .append('rect')
@@ -98,8 +94,6 @@ function Annotation(attributes) {
                 .attr('height', Math.abs(_this.plot.yscale(_this.attr.height) - _this.plot.yscale(0)))
                 .attr('x', x)
                 .attr('y', y);
-            tmargin.x = tmargin.x + _this.attr.text.length*2 + 2;
-            tmargin.y = tmargin.y - 5;
         } else if (_this.attr.type == 'circle') {
             asel.selectAll('.circle').data([_this.attr]).enter()
                 .append('circle')
@@ -107,7 +101,6 @@ function Annotation(attributes) {
                 .attr('r', _this.attr.size / 2)
                 .attr('cx', x)
                 .attr('cy', y);
-            tmargin.y = tmargin.y - (_this.attr.size / 2) - 5;
         } else if (_this.attr.type == 'triangle') {
             asel.selectAll('.triangle').data([_this.attr]).enter()
                 .append('path')
@@ -120,15 +113,36 @@ function Annotation(attributes) {
                     'L' + x + ',' + (y + (d.size / 2)),
                     'Z'].join('');
                 });
-            tmargin.x = tmargin.x + (_this.attr.size / 2) - _this.attr.text.length*2;
-            tmargin.y = tmargin.y - (_this.attr.size / 2) - 5;
         }
         if (_this.attr.text !== '') {
             asel.selectAll('.text').data([_this.attr]).enter()
                 .append('text')
                 .attr('class', 'text')
-                .attr('x', x + tmargin.x)
-                .attr('y', y + tmargin.y)
+                .attr('x', function(d) {
+                    var txt = (typeof d.text === 'function') ? d.text(d) : d.text;
+                    var xnew = x + d.tmargin.x + txt.toString().length*2;
+                    if (d.type === 'rect') {
+                        return xnew + 2;
+                    } else if (d.type === 'circle') {
+                        return x + d.tmargin.x;
+                    } else if (d.type === 'triangle') {
+                        return x + d.tmargin.x + (d.size / 2) - txt.toString().length*2;
+                    } else {
+                        return x + d.tmargin.x;
+                    }
+                })
+                .attr('y', function(d) {
+                    var ynew = y - (d.size / 2) - 5;
+                    if (d.type === 'rect') {
+                        return y - d.tmargin.y - 5;
+                    } else if (d.type === 'circle') {
+                        return ynew;
+                    } else if (d.type === 'triangle') {
+                        return ynew;
+                    } else {
+                        return y - d.tmargin.y;
+                    }
+                })
                 .style("font-size", _this.attr.tsize)
                 .style("text-anchor", "middle")
                 .text(_this.attr.text);
@@ -148,7 +162,8 @@ function Annotation(attributes) {
         parent: null,
         id: quorra.uuid(),
         type: 'text',
-        text: function(d){ return d3.format('.2f')(d.x); },
+        text: '',
+        // text: function(d){ return d3.format('.2f')(d.x); },
         hovertext: '',
         xfixed: false,
         yfixed: false,
@@ -165,6 +180,9 @@ function Annotation(attributes) {
         height: 0,
         draggable: false,
         events: {
+            add: function() {
+                quorra.log('add event');
+            },
             drag: function() {
                 quorra.log('drag event');
             },

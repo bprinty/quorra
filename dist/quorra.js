@@ -817,68 +817,38 @@ function QuorraPlot(attributes) {
     this.enableannotation = function() {
         quorra.log('enabling annotation events');
 
-        // set up default attributes for new annotation
-        var triggers = _.extend({
-            id: function(d){ return quorra.uuid(); },
-            type: function(d){ return 'circle'; },
-            text: function(d){ return (_this.attr.xformat == "auto") ? d3.format(".2f")(d.x) : _this.attr.xformat(d.x); },
-            size: function(d){ return 15; },
-            group: function(d){ return null; },
-            rotate: function(d){ return 0; },
-            'text-size': function(d){ return 13; },
-            'text-position': function(d){ return {x: 0, y: 20}; },
-            'text-rotation': function(d){ return 0; },
-            x: function(d){ return d.x; },
-            y: function(d){ return d.y; },
-            style: function(d){ return {}; },
-            meta: function(d){ return {}; },
-            draggable: false,
-            events: {}
-        }, _this.attr.annotatable);
-        triggers['events'] = _.extend({
-            dragstart: function(){},
-            drag: function(){},
-            dragend: function(){},
-            click: function(){},
-            add: function(d){}
-        }, triggers['events']);
-
         // enable annotation on click event
         _this.attr.svg.on('click', function(){
             if (_this.enabled.annotate) {
                 var coordinates = mouse(_this.attr.svg);
-                if (coordinates[0] > (_this.innerwidth + _this.attr.margin.left) ||
-                    coordinates[0] < _this.attr.margin.left ||
-                    coordinates[1] > (_this.innerheight + _this.attr.margin.top) ||
-                    coordinates[1] < _this.attr.margin.top) {
+                if (coordinates.x > (_this.innerwidth + _this.attr.margin.left) ||
+                    coordinates.x < _this.attr.margin.left ||
+                    coordinates.y > (_this.innerheight + _this.attr.margin.top) ||
+                    coordinates.y < _this.attr.margin.top) {
                     return;
                 }
 
                 var xmap = d3.scale.linear().domain(_this.xscale.range()).range(_this.xscale.domain());
                 var ymap = d3.scale.linear().domain(_this.yscale.range()).range(_this.yscale.domain());
                 var d = {
-                    x: xmap(coordinates[0] - _this.attr.margin.left),
-                    y: ymap(coordinates[1] - _this.attr.margin.top),
+                    x: xmap(coordinates.x - _this.attr.margin.left),
+                    y: ymap(coordinates.y - _this.attr.margin.top),
                 }
                 for (i in _this.attr.annotation){
                     var annot = _this.attr.annotation[i];
-                    if ((Math.abs(_this.xscale(annot.x) - _this.xscale(d.x)) < 20) && (Math.abs(_this.yscale(annot.y) - _this.yscale(d.y)) < 20)){
+                    if (
+                        (Math.abs(_this.xscale(annot.x()) - _this.xscale(d.x)) < 20) &&
+                        (Math.abs(_this.yscale(annot.y()) - _this.yscale(d.y)) < 20)
+                    ){
                         return;
                     }
                 }
 
-                d.parent = _this.attr.id;
-                _.each(['id', 'type', 'text', 'style', 'meta', 'size', 'group', 'text-size', 'text-position', 'events'], function(x){
-                    d[x] = (typeof triggers[x] === "function") ? triggers[x](d) : triggers[x];
-                });
-                d.events = triggers.events;
-                if (_this.attr.annotation){
-                    _this.attr.annotation.push(d);
-                }else{
-                    _this.attr.annotation = [d];
-                }
+                var obj = quorra.annotation(_this.attr.annotatable)
+                    .bind(_this.go).x(d.x).y(d.y);
+                _this.attr.annotation.push(obj);
                 _this.annotate();
-                triggers.events.add(d);
+                obj.events().add(d);
             }
         });
 
@@ -977,6 +947,9 @@ function QuorraPlot(attributes) {
         // glyphs
         glyphs: true,
         gshape: "circle",
+
+        // placeholder
+        annotation: []
         
     }, attributes);
 
@@ -1088,9 +1061,6 @@ function Annotation(attributes) {
                     ycoord = movement.y - _this.plot.attr.margin.top - yoffset;
 
                     // translate annotation object
-                    console.log(ycoord);
-                    console.log(_this.plot.innerheight);
-                    console.log(_this.plot.attr.margin);
                     var xmotion = _.center(xcoord, [0, _this.plot.innerwidth - 2*xoffset]);
                     var ymotion = _.center(ycoord, [0, _this.plot.innerheight - 2*yoffset]);
                     d3.select(this).attr('transform', 'translate(' + (xmotion - x) + ',' + (ymotion - y) + ')');
@@ -1109,7 +1079,6 @@ function Annotation(attributes) {
         }
 
         // extend annotation object with specific shape
-        var tmargin = {x: _this.attr.tmargin.x, y: _this.attr.tmargin.y};
         if (_this.attr.type == 'rect') {
             asel.selectAll('.rect').data([_this.attr]).enter()
                 .append('rect')
@@ -1119,8 +1088,6 @@ function Annotation(attributes) {
                 .attr('height', Math.abs(_this.plot.yscale(_this.attr.height) - _this.plot.yscale(0)))
                 .attr('x', x)
                 .attr('y', y);
-            tmargin.x = tmargin.x + _this.attr.text.length*2 + 2;
-            tmargin.y = tmargin.y - 5;
         } else if (_this.attr.type == 'circle') {
             asel.selectAll('.circle').data([_this.attr]).enter()
                 .append('circle')
@@ -1128,7 +1095,6 @@ function Annotation(attributes) {
                 .attr('r', _this.attr.size / 2)
                 .attr('cx', x)
                 .attr('cy', y);
-            tmargin.y = tmargin.y - (_this.attr.size / 2) - 5;
         } else if (_this.attr.type == 'triangle') {
             asel.selectAll('.triangle').data([_this.attr]).enter()
                 .append('path')
@@ -1141,15 +1107,36 @@ function Annotation(attributes) {
                     'L' + x + ',' + (y + (d.size / 2)),
                     'Z'].join('');
                 });
-            tmargin.x = tmargin.x + (_this.attr.size / 2) - _this.attr.text.length*2;
-            tmargin.y = tmargin.y - (_this.attr.size / 2) - 5;
         }
         if (_this.attr.text !== '') {
             asel.selectAll('.text').data([_this.attr]).enter()
                 .append('text')
                 .attr('class', 'text')
-                .attr('x', x + tmargin.x)
-                .attr('y', y + tmargin.y)
+                .attr('x', function(d) {
+                    var txt = (typeof d.text === 'function') ? d.text(d) : d.text;
+                    var xnew = x + d.tmargin.x + txt.toString().length*2;
+                    if (d.type === 'rect') {
+                        return xnew + 2;
+                    } else if (d.type === 'circle') {
+                        return x + d.tmargin.x;
+                    } else if (d.type === 'triangle') {
+                        return x + d.tmargin.x + (d.size / 2) - txt.toString().length*2;
+                    } else {
+                        return x + d.tmargin.x;
+                    }
+                })
+                .attr('y', function(d) {
+                    var ynew = y - (d.size / 2) - 5;
+                    if (d.type === 'rect') {
+                        return y - d.tmargin.y - 5;
+                    } else if (d.type === 'circle') {
+                        return ynew;
+                    } else if (d.type === 'triangle') {
+                        return ynew;
+                    } else {
+                        return y - d.tmargin.y;
+                    }
+                })
                 .style("font-size", _this.attr.tsize)
                 .style("text-anchor", "middle")
                 .text(_this.attr.text);
@@ -1169,7 +1156,8 @@ function Annotation(attributes) {
         parent: null,
         id: quorra.uuid(),
         type: 'text',
-        text: function(d){ return d3.format('.2f')(d.x); },
+        text: '',
+        // text: function(d){ return d3.format('.2f')(d.x); },
         hovertext: '',
         xfixed: false,
         yfixed: false,
@@ -1186,6 +1174,9 @@ function Annotation(attributes) {
         height: 0,
         draggable: false,
         events: {
+            add: function() {
+                quorra.log('add event');
+            },
             drag: function() {
                 quorra.log('drag event');
             },
@@ -1967,222 +1958,146 @@ Line.prototype.constructor = Line;
 quorra.line = function(attributes) {
     return new Line(attributes);
 };
-quorra.multiline = function() {
+function Multiline(attributes) {
     /**
     quorra.multiline()
 
-    Multi line plot with group-relative scaling.
+    Line plot with sections of different relative scaling.
 
     @author <bprinty@gmail.com>
     */
+    var _this = this;
+    if (typeof attributes == 'undefined') attributes = {};
 
-    // attributes
-    var width = "auto";
-    var height = "auto";
-    var margin = {"top": 30, "bottom": 20, "left": 40, "right": 20};
-    var color = d3.scale.category10();
-    var x = function(d, i) { return d.x; };
-    var y = function(d, i) { return d.y; };
-    var group = function(d, i){ return (typeof d.group == "undefined") ? 0 : d.group; };
-    var label = function(d, i){ return (typeof d.label == "undefined") ? i : d.label; };
-    var grouplabels = [];
-    var groupformats = [];
-    var groupticks = [];
-    var legend = true;
-    var xticks = "auto";
-    var yticks = "auto";
-    var tooltip = d3.select("body").append("div")
-            .attr("id", "multiline-tooltip")
-            .attr("class", "tooltip")
-            .style("position", "absolute")
-            .style("opacity", 0);
+    // plot-specific attributes
+    QuorraPlot.call(this, extend({
+        class: "quorra-multiline",
+        points: 0,
+        size: 3,
+        layout: "line",
+        interpolate: "linear"
+    }, attributes));
+    this.type = "multiline";
 
-    // generator
-    function go(selection){
-        // format selection
-        if (typeof selection == "string") selection = d3.select(selection);
+    // overwrite render method
+    this.plot = function() {
 
-        // if height/width are auto, determine them from selection
-        var w = (width == "auto") ? (parseInt(selection.style("width")) - margin.left - margin.right) : width;
-        var h = (height == "auto") ? (parseInt(selection.style("height")) - margin.top - margin.bottom) : height;
-        
-        // transform data (if transformation function is applied)
-        // this is used for density plots
-        var data = selection.data()[0];
+        // configuring path renderer
+        var path = d3.svg.line()
+            .x(function(d, i) { return _this.xscale(_this.attr.x(d, i)); })
+            .y(function(d, i) { return _this.yscale(_this.attr.y(d, i)); })
+            .interpolate(_this.attr.interpolate);
 
-        // arrange data for grouping
-        var groups = _.unique(_.map(data, function(d){ return d.group; }));
-        var groupValues = _.map(groups, function(d){ return []; });
-        for(var i=0; i<data.length; i++){
-            idx = groups.indexOf(data[i].group);
-            groupValues[idx].push(data[i].x);
+        // draw lines
+        var ugrps = _this.pallette.domain();
+        for (var grp in ugrps) {
+
+            // lines
+            var subdat = _.filter(_this.data, function(d){ return d.group == ugrps[grp]; });
+            _this.plotarea.append("path")
+                .datum(subdat)
+                .attr("class", function(d, i){
+                    return "line " + "g_" + d[0].group;
+                })
+                .attr("d", function(d){
+                    var p = path(d);
+                    if (_this.attr.layout === "line"){
+                        return p;
+                    }else if (_this.attr.layout === "area"){
+                        return [
+                            p,
+                            "L" + _this.xscale(_this.domain[1]) + "," + _this.yscale(_this.range[0]),
+                            "L" + _this.xscale(_this.domain[0]) + "," + _this.yscale(_this.range[0]),
+                            "Z"
+                        ].join('');
+                    }
+                })
+                .style("fill", function(d){
+                    if (_this.attr.layout === "line"){
+                        return "none";
+                    }else if (_this.attr.layout === "area"){
+                        return _this.pallette(d[0].group);
+                    }
+                })
+                .style("stroke", _this.pallette(ugrps[grp]))
+                .style("stroke-width", _this.attr.size)
+                .style("opacity", _this.attr.opacity)
+                .style("visibility", function(d, i){
+                    return _.contains(_this.attr.toggled, _this.attr.group(d[0], i)) ? 'hidden' : 'visible';
+                })
+                .attr("clip-path", "url(#clip)")
+                .on("mouseover", function(d, i) {
+                    d3.select(this).style("opacity", 0.25);
+                    if (_this.attr.tooltip){
+                        _this.attr.tooltip.html(d[0].group)
+                            .style("opacity", 1)
+                            .style("left", (d3.event.pageX + 5) + "px")
+                            .style("top", (d3.event.pageY - 20) + "px");
+                    }
+                }).on("mousemove", function(d) {
+                    if (_this.attr.tooltip) {
+                        _this.attr.tooltip
+                            .style("left", (d3.event.pageX + 5) + "px")
+                            .style("top", (d3.event.pageY - 20) + "px");
+                    }
+                }).on("mouseout", function(d) {
+                    d3.select(this).style("opacity", _this.attr.opacity);
+                    if (_this.attr.tooltip) {
+                        _this.attr.tooltip.style("opacity", 0);
+                    }
+                }).on("click", _this.attr.groupclick);
         }
 
-        // generate scaling in type-aware way
-        var groupScales = _.map(groups, function(d){ return undefined; });
-        for(i=0; i<groups.length; i++){
-            if(typeof groupValues[i][0] === 'string'){
-                groupScales[i] = d3.scale.ordinal().range([0, h]);
-                groupScales[i].domain(groupValues[i]).rangePoints(groupScales[i].range(), 1);
-            }else{
-                groupScales[i] = d3.scale.linear().range([0, h]);
-                groupScales[i].domain([_.min(groupValues[idx]), _.max(groupValues[idx])]).nice();
-            }
+        // draw points (if specified)
+        if (_this.attr.points > 0) {
+
+            _this.plotarea.selectAll(".dot")
+                .remove().data(_this.data)
+                .enter().append("circle")
+                .attr("class", function(d, i){
+                    return "dot " + "g_" + d.group;
+                })
+                .attr("r", _this.attr.points)
+                .attr("cx", function(d, i) { return _this.xscale(_this.attr.x(d, i)); })
+                .attr("cy", function(d, i) { return _this.yscale(_this.attr.y(d, i)); })
+                .style("fill", function(d, i){ return _this.pallette(_this.attr.group(d, i)); })
+                .style("opacity", _this.attr.opacity)
+                .style("visibility", function(d, i) {
+                    return _.contains(_this.attr.toggled, _this.attr.group(d, i)) ? 'hidden' : 'visible';
+                })
+                .attr("clip-path", "url(#clip)")
+                .on("mouseover", function(d, i){
+                    d3.select(this).style("opacity", 0.25);
+                    if (_this.attr.tooltip){
+                        _this.attr.tooltip.html(_this.attr.label(d, i))
+                            .style("opacity", 1)
+                            .style("left", (d3.event.pageX + 5) + "px")
+                            .style("top", (d3.event.pageY - 20) + "px");
+                    }
+                }).on("mousemove", function(d){
+                    if (_this.attr.tooltip){
+                        _this.attr.tooltip
+                            .style("left", (d3.event.pageX + 5) + "px")
+                            .style("top", (d3.event.pageY - 20) + "px");
+                    }
+                }).on("mouseout", function(d){
+                    d3.select(this).style("opacity", _this.attr.opacity);
+                    if (_this.attr.tooltip){
+                        _this.attr.tooltip.style("opacity", 0);
+                    }
+                }).on("click", _this.attr.labelclick);
         }
-
-        // configure axes
-        var groupAxes = _.map(groups, function(d){ return undefined; });
-        for(i=0; i<groups.length; i++){
-            groupAxes[i] = d3.svg.axis().scale(groupScales[i]).orient("left");
-            if (groupticks.length === groups.length && groupticks[i] != "auto") {
-                groupAxes[i] = groupAxes[i].ticks(groupticks[i]);
-            }
-            if (groupformats.length === groups.length && groupformats[i] != "auto"){
-                groupAxes[i] = groupAxes[i].tickFormat(xformats[i]);
-            }
-        }
-
-        // initialize canvas
-        var svg;
-        if (selection.select("svg")[0][0] == null){
-            svg = selection.append("svg");
-        } else {
-            svg = selection.select("svg");
-        }
-        svg = svg.attr("class", "quorra-line")
-            .attr("width", w + margin.left + margin.right)
-            .attr("height", h + margin.top + margin.bottom)
-            .append("g")
-            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-        // axes
-        // for some reason (haven't been able to look into it yet)
-        // all of the axes are using the same scale when they should
-        // have different scaling relative to the input data
-        var xScale = d3.scale.linear().range([0, w]);
-        xScale.domain([0, groups.length]).nice();
-        for(i=0; i<groups.length; i++){
-            
-            var label = (grouplabels.length == groups.length) ? grouplabels[i] : groups[i];
-            var axes = groupAxes[i];
-            var offset = xScale(i);
-            svg.append("g")
-                .attr("class", "y axis")
-                .attr("transform", "translate(" + offset + ", 0)")
-                .call(axes)
-            .append("text")
-                .attr("class", "label")
-                .attr("y", -margin.top + 5)
-                .attr("dy", ".71em")
-                .style("text-anchor", "end")
-                .text(label);
-
-        }
-
-        // plotting lines
-        // note -- this is wrong right now, and so is the
-        // code below I fell asleep working on this part, so it's
-        // incomplete
-        var line = d3.svg.line()
-            .x(function(d, i) { return xScale(groups.indexOf(d.group)); })
-            .y(function(d, i) { return groupScales[groups.indexOf(d.group)](x(d, i)); });
-        
-        svg.append("path")
-            .datum(data)
-            .attr("class", "line")
-            .attr("d", line)
-            .style("stroke", color(0))
-            .style("opacity", 0.75)
-            .on("mouseover", function(d, i){
-                d3.select(this).style("opacity", 0.25);
-                tooltip.html(d[0].group)
-                    .style("opacity", 1)
-                    .style("left", (d3.event.pageX + 5) + "px")
-                    .style("top", (d3.event.pageY - 20) + "px");
-            }).on("mousemove", function(d){
-                tooltip
-                    .style("left", (d3.event.pageX + 5) + "px")
-                    .style("top", (d3.event.pageY - 20) + "px");
-            }).on("mouseout", function(d){
-                d3.select(this).style("opacity", 0.75);
-                tooltip.style("opacity", 0);
-            });
-
-        // // legend (if specified)
-        // if (legend) {
-        //     var leg = svg.selectAll(".legend")
-        //         .data(color.domain())
-        //         .enter().append("g")
-        //         .attr("class", "legend")
-        //         .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
-        // }
     }
 
-    // getters/setters
-    go.width = function(value) {
-        if (!arguments.length) return width;
-        width = value;
-        return go;
-    };
-    go.height = function(value) {
-        if (!arguments.length) return height;
-        height = value;
-        return go;
-    };
-    go.margin = function(value) {
-        if (!arguments.length) return margin;
-        margin = value;
-        return go;
-    };
-    go.color = function(value) {
-        if (!arguments.length) return color;
-        color = value;
-        return go;
-    };
-    go.x = function(value) {
-        if (!arguments.length) return x;
-        x = value;
-        return go;
-    };
-    go.group = function(value) {
-        if (!arguments.length) return group;
-        group = value;
-        return go;
-    };
-    go.label = function(value) {
-        if (!arguments.length) return label;
-        label = value;
-        return go;
-    };
-    go.grouplabels = function(value) {
-        if (!arguments.length) return grouplabels;
-        grouplabels = value;
-        return go;
-    };
-    go.groupformats = function(value) {
-        if (!arguments.length) return groupformats;
-        groupformats = value;
-        return go;
-    };
-    go.groupticks = function(value) {
-        if (!arguments.length) return groupticks;
-        groupticks = value;
-        return go;
-    };
-    go.legend = function(value) {
-        if (!arguments.length) return legend;
-        legend = value;
-        return go;
-    };
-    go.tooltip = function(value) {
-        if (!arguments.length) return tooltip;
-        tooltip.remove();
-        tooltip = value;
-        return go;
-    };
+    return this.go;
+}
 
-    return go;
-};function Pie(attributes) {
+Multiline.prototype = Object.create(QuorraPlot.prototype);
+Multiline.prototype.constructor = Multiline;
+quorra.multiline = function(attributes) {
+    return new Multiline(attributes);
+};
+function Pie(attributes) {
     /**
     quorra.pie()
 
