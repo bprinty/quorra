@@ -57,17 +57,17 @@ describe("annotation.js", function () {
         .color(['firebrick','steelblue'])
         .annotation([
             {
-                type: 'rectangle',
+                type: 'rect',
                 text: 'rect',
                 group: 'Evil',
                 width: 5,
                 height: 5,
+                draggable: true,
                 x: 5,
                 y: 15,
             },
             {
                 type: 'triangle',
-                draggable: true,
                 size: 20,
                 rotate: 90,
                 x: 25,
@@ -76,17 +76,10 @@ describe("annotation.js", function () {
             {
                 type: 'circle',
                 draggable: true,
-                size: 20,
+                r: 10,
                 x: 15,
                 y: 20
             },
-             {
-                 type: 'square',
-                 draggable: true,
-                 size: 20,
-                 x: 20,
-                 y: 20
-             },
             {
                 type: 'text',
                 draggable: true,
@@ -98,16 +91,13 @@ describe("annotation.js", function () {
 
       quorra.render(full);
 
-      validate(id);
-      var rect = d3.select('svg#' + id).selectAll('.annotation.rectangle');
+      checkplot(id);
+      var rect = d3.select('svg#' + id).selectAll('.annotation.rect');
       d3expect(rect.select('rect'));
       d3expect(rect.select('text'));
       var circle = d3.select('svg#' + id).selectAll('.annotation.circle');
       d3expect(circle.select('circle'));
       d3expect(circle.select('text'));
-      var square = d3.select('svg#' + id).selectAll('.anntoation.square');
-      d3expect(square.select('rect'));
-      d3expect(square.select('text'));
       var triangle = d3.select('svg#' + id).selectAll('.annotation.triangle');
       d3expect(triangle.select('path'));
       d3expect(triangle.select('text'));
@@ -130,9 +120,10 @@ describe("annotation.js", function () {
 
       var square = quorra.annotation()
           .bind(line)
-          .type('square')
+          .type('rect')
           .text('rect').group('Evil')
-          .x(10).y(15).size(10)
+          .x(10).y(15)
+          .width(10).height(10)
           .draggable(true)
           .style({
               'fill': 'steelblue'
@@ -141,8 +132,9 @@ describe("annotation.js", function () {
       line.add(square);
       quorra.render(line);
 
-      validate(id);
-      var square = d3.select('svg#' + id).selectAll('.anntoation.square');
+      checkplot(id);
+      var square = d3.select('svg#' + id).selectAll('.annotation.rect');
+      console.log(square.select('rect'));
       d3expect(square.select('rect'));
       d3expect(square.select('text'));
   });

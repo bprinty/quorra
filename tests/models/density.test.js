@@ -61,7 +61,9 @@ describe("density.js", function () {
 
       quorra.render(density);
 
-      validate(id);
+      checkplot(id);
+      checkaxis(id);
+      checkglyphs(id);
   });
 
   it("lowdensity", function () {
@@ -88,7 +90,9 @@ describe("density.js", function () {
 
       quorra.render(lowdensity);
 
-      validate(id);
+      checkplot(id);
+      checkaxis(id);
+      checkglyphs(id);
   });
 
 });

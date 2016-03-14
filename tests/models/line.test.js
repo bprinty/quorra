@@ -65,10 +65,13 @@ describe("line.js", function () {
 
       quorra.render(line);
 
-      validate(id);
+      checkplot(id);
+      checkaxis(id);
+      checkglyphs(id);
   });
 
   it("area", function () {
+
       var id = quorra.uuid();
       base.append('div').attr('id', id).attr('class', 'plotarea');
 
@@ -94,7 +97,9 @@ describe("line.js", function () {
 
       quorra.render(line);
 
-      validate(id);
+      checkplot(id);
+      checkaxis(id);
+      checkglyphs(id);
   });
 
 });

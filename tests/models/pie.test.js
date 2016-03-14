@@ -57,10 +57,11 @@ describe("pie.js", function () {
 
       quorra.render(pie);
 
-      validate(id);
+      checkplot(id);
   });
 
   it("hollowpie", function () {
+      
       var id = quorra.uuid();
       base.append('div').attr('id', id).attr('class', 'plotarea');
 
@@ -79,7 +80,7 @@ describe("pie.js", function () {
 
       quorra.render(hollowpie);
 
-      validate(id);
+      checkplot(id);
   });
 
 });

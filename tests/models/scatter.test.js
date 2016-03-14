@@ -69,10 +69,13 @@ describe("scatter.js", function () {
 
       quorra.render(scatter);
 
-      validate(id);
+      checkplot(id);
+      checkaxis(id);
+      checkglyphs(id);
   });
 
   it("jitter", function () {
+
       var id = quorra.uuid();
       base.append('div').attr('id', id).attr('class', 'plotarea');
 
@@ -92,7 +95,9 @@ describe("scatter.js", function () {
 
       quorra.render(jitter);
 
-      validate(id);
+      checkplot(id);
+      checkaxis(id);
+      checkglyphs(id);
   });
 
 });

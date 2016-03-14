@@ -349,6 +349,7 @@ function QuorraPlot(attributes) {
         // compute width and height for scaling
         var width = (_this.attr.width == "auto") ? parseInt(_this.selection.style("width")) : _this.attr.width;
         var height = (_this.attr.height == "auto") ? parseInt(_this.selection.style("height")) : _this.attr.height;
+        width = (_this.attr.lposition === "inside") ? width - 22 : width;
 
         // create container for legend
         var leg = _this.attr.svg
@@ -410,7 +411,7 @@ function QuorraPlot(attributes) {
         leg.append("text")
             .attr("x", function(){
                 if (_this.attr.lposition === "inside"){
-                    return 5 + _this.attr.lmargin.left;
+                    return _this.attr.lmargin.left;
                 }else if (_this.attr.lposition === "outside"){
                     var pad = (_this.attr.lshape === "square") ? 0 : 7;
                     return 27 + _this.attr.lmargin.left + pad;

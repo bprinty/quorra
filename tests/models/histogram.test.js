@@ -40,7 +40,6 @@ describe("histogram.js", function () {
       var id = quorra.uuid();
       base.append('div').attr('id', id).attr('class', 'plotarea');
 
-      // grouped bar
       var grouped = quorra.histogram()
           .bind('#' + id)
           .id(id)
@@ -57,14 +56,15 @@ describe("histogram.js", function () {
 
       quorra.render(grouped);
 
-      validate(id);
+      checkplot(id);
+      checkaxis(id);
+      checkglyphs(id);
   });
 
   it("lowdensity", function () {
       var id = quorra.uuid();
       base.append('div').attr('id', id).attr('class', 'plotarea');
 
-      // stacked bar
       var stacked = quorra.histogram()
           .bind('#' + id)
           .id(id)
@@ -85,7 +85,9 @@ describe("histogram.js", function () {
 
       quorra.render(stacked);
 
-      validate(id);
+      checkplot(id);
+      checkaxis(id);
+      checkglyphs(id);
   });
 
 });

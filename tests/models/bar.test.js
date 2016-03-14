@@ -57,6 +57,7 @@ describe("bar.js", function () {
   });
 
   it("grouped", function () {
+    
     var id = quorra.uuid();
     base.append('div').attr('id', id).attr('class', 'plotarea');
 
@@ -74,10 +75,14 @@ describe("bar.js", function () {
         .color(['firebrick', 'steelblue']);
 
     quorra.render(grouped);
-    validate(id);
+
+    checkplot(id);
+    checkaxis(id);
+    checkglyphs(id);
   });
 
   it("stacked", function () {
+    
     var id = quorra.uuid();
     base.append('div').attr('id', id).attr('class', 'plotarea');
 
@@ -96,7 +101,10 @@ describe("bar.js", function () {
 
 
     quorra.render(stacked);
-    validate(id);
+
+    checkplot(id);
+    checkaxis(id);
+    checkglyphs(id);
   });
 
 });

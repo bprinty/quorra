@@ -351,6 +351,7 @@ function QuorraPlot(attributes) {
         // compute width and height for scaling
         var width = (_this.attr.width == "auto") ? parseInt(_this.selection.style("width")) : _this.attr.width;
         var height = (_this.attr.height == "auto") ? parseInt(_this.selection.style("height")) : _this.attr.height;
+        width = (_this.attr.lposition === "inside") ? width - 22 : width;
 
         // create container for legend
         var leg = _this.attr.svg
@@ -412,7 +413,7 @@ function QuorraPlot(attributes) {
         leg.append("text")
             .attr("x", function(){
                 if (_this.attr.lposition === "inside"){
-                    return 5 + _this.attr.lmargin.left;
+                    return _this.attr.lmargin.left;
                 }else if (_this.attr.lposition === "outside"){
                     var pad = (_this.attr.lshape === "square") ? 0 : 7;
                     return 27 + _this.attr.lmargin.left + pad;
@@ -1079,17 +1080,26 @@ function Annotation(attributes) {
                 }).on("drag", function() {
                     // get mouse coordinates
                     var movement = mouse(_this.plot.attr.svg);
-                    xcoord = movement.x - x - _this.plot.attr.margin.left;
-                    ycoord = movement.y - y - _this.plot.attr.margin.top;
+                    var xoffset = Math.abs(_this.plot.xscale(_this.attr.width) - _this.plot.xscale(0));
+                    var yoffset = Math.abs(_this.plot.yscale(_this.attr.height) - _this.plot.yscale(0));
+                    xoffset = (_this.attr.type === 'rect') ? xoffset / 2 : 0;
+                    yoffset = (_this.attr.type === 'rect') ? yoffset / 2: 0;
+                    xcoord = movement.x - _this.plot.attr.margin.left - xoffset;
+                    ycoord = movement.y - _this.plot.attr.margin.top - yoffset;
 
                     // translate annotation object
-                    d3.select(this).attr('transform', 'translate(' + xcoord + ',' + ycoord + ')');
+                    console.log(ycoord);
+                    console.log(_this.plot.innerheight);
+                    console.log(_this.plot.attr.margin);
+                    var xmotion = _.center(xcoord, [0, _this.plot.innerwidth - 2*xoffset]);
+                    var ymotion = _.center(ycoord, [0, _this.plot.innerheight - 2*yoffset]);
+                    d3.select(this).attr('transform', 'translate(' + (xmotion - x) + ',' + (ymotion - y) + ')');
                     
                     // update annotation attributes with new data
                     var xmap = d3.scale.linear().domain(_this.plot.xscale.range()).range(_this.plot.xscale.domain());
                     var ymap = d3.scale.linear().domain(_this.plot.yscale.range()).range(_this.plot.yscale.domain());
-                    _this.attr.x = xmap(movement.x - _this.plot.attr.margin.left);
-                    _this.attr.y = ymap(movement.y - _this.plot.attr.margin.top);
+                    _this.attr.x = xmap(xmotion);
+                    _this.attr.y = ymap(ymotion);
                     d3.select(this).select('text').text(_this.attr.text);
 
                     _this.attr.events.drag();
@@ -1100,20 +1110,10 @@ function Annotation(attributes) {
 
         // extend annotation object with specific shape
         var tmargin = {x: _this.attr.tmargin.x, y: _this.attr.tmargin.y};
-        if (_this.attr.type == 'square') {
-            asel.selectAll('.square').data([_this.attr]).enter()
+        if (_this.attr.type == 'rect') {
+            asel.selectAll('.rect').data([_this.attr]).enter()
                 .append('rect')
-                .attr('class', 'square')
-                .attr('transform', 'rotate(' + _this.attr.rotate + ' ' + x + ' ' + y + ')')
-                .attr('width', _this.attr.size)
-                .attr('height', _this.attr.size)
-                .attr('x', x - _this.attr.size / 2)
-                .attr('y', y - _this.attr.size / 2);
-            tmargin.y = tmargin.y - (_this.attr.size / 2) - 5;
-        } else if (_this.attr.type == 'rectangle') {
-            asel.selectAll('.rectangle').data([_this.attr]).enter()
-                .append('rect')
-                .attr('class', 'rectangle')
+                .attr('class', 'rect')
                 .attr('transform', 'rotate(' + _this.attr.rotate + ' ' + x + ' ' + y + ')')
                 .attr('width', Math.abs(_this.plot.xscale(_this.attr.width) - _this.plot.xscale(0)))
                 .attr('height', Math.abs(_this.plot.yscale(_this.attr.height) - _this.plot.yscale(0)))
