@@ -53,7 +53,7 @@
             } else if (suite[0].length == 1) {
                 var base = suite.select('ul');
             } else {
-                var base = d3.select(_.filter(suite[0], function(d){
+                var base = d3.select(_.filter(suite[0], function(d) {
                   return d3.select(d).select('h1').select('a').text() == ident;
                 })[0]).select('ul');
             }
@@ -72,29 +72,34 @@
         }
 
         function validate(id) {
+            // select objects
+            var svg = d3.selectAll('svg#' + id);
+            d3expect(svg);
+            var plotarea = svg.selectAll('g.plotarea');
+            d3expect(plotarea);
+            var glyphs = svg.selectAll('.glyphbox');
+            d3expect(glyphs);
+            
+            // validate selections
+            d3expect(svg.selectAll('g'));
+            d3expect(svg.selectAll('clippath'));
+            d3expect(svg.selectAll('symbol'));
+            d3expect(plotarea.selectAll('.axis'));
+            d3expect(plotarea.selectAll('.layer'));
+            return;
+        }
+
+        function d3expect(selection) {
             if (typeof d3.select('#mocha-report').selectAll('li.suite')[0] == 'undefined') {
                 // figure out another way to validate for phantom ...
                 expect(42).to.be.equal(42);
             } else {
-                // select objects
-                var svg = d3.select('svg#' + id);
-                expect(svg[0][0]).to.be.not.null();
-                var plotarea = svg.select('g.plotarea');
-                expect(plotarea[0][0]).to.be.not.null();
-                var glyphs = svg.selectAll('.glyphbox');
-                expect(glyphs[0][0]).to.be.not.null();
-                
-                // validate selections
-                expect(svg.selectAll('g')[0].length).to.be.greaterThan(1);
-                expect(svg.select('clippath')[0][0]).to.be.not.null();
-                expect(svg.selectAll('symbol')[0].length).to.be.greaterThan(1);
-                expect(plotarea.selectAll('.axis')[0]).to.be.not.null();
-                expect(plotarea.selectAll('.layer')[0]).to.be.not.null();
+                expect(selection[0][0]).to.be.not.null();
             }
-            return;
+            return; 
         }
 
-        quorra.seed(123);
+        quorra.seed(42);
 
         if (window.mochaPhantomJS) {
             mochaPhantomJS.run();

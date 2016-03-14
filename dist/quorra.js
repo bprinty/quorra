@@ -79,7 +79,7 @@ function QuorraPlot(attributes) {
     // constructor
     this.go = function(selection) {
         quorra.log('running generator function');
-        
+
         // configure selection
         if (typeof selection === 'undefined') selection = _this.attr.bind;
         _this.selection = (typeof selection === 'string') ? d3.select(selection) : selection;

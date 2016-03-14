@@ -58,46 +58,45 @@ describe("bar.js", function () {
 
   it("grouped", function () {
     var id = quorra.uuid();
-      base.append('div').attr('id', id).attr('class', 'plotarea');
+    base.append('div').attr('id', id).attr('class', 'plotarea');
 
-      var grouped = quorra.bar()
-          .bind('#' + id)
-          .id(id)
-          .bind('.plotarea')
-          .data(data)
-          .grid(true)
-          .zoomable(true)
-          .opacity(0.75)
-          .labelposition("end")
-          .layout('grouped')
-          .xlabel("X Axis Label")
-          .ylabel("Y Axis Label")
-          .color(['firebrick', 'steelblue']);
+    var grouped = quorra.bar()
+        .bind('#' + id)
+        .id(id)
+        .data(data)
+        .grid(true)
+        .zoomable(true)
+        .opacity(0.75)
+        .labelposition("end")
+        .layout('grouped')
+        .xlabel("X Axis Label")
+        .ylabel("Y Axis Label")
+        .color(['firebrick', 'steelblue']);
 
-      quorra.render(grouped);
-      validate(id);
+    quorra.render(grouped);
+    validate(id);
   });
 
   it("stacked", function () {
     var id = quorra.uuid();
-      base.append('div').attr('id', id).attr('class', 'plotarea');
+    base.append('div').attr('id', id).attr('class', 'plotarea');
 
-      var stacked = quorra.bar()
-          .bind('#' + id)
-          .id(id)
-          .data(data)
-          .opacity(0.75)
-          .lposition("outside")
-          .lshape("circle")
-          .zoomable(true)
-          .layout('stacked')
-          .xlabel("X Axis Label")
-          .ylabel("Y Axis Label")
-          .color(['firebrick', 'steelblue']);
+    var stacked = quorra.bar()
+        .bind('#' + id)
+        .id(id)
+        .data(data)
+        .opacity(0.75)
+        .lposition("outside")
+        .lshape("circle")
+        .zoomable(true)
+        .layout('stacked')
+        .xlabel("X Axis Label")
+        .ylabel("Y Axis Label")
+        .color(['firebrick', 'steelblue']);
 
 
-      quorra.render(stacked);
-      validate(id);
+    quorra.render(stacked);
+    validate(id);
   });
 
 });
