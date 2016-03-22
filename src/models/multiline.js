@@ -19,114 +19,129 @@ function Multiline(attributes) {
     }, attributes));
     this.type = "multiline";
 
+    // overwrite axes method
+    this.axes = function() {
+        quorra.log('redrawing axes');
+
+        // parameterize axes scaling
+        var domain = _this.attr.xrange === "auto" ? _this.domain : _this.attr.xrange;
+        var range = _this.attr.yrange === "auto" ? _this.range : _this.attr.yrange;
+        if (_this.type === 'histogram') {
+            domain[1] = domain[1] + (domain[1] - domain[0])/(_this.attr.bins-1);
+        }
+
+        // set up scaling for axes
+        // TODO: allow users to pass in arbitrary scaling function
+        //       i.e. d3.scale.log()
+        if (typeof _this.data[0].x === 'string') {
+            _this.xscale = d3.scale.ordinal()
+                .domain(domain)
+                .range([0, _this.innerwidth])
+                .rangePoints([0, _this.innerwidth], 1);
+        } else {
+            _this.xscale = d3.scale.linear()
+                .domain(domain)
+                .range([0, _this.innerwidth]);
+        }
+        if (typeof _this.data[0].y === 'string') {
+            _this.yscale = d3.scale.ordinal()
+                .domain(range)
+                .range([0, _this.innerheight])
+                .rangePoints([_this.innerheight, 0], 1);
+        } else {
+            _this.yscale = d3.scale.linear()
+                .domain(range)
+                .range([ _this.innerheight, 0]);
+        }
+
+        // tick formatting
+        _this.xaxis = d3.svg.axis().scale(_this.xscale).orient(_this.attr.xorient);
+        if (_this.attr.xticks !== "auto") {
+            _this.xaxis = _this.xaxis.ticks(_this.attr.xticks);
+        } else if (_this.type === 'histogram') {
+            _this.xaxis = _this.xaxis.ticks(_this.attr.bins);
+        }
+        _this.yaxis = d3.svg.axis().scale(_this.yscale).orient(_this.attr.yorient);
+        if (_this.attr.yticks !== "auto") {
+            _this.yaxis = _this.yaxis.ticks(_this.attr.yticks);
+        }
+
+        // number formatting
+        if (_this.attr.xformat !== "auto") {
+            _this.xaxis = _this.xaxis.tickFormat(_this.attr.xformat);
+        }
+        if (_this.attr.yformat !== "auto") {
+            _this.yaxis = _this.yaxis.tickFormat(_this.attr.yformat);
+        }
+
+        // configure grid (if specified)
+        if (_this.attr.grid) {
+            _this.xaxis = _this.xaxis.tickSize(-_this.innerheight, 0, 0);
+            _this.yaxis = _this.yaxis.tickSize(-_this.innerwidth, 0, 0);
+        }
+
+        // x axis
+        if (_this.attr.xaxis !== "hidden" && _this.attr.xaxis !== false) {
+            _this.plotarea
+                .append("g")
+                .attr("class", "x axis")
+                .attr("transform", "translate(0," + _this.innerheight + ")")
+                .call(_this.xaxis)
+                .append("text")
+                    .attr("class", "label")
+                    .attr("x", function(x){
+                        if (_this.attr.labelposition === "end"){
+                            return _this.innerwidth;
+                        }else if (_this.attr.labelposition === "middle"){
+                            return _this.innerwidth / 2;
+                        }else if (_this.attr.labelposition === "beginning"){
+                            return 0;
+                        }
+                    })
+                    .attr("y", function(){
+                        if (_this.attr.xaxis === "inside"){
+                            return -6 + _this.attr.labelpadding.x;
+                        }else if(_this.attr.xaxis === "outside"){
+                            return 35 + _this.attr.labelpadding.x;
+                        }
+                    })
+                    .style("text-anchor", _this.attr.labelposition)
+                    .text(_this.attr.xlabel);
+        }
+
+        // y axis
+        if (_this.attr.yaxis !== "hidden" && _this.attr.yaxis !== false) {
+            _this.plotarea
+                .append("g")
+                .attr("class", "y axis")
+                .call(_this.yaxis)
+                .append("text")
+                    .attr("class", "label")
+                    .attr("transform", "rotate(-90)")
+                    .attr("x", function(x){
+                        if (_this.attr.labelposition === "end"){
+                            return 0;
+                        }else if (_this.attr.labelposition === "middle"){
+                            return -_this.innerheight / 2;
+                        }else if (_this.attr.labelposition === "beginning"){
+                            return -_this.innerheight;
+                        }
+                    }).attr("y", function(){
+                        if (_this.attr.yaxis === "inside"){
+                            return 6 + _this.attr.labelpadding.y;
+                        }else if(_this.attr.yaxis === "outside"){
+                            return -40 + _this.attr.labelpadding.y;
+                        }
+                    })
+                    .attr("dy", ".71em")
+                    .style("text-anchor", _this.attr.labelposition)
+                    .text(_this.attr.ylabel);
+        }
+    }
+
     // overwrite render method
     this.plot = function() {
 
-        // configuring path renderer
-        var path = d3.svg.line()
-            .x(function(d, i) { return _this.xscale(_this.attr.x(d, i)); })
-            .y(function(d, i) { return _this.yscale(_this.attr.y(d, i)); })
-            .interpolate(_this.attr.interpolate);
-
-        // draw lines
-        var ugrps = _this.pallette.domain();
-        for (var grp in ugrps) {
-
-            // lines
-            var subdat = _.filter(_this.data, function(d){ return d.group == ugrps[grp]; });
-            _this.plotarea.append("path")
-                .datum(subdat)
-                .attr("class", function(d, i){
-                    return "line " + "g_" + d[0].group;
-                })
-                .attr("d", function(d){
-                    var p = path(d);
-                    if (_this.attr.layout === "line"){
-                        return p;
-                    }else if (_this.attr.layout === "area"){
-                        return [
-                            p,
-                            "L" + _this.xscale(_this.domain[1]) + "," + _this.yscale(_this.range[0]),
-                            "L" + _this.xscale(_this.domain[0]) + "," + _this.yscale(_this.range[0]),
-                            "Z"
-                        ].join('');
-                    }
-                })
-                .style("fill", function(d){
-                    if (_this.attr.layout === "line"){
-                        return "none";
-                    }else if (_this.attr.layout === "area"){
-                        return _this.pallette(d[0].group);
-                    }
-                })
-                .style("stroke", _this.pallette(ugrps[grp]))
-                .style("stroke-width", _this.attr.size)
-                .style("opacity", _this.attr.opacity)
-                .style("visibility", function(d, i){
-                    return _.contains(_this.attr.toggled, _this.attr.group(d[0], i)) ? 'hidden' : 'visible';
-                })
-                .attr("clip-path", "url(#clip)")
-                .on("mouseover", function(d, i) {
-                    d3.select(this).style("opacity", 0.25);
-                    if (_this.attr.tooltip){
-                        _this.attr.tooltip.html(d[0].group)
-                            .style("opacity", 1)
-                            .style("left", (d3.event.pageX + 5) + "px")
-                            .style("top", (d3.event.pageY - 20) + "px");
-                    }
-                }).on("mousemove", function(d) {
-                    if (_this.attr.tooltip) {
-                        _this.attr.tooltip
-                            .style("left", (d3.event.pageX + 5) + "px")
-                            .style("top", (d3.event.pageY - 20) + "px");
-                    }
-                }).on("mouseout", function(d) {
-                    d3.select(this).style("opacity", _this.attr.opacity);
-                    if (_this.attr.tooltip) {
-                        _this.attr.tooltip.style("opacity", 0);
-                    }
-                }).on("click", _this.attr.groupclick);
-        }
-
-        // draw points (if specified)
-        if (_this.attr.points > 0) {
-
-            _this.plotarea.selectAll(".dot")
-                .remove().data(_this.data)
-                .enter().append("circle")
-                .attr("class", function(d, i){
-                    return "dot " + "g_" + d.group;
-                })
-                .attr("r", _this.attr.points)
-                .attr("cx", function(d, i) { return _this.xscale(_this.attr.x(d, i)); })
-                .attr("cy", function(d, i) { return _this.yscale(_this.attr.y(d, i)); })
-                .style("fill", function(d, i){ return _this.pallette(_this.attr.group(d, i)); })
-                .style("opacity", _this.attr.opacity)
-                .style("visibility", function(d, i) {
-                    return _.contains(_this.attr.toggled, _this.attr.group(d, i)) ? 'hidden' : 'visible';
-                })
-                .attr("clip-path", "url(#clip)")
-                .on("mouseover", function(d, i){
-                    d3.select(this).style("opacity", 0.25);
-                    if (_this.attr.tooltip){
-                        _this.attr.tooltip.html(_this.attr.label(d, i))
-                            .style("opacity", 1)
-                            .style("left", (d3.event.pageX + 5) + "px")
-                            .style("top", (d3.event.pageY - 20) + "px");
-                    }
-                }).on("mousemove", function(d){
-                    if (_this.attr.tooltip){
-                        _this.attr.tooltip
-                            .style("left", (d3.event.pageX + 5) + "px")
-                            .style("top", (d3.event.pageY - 20) + "px");
-                    }
-                }).on("mouseout", function(d){
-                    d3.select(this).style("opacity", _this.attr.opacity);
-                    if (_this.attr.tooltip){
-                        _this.attr.tooltip.style("opacity", 0);
-                    }
-                }).on("click", _this.attr.labelclick);
-        }
     }
 
     return this.go;

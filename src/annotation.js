@@ -10,8 +10,8 @@ function Annotation(attributes) {
 
     quorra.log('instantiating annotation object');
 
-    if (typeof attributes == 'undefined') attributes = {};
-    if (typeof plot == 'undefined') plot = 'body';
+    if (typeof attributes === 'undefined') attributes = {};
+    if (typeof plot === 'undefined') plot = 'body';
     var _this = this;
 
     // constructor
@@ -20,7 +20,7 @@ function Annotation(attributes) {
 
         // create wrapper element for annotation groups
         _this.plot.plotarea.selectAll('.annotation#' + _this.attr.id).remove();
-        var cl = (_this.attr.group == null) ? 'annotation ' + _this.attr.type : 'annotation ' + _this.attr.type + ' g_' + _this.attr.group;
+        var cl = (_this.attr.group === null) ? 'annotation ' + _this.attr.type : 'annotation ' + _this.attr.type + ' g_' + _this.attr.group;
         var asel = _this.plot.plotarea.append('g')
             .attr('id', _this.attr.id).attr('class', cl)
             .attr("clip-path", "url(#clip)")
@@ -63,8 +63,8 @@ function Annotation(attributes) {
                     var yoffset = Math.abs(_this.plot.yscale(_this.attr.height) - _this.plot.yscale(0));
                     xoffset = (_this.attr.type === 'rect') ? xoffset / 2 : 0;
                     yoffset = (_this.attr.type === 'rect') ? yoffset / 2: 0;
-                    xcoord = movement.x - _this.plot.attr.margin.left - xoffset;
-                    ycoord = movement.y - _this.plot.attr.margin.top - yoffset;
+                    var xcoord = movement.x - _this.plot.attr.margin.left - xoffset;
+                    var ycoord = movement.y - _this.plot.attr.margin.top - yoffset;
 
                     // translate annotation object
                     var xmotion = _.center(xcoord, [0, _this.plot.innerwidth - 2*xoffset]);
@@ -85,7 +85,7 @@ function Annotation(attributes) {
         }
 
         // extend annotation object with specific shape
-        if (_this.attr.type == 'rect') {
+        if (_this.attr.type === 'rect') {
             asel.selectAll('.rect').data([_this.attr]).enter()
                 .append('rect')
                 .attr('class', 'rect')
@@ -94,14 +94,14 @@ function Annotation(attributes) {
                 .attr('height', Math.abs(_this.plot.yscale(_this.attr.height) - _this.plot.yscale(0)))
                 .attr('x', x)
                 .attr('y', y);
-        } else if (_this.attr.type == 'circle') {
+        } else if (_this.attr.type === 'circle') {
             asel.selectAll('.circle').data([_this.attr]).enter()
                 .append('circle')
                 .attr('class', 'circle')
                 .attr('r', _this.attr.size / 2)
                 .attr('cx', x)
                 .attr('cy', y);
-        } else if (_this.attr.type == 'triangle') {
+        } else if (_this.attr.type === 'triangle') {
             asel.selectAll('.triangle').data([_this.attr]).enter()
                 .append('path')
                 .attr('class', 'triangle')
@@ -155,7 +155,7 @@ function Annotation(attributes) {
         );
 
         return _this;
-    }
+    };
 
     // setting up attributes
     this.attr = extend({

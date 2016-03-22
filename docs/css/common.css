@@ -3,24 +3,56 @@ body {
     padding-top: 10px;
     width: 100%;
     height: 100%;
-}
-
-h1 {
     font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
     font-weight: 100;
 }
 
-#header {
-    width: 900px;
+h1, h2, h3, p, a {
+    font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+    font-weight: 100;
+}
+
+a {
+    text-decoration: none;
+    color: steelblue;
+}
+
+section {
+    width: 800px;
     margin-left: auto;
     margin-right: auto;
+}
+
+section#header {
     text-align: center;
 }
 
-#plots {
-    width: 900px;
+footer {
+    border-top: 1px solid #AAA;
+    width: 600px;
     margin-left: auto;
     margin-right: auto;
+}
+
+footer p {
+    padding-top: 20px;
+    padding-bottom: 10px;
+    font-size: 13px;
+    text-align: center;
+}
+
+.plot-thumbnail {
+    width: 190px;
+    height: 200px;
+    margin: 2px 0px 2px 0px;
+    display: inline-block;
+    border: 1px solid #AAA;
+}
+
+.plot-thumbnail p {
+    margin-top: 85px;
+    margin-left: 60px;
+    opacity: 0;
 }
 
 .editor { 

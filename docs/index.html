@@ -23,92 +23,132 @@
             margin-right: 10px;
             display: inline-block;
         }
+        #thumbnails {
+            width: 800px;
+            height: 300px;
+            border: 1px solid #AAA;
+        }
     </style>
   </head>
 
   <body>
 
-    <div id="header">
-        <h1>Quorra Examples</h1>
-    </div>
+    <section id="header">
+        <h1>quorra.js</h1>
+        <h3>subheader</h3>
+        <div id="thumbnails">
+        &nbsp;
+        </div>
+        <!-- <h3>simple, dynamic visualizations</h3> -->
+    </section>
 
-    <div id="thumbnails">
-        <div id="bar-grouped" class="plot"></div>
-        <div id="bar-stacked" class="plot"></div>
-    </div>
+    <section id="body">
+        <p>
+            quorra.js is an open-source framework for creating rich data-based visualizations, that doesn't require the steep learning curve of other visualization libraries. Out of the box, quorra provides the following features (in addition to plotting):
+        </p>
+
+        <ul>
+            <li><a href="./features/zooming.html">Zooming/Panning</a></li>
+            <li><a href="./features/export.html">PNG Exporting</a></li>
+            <li><a href="./features/annotation.html">Interactive Plot Annotations</a></li>
+            <li><a href="./features/real-time.html">Real-Time Updating</a></li>
+            <li><a href="./features/grid.html">Layout Tools</a></li>
+            <li><a href="./features/data-binding.html">Data Binding Across Plots</a></li>
+        </ul>
+
+        <p>
+            The following plot "models" are currently available within quorra:
+        </p>
+
+        <div class="plot-thumbnail">
+            <p>Bar Charts</p>
+        </div>
+        <div class="plot-thumbnail">
+            <p>Line Charts</p>
+        </div>
+        <div class="plot-thumbnail">
+            <p>Scatter Charts</p>
+        </div>
+        <div class="plot-thumbnail">
+            <p>Jitter Charts</p>
+        </div>
+        <div class="plot-thumbnail">
+            <p>Step Charts</p>
+        </div>
+        <div class="plot-thumbnail">
+            <p>Heatmaps</p>
+        </div>
+        <div class="plot-thumbnail">
+            <p>Box Charts</p>
+        </div>
+        <div class="plot-thumbnail">
+            <p>Histograms</p>
+        </div>
+        <div class="plot-thumbnail">
+            <p>Density Plots</p>
+        </div>
+
+    </section>
+
+    <footer>
+        <p>
+            Library released under <a href="https://raw.githubusercontent.com/bprinty/quorra/master/LICENSE">Apache 2 license</a>. Copyright 2016 <a href="http://bprinty.github.io">Blake Printy</a>.
+        </p>
+    </footer>
 
     <script src="../lib/d3/d3.min.js"></script>
     <script src="../lib/underscore/underscore-min.js"></script>
     <script src="../dist/quorra.js"></script>
     <script>
-        // simulate data
-        quorra.seed(678);
-        function layerup(n, o) {
-            function bump(a) {
-                var x = 1 / (.1 + quorra.random()),
-                    y = 2 * quorra.random() - .5,
-                    z = 10 / (.1 + quorra.random());
-                for (var i = 0; i < n; i++) {
-                    var w = (i / n - y) * z;
-                    a[i] += x * Math.exp(-w * w);
-                }
-            }
-            var a = [], i;
-            for (i = 0; i < n; ++i) a[i] = o + o * quorra.random();
-            for (i = 0; i < 5; ++i) bump(a);
-            return a.map(function(d, i) { return {
-                x: i,
-                y: Math.max(0, d),
-            }; });
-        }
-        var groups = 2;
-        var samples = 20;
-        var stack = d3.layout.stack();
-        var layerdata = stack(d3.range(groups).map(function() { return layerup(samples, 0.1); }));
-        var data = [];
-        for (var layer in layerdata) {
-            data = data.concat(_.map(layerdata[layer], function(d, i){
-                return {
-                    x: d.x,
-                    y: d.y,
-                    group: (layer == 1) ? 'Good': 'Evil',
-                    label: (layer == 1) ? ('Good' + i): ('Evil' + i)
-                };
-            }));
-        }
 
-        //
-        var redblue = d3.scale.ordinal().domain(['Evil', 'Good']).range(['firebrick','steelblue']);
+        // interactivity
+        // -------------
+        d3.selectAll('.plot-thumbnail')
+            .on('mouseover', function() {
 
-        // grouped bar
-        var grouped = quorra.bar()
-            .width(200)
-            .height(200)
-            .grid(true)
-            .legend(false)
-            .layout('grouped')
-            .xlabel("")
-            .ylabel("")
-            .tooltip(false)
-            .color(redblue);
+                d3.select(this).transition()
+                    .duration(100)
+                    .style('margin-left', '-3px')
+                    .style('border-width', '3px');
 
-        d3.select('#bar-grouped')
-            .datum(data).call(grouped);
+                d3.select(this).select('p')
+                    .transition().duration(200)
+                    .style('opacity', 0.75);
 
-        // stacked bar
-        var stacked = quorra.bar()
-            .width(200)
-            .height(200)
-            .grid(false)
-            .legend(false)
-            .layout('stacked')
-            .xlabel("")
-            .ylabel("")
-            .tooltip(false)
-            .color(redblue);
+            }).on('mouseout', function() {
 
-        d3.select('#bar-stacked')
-            .datum(data).call(stacked);
+                d3.select(this).transition()
+                    .duration(200)
+                    .style('margin-left', '0px')
+                    .style('border-width', '1px');
+
+                d3.select(this).select('p')
+                    .transition().duration(200)
+                    .style('opacity', 0);
+            });
+
+
+        // plots
+        // -----
+
+        // Bar
+
+        // Line
+
+        // Scatter
+
+        // Jitter
+
+        // Step
+
+        // Heatmaps
+
+        // Box and Whisker
+
+        // Histograms
+
+        // Density
+
 
     </script>
   </body>

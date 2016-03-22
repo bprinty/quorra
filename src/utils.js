@@ -102,20 +102,20 @@ quorra.export = function(svg, filename) {
         canvas.remove();
         document.body.removeChild(cln);
     };
-}
+};
 
 
 // underscore additions
 _.center = function(x, bounds){
     return _.min([_.max([x, bounds[0]]), bounds[1]]);
-}
+};
 
 _.uniquesort = function(x, func) {
     if (typeof func === 'undefined') {
         func = function(x){ return x; };
     }
     return _.unique(_.map(x, func)).sort();
-}
+};
 
 
 // common generator object utilities
@@ -137,7 +137,7 @@ parameterize = function(attributes, generator) {
                 attributes[i].remove();
             }
             // maintain non-overridden object arguments
-            if (typeof value === 'object' && i != 'tooltip') {
+            if (typeof value === 'object' && i !== 'tooltip') {
                 if (typeof attributes[i] === 'object') {
                     if (Array.isArray(attributes[i]) && ! Array.isArray(value)) {
                         value = [value];
@@ -152,7 +152,7 @@ parameterize = function(attributes, generator) {
             return generator;
         };
     });
-}
+};
 
 extend = function(stock, custom) {
     /**
@@ -167,8 +167,8 @@ extend = function(stock, custom) {
     });
 
     _.map(Object.keys(stock), function(d) {
-        if (typeof custom[d] != 'undefined') {
-            if (typeof stock[d] == "object" && ! Array.isArray(stock[d]) && stock[d] != null) {
+        if (typeof custom[d] !== 'undefined') {
+            if (typeof stock[d] === "object" && ! Array.isArray(stock[d]) && stock[d] != null) {
                 stock[d] = extend(stock[d], custom[d]);
             } else if (Array.isArray(stock[d]) && !Array.isArray(custom[d])) { 
                 stock[d] = [custom[d]];
@@ -178,5 +178,5 @@ extend = function(stock, custom) {
         }
     });
     return stock;
-}
+};
 
