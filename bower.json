@@ -24,7 +24,8 @@
     "CONTRIBUTING.md",
     "Gruntfile.js",
     "Makefile",
-    "lib"
+    "lib",
+    "package.json"
   ],
   "main": [
     "dist/quorra.js",
