@@ -57,6 +57,7 @@ describe("line.js", function () {
         .labelposition("end")
         .yaxis("inside")
         .xaxis("outside")
+        .exportable(true)
         .zoomable(true)
         .exportable(true)
         .points(5)

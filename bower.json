@@ -3,10 +3,10 @@
   "homepage": "http://github.com/bprinty/quorra",
   "version": "0.0.1",
   "authors": [
-    "Blake Printy <bprinty@gmail.com>"
+    "Blake Printy <bprinty@gmail.com> (http://bprinty.github.io)"
   ],
-  "description": "A reusable visualization API built on top of d3.js",
-  "license": "MIT",
+  "description": "An interactive data visualization API built on top of d3.js",
+  "license": "Apache-2.0",
   "keywords": [
     "d3",
     "visualization",
@@ -18,17 +18,34 @@
   "ignore": [
     "**/.*",
     "node_modules",
-    "test",
+    "tests",
     "src",
-    "examples",
-    "*.rst"
+    "AUTHORS.md",
+    "CONTRIBUTING.md",
+    "Gruntfile.js",
+    "Makefile",
+    "lib",
+    "package.json"
   ],
   "main": [
-    "build/quorra.js",
-    "build/quorra.css"
+    "dist/quorra.js",
+    "dist/quorra.css"
   ],
   "dependencies": {
-    "d3": "^3.0.2",
-    "underscore": "^1.8.2"
+    "d3": "~3.0.2",
+    "underscore": "~1.8.2"
+  },
+  "devDependencies": {
+    "grunt": "^0.4.5",
+    "grunt-karma": "0.12.1",
+    "grunt-contrib-concat": "~0.2.0",
+    "grunt-contrib-copy": "~0.4.1",
+    "grunt-contrib-cssmin": "~0.6.2",
+    "grunt-contrib-jshint": "^0.11.0",
+    "grunt-contrib-uglify": "~0.2.0",
+    "grunt-contrib-watch": "~0.3.1",
+    "grunt-text-replace": "^0.4.0",
+    "chai": "1.10.0",
+    "mocha": "2.1.0"
   }
 }

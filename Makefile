@@ -36,9 +36,8 @@ clean:
 
 
 release: test build
-	git add dist/quorra.js
-	git add dist/quorra.css
 	TAG=$(VERSION) && git commit -m "quorra, release $$TAG" || echo "distribution already added"
 	TAG=$(VERSION) && git tag -d $$TAG || echo "local tag available"
 	TAG=$(VERSION) && git push origin :$$TAG || echo "remote tag available"
 	TAG=$(VERSION) && git tag $$TAG && git push origin $$TAG
+
