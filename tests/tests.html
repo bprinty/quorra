@@ -74,9 +74,8 @@
             // select objects
             var svg = d3.selectAll('svg#' + id);
             d3expect(svg);
-            var plotarea = svg.selectAll('g.plotarea');
-            d3expect(plotarea);
-            d3expect(svg.selectAll('g'));
+            d3expect(svg.selectAll('g.plotregion'));
+            d3expect(svg.selectAll('g.plotregion').selectAll('g.plotarea'));
             return;
         }
 
@@ -91,8 +90,7 @@
         function checkaxis(id) {
             var svg = d3.selectAll('svg#' + id);
             d3expect(svg);
-            d3expect(svg.selectAll('clippath'));
-            d3expect(svg.selectAll('g.plotarea').selectAll('.axis'));
+            d3expect(svg.selectAll('g.plotregion').selectAll('.axis'));
             return;
         }
 

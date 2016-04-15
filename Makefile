@@ -22,14 +22,13 @@ requirements:
 	bower install
 	npm install
 
-
 build:
 	grunt
 
 
 .PHONY: test
 test: build
-	mocha-phantomjs tests/tests.html 
+	./node_modules/mocha-phantomjs/bin/mocha-phantomjs tests/tests.html 
 
 
 clean:

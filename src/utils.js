@@ -65,6 +65,9 @@ quorra.export = function(svg, filename) {
         version: '1.1'
     }).node();
     var cln = sel.cloneNode(true);
+    d3.select(cln).selectAll('clippath').attr('id', 'clip-export');
+    d3.select(cln).selectAll('.plotarea').attr('clip-path', 'url(#clip-export)');
+    cln.id = "export";
     document.body.appendChild(cln);
 
     // set styling for elements
@@ -74,6 +77,7 @@ quorra.export = function(svg, filename) {
     d3.select(cln).selectAll('.axis line').style('stroke', '#bbb').style('fill', 'none').style('shape-rendering', 'crispEdges');
     d3.select(cln).selectAll('.axis path').style('stroke', '#bbb').style('fill', 'none').style('shape-rendering', 'crispEdges');
     d3.select(cln).selectAll('.axis .tick line').style('stroke', '#bbb').style('opacity', 0.5);
+    d3.select(cln).selectAll('.selector').style('stroke', '#bbb').style('stroke-width', '1px');
     d3.select(cln).selectAll('.xtick').style('stroke-width', '1.5px');
     d3.select(cln).selectAll('.ytick').style('stroke-width', '1.5px');
 
@@ -118,6 +122,23 @@ _.uniquesort = function(x, func) {
 };
 
 
+// d3 additions
+d3.selection.prototype.stageup = function() {
+  return this.each(function(){
+    this.parentNode.appendChild(this);
+  });
+};
+
+d3.selection.prototype.stagedown = function() { 
+    return this.each(function() { 
+        var firstChild = this.parentNode.firstChild; 
+        if (firstChild) { 
+            this.parentNode.insertBefore(this, firstChild); 
+        } 
+    }); 
+};
+
+
 // common generator object utilities
 parameterize = function(attributes, generator) {
     /**
@@ -132,12 +153,8 @@ parameterize = function(attributes, generator) {
         generator[i] = function(value) {
             if (!arguments.length) return attributes[i];
 
-            // binding a tooltip requires removal of the previous
-            if (i === 'tooltip') {
-                attributes[i].remove();
-            }
             // maintain non-overridden object arguments
-            if (typeof value === 'object' && i !== 'tooltip') {
+            if (typeof value === 'object') {
                 if (typeof attributes[i] === 'object') {
                     if (Array.isArray(attributes[i]) && ! Array.isArray(value)) {
                         value = [value];

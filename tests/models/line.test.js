@@ -58,6 +58,7 @@ describe("line.js", function () {
         .yaxis("inside")
         .xaxis("outside")
         .zoomable(true)
+        .exportable(true)
         .points(5)
         .xlabel("X Axis Label")
         .ylabel("Y Axis Label")
@@ -91,6 +92,7 @@ describe("line.js", function () {
         .yaxis("inside")
         .xaxis("outside")
         .zoomable(true)
+        .exportable(true)
         .xlabel("X Axis Label")
         .ylabel("Y Axis Label")
         .color(['firebrick','steelblue']);

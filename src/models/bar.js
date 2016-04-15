@@ -46,8 +46,7 @@ function Bar(attributes) {
         var layer = _this.plotarea.selectAll(".layer")
             .remove().data(layers)
             .enter().append("g")
-            .attr("class","layer")
-            .attr("clip-path", "url(#clip)");
+            .attr("class","layer");
 
         var bar = layer.selectAll("rect")
             .remove().data(function(d){ return d; })
@@ -93,7 +92,7 @@ function Bar(attributes) {
                 d3.select(this).style("opacity", 0.25);
                 if (_this.attr.tooltip){
                     _this.attr.tooltip.html(d.label)
-                        .style("opacity", 1)
+                        .style("visibility", "visible")
                         .style("left", (d3.event.pageX + 5) + "px")
                         .style("top", (d3.event.pageY - 20) + "px");
                 }
@@ -106,7 +105,7 @@ function Bar(attributes) {
             }).on("mouseout", function(d){
                 d3.select(this).style("opacity", _this.attr.opacity);
                 if (_this.attr.tooltip){
-                    _this.attr.tooltip.style("opacity", 0);
+                    _this.attr.tooltip.style("visibility", "hidden");
                 }
             });
     }
