@@ -38,10 +38,6 @@ module.exports = function(grunt) {
             }
         },
         uglify: {
-            options: {
-                banner: '/* quorra version ' + _pkg.version + ' (' + _pkg.homepage + ') ' +
-                    '<%= grunt.template.today("yyyy-mm-dd") %> */\n'
-            },
             js: {
                 files: {
                     'dist/quorra.min.js': ['dist/quorra.js']
@@ -87,7 +83,7 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-karma');
     grunt.loadNpmTasks('grunt-text-replace');
 
-    grunt.registerTask('default', ['concat','copy']);
+    grunt.registerTask('default', ['concat','copy', 'uglify']);
     grunt.registerTask('production', ['concat', 'uglify', 'copy', 'cssmin', 'replace']);
     grunt.registerTask('release', ['production']);
     grunt.registerTask('lint', ['jshint']);
