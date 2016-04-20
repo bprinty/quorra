@@ -45,7 +45,6 @@
     "grunt-contrib-uglify": "~0.5.0",
     "grunt-contrib-watch": "~0.6.1",
     "chai": "1.10.0",
-    "mocha": "2.1.0",
-    "mocha-phantomjs": "4.0.2"
+    "mocha": "2.1.0"
   }
 }
