@@ -50,8 +50,8 @@ describe("pie.js", function () {
           .data(data)
           .radius(125)
           .opacity(0.75)
+          .tooltip(true)
           .lshape("circle")
-          .tooltip(false)
           .color(['firebrick','forestgreen','steelblue'])
           .aggregate(function(x){ return(x.length); });
 
@@ -74,6 +74,7 @@ describe("pie.js", function () {
               {x: 20, group: "Okay", label: "Okay"}
           ]).legend(false)
           .radius(125)
+          .tooltip(true)
           .opacity(0.75)
           .inner(50)
           .color(['firebrick','forestgreen','steelblue']);
