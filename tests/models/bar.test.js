@@ -9,6 +9,7 @@ describe("bar.js", function () {
 
   var base = null;
   var data = null;
+  var textdata = null;
   before(function() {
       // config
       quorra.debug = false;
@@ -46,6 +47,23 @@ describe("bar.js", function () {
                   label: (layer == 1) ? ('Good' + i): ('Evil' + i)
               };
           }));
+      }
+
+      // simulate text data
+      var entries = 3;
+      var groups = 2;
+      x = _.range(entries*groups).map(function(d) { return 'Type' + (d % entries); });
+      y = _.range(entries*groups).map(function(d) { return quorra.random() * 100; });
+      group = _.range(entries*groups).map(function(d) {
+          return ['Foo', 'Bar'][(d % groups)];
+      });
+      textdata = [];
+      for(var i=0; i<x.length; i++){
+          textdata.push({
+              x: x[i],
+              y: y[i],
+              group: group[i]
+          });
       }
 
       // set up selection
@@ -103,6 +121,60 @@ describe("bar.js", function () {
 
 
     quorra.render(stacked);
+
+    checkplot(id);
+    checkaxis(id);
+    checkglyphs(id);
+  });
+
+  it("textgrouped", function () {
+    
+    var id = quorra.uuid();
+    base.append('div').attr('id', id).attr('class', 'plotarea');
+
+    var text = quorra.bar()
+        .bind('#' + id)
+        .id(id)
+        .data(textdata)
+        .opacity(0.75)
+        .yrange([0, 100])
+        .lposition("outside")
+        .lshape("circle")
+        .zoomable(true)
+        .exportable(true)
+        .layout('grouped')
+        .xlabel("X Axis Label")
+        .ylabel("Y Axis Label")
+        .color(['firebrick', 'steelblue']);
+
+    quorra.render(text);
+
+    checkplot(id);
+    checkaxis(id);
+    checkglyphs(id);
+  });
+
+  it("textstacked", function () {
+    
+    var id = quorra.uuid();
+    base.append('div').attr('id', id).attr('class', 'plotarea');
+
+    var text = quorra.bar()
+        .bind('#' + id)
+        .id(id)
+        .data(textdata)
+        .opacity(0.75)
+        .yrange([0, 100])
+        .lposition("outside")
+        .lshape("circle")
+        .zoomable(true)
+        .exportable(true)
+        .layout('stacked')
+        .xlabel("X Axis Label")
+        .ylabel("Y Axis Label")
+        .color(['firebrick', 'steelblue']);
+
+    quorra.render(text);
 
     checkplot(id);
     checkaxis(id);

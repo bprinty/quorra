@@ -27,7 +27,7 @@ function Line(attributes) {
         // configuring path renderer
         var path = d3.svg.line()
             .x(function(d, i) { return _this.xscale(_this.xmapper(_this.attr.x(d, i))); })
-            .y(function(d, i) { return _this.yscale(_this.attr.y(d, i)); })
+            .y(function(d, i) { return _this.yscale(_this.ymapper(_this.attr.y(d, i))); })
             .interpolate(_this.attr.interpolate);
 
         // draw lines
@@ -43,28 +43,28 @@ function Line(attributes) {
                 })
                 .attr("d", function(d){
                     var p = path(d);
-                    if (_this.attr.layout === "line"){
+                    if (_this.attr.layout === "line") {
                         return p;
-                    }else if (_this.attr.layout === "area"){
+                    } else if (_this.attr.layout === "area") {
                         return [
                             p,
-                            "L" + _this.xscale(_this.xmapper(_this.domain[1])) + "," + _this.yscale(_this.range[0]),
-                            "L" + _this.xscale(_this.xmapper(_this.domain[0])) + "," + _this.yscale(_this.range[0]),
+                            "L" + _this.xscale(_this.xmapper(_this.domain[_this.domain.length - 1])) + "," + _this.yscale(_this.ymapper(_this.range[0])),
+                            "L" + _this.xscale(_this.xmapper(_this.domain[0])) + "," + _this.yscale(_this.ymapper(_this.range[0])),
                             "Z"
                         ].join('');
                     }
                 })
                 .style("fill", function(d){
-                    if (_this.attr.layout === "line"){
+                    if (_this.attr.layout === "line") {
                         return "none";
-                    }else if (_this.attr.layout === "area"){
+                    } else if (_this.attr.layout === "area") {
                         return _this.pallette(d[0].group);
                     }
                 })
                 .style("stroke", _this.pallette(ugrps[grp]))
                 .style("stroke-width", _this.attr.size)
                 .style("opacity", _this.attr.opacity)
-                .style("visibility", function(d, i){
+                .style("visibility", function(d, i) {
                     return _.contains(_this.attr.toggled, _this.attr.group(d[0], i)) ? 'hidden' : 'visible';
                 })
                 .on("mouseover", function(d, i) {
@@ -100,7 +100,7 @@ function Line(attributes) {
                 })
                 .attr("r", _this.attr.points)
                 .attr("cx", function(d, i) { return _this.xscale(_this.xmapper(_this.attr.x(d, i))); })
-                .attr("cy", function(d, i) { return _this.yscale(_this.attr.y(d, i)); })
+                .attr("cy", function(d, i) { return _this.yscale(_this.ymapper(_this.attr.y(d, i))); })
                 .style("fill", function(d, i){ return _this.pallette(_this.attr.group(d, i)); })
                 .style("opacity", _this.attr.opacity)
                 .style("visibility", function(d, i) {

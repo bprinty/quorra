@@ -9,6 +9,8 @@ describe("scatter.js", function () {
 
   var base = null;
   var data = null;
+  var jdata = null;
+  var ldata = null;
   before(function() {
       
       // config
@@ -37,6 +39,20 @@ describe("scatter.js", function () {
               group: group[i],
               label: label[i]
           });
+      }
+
+      var entries = 4;
+      var samples = 5;
+      ldata = [];
+      for(var i=0; i<(entries+1); i++) {
+        for(var j=0; j<(samples + 1); j++) {
+          ldata.push({
+            x: 'E' + i,
+            y: quorra.random() * 10,
+            group: 'S' + j,
+            label: 'E' + i + ', S' + j, 
+          });
+        }
       }
 
       // set up selection
@@ -96,6 +112,35 @@ describe("scatter.js", function () {
           .color(['firebrick','steelblue']);
 
       quorra.render(jitter);
+
+      checkplot(id);
+      checkaxis(id);
+      checkglyphs(id);
+  });
+
+  it("jitterline", function () {
+
+      var id = quorra.uuid();
+      base.append('div').attr('id', id).attr('class', 'plotarea');
+
+      var jitterline = quorra.scatter()
+          .bind('#' + id)
+          .id(id)
+          .data(ldata)
+          .xjitter(15)
+          .size(5)
+          .opacity(0.75)
+          .legend(false)
+          .zoomable(true)
+          .exportable(true)
+          .line("hover")
+          .yrange([0, 10])
+          .hovercolor('firebrick')
+          .xlabel("X Axis Label")
+          .ylabel("Y Axis Label")
+          .color(['steelblue']);
+
+      quorra.render(jitterline);
 
       checkplot(id);
       checkaxis(id);

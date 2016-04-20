@@ -20,7 +20,7 @@ describe("line.js", function () {
       x = _.range(entries).map(function(d) { return d; });
       y = _.range(entries).map(function(d) { return quorra.random() * d; });
       group = _.range(entries).map(function(d) {
-          return quorra.random() > 0.5 ? 'Good' : 'Evil';
+          return quorra.random() > 0.5 ? 'Foo' : 'Bar';
       });
       label = _.range(entries).map(function(d, i) { return group[i]+i; });
       data = [];
@@ -38,7 +38,7 @@ describe("line.js", function () {
       x = _.range(entries).map(function(d) { return 'Group' + d; });
       y = _.range(entries).map(function(d) { return quorra.random() * d; });
       group = _.range(entries).map(function(d) {
-          return quorra.random() > 0.5 ? 'Good' : 'Evil';
+          return quorra.random() > 0.5 ? 'Foo' : 'Bar';
       });
       label = _.range(entries).map(function(d, i) { return group[i]+i; });
       textdata = [];
@@ -60,69 +60,69 @@ describe("line.js", function () {
       reorder(base);
   });
 
-  it("pointline", function () {
+  // it("pointline", function () {
 
-      var id = quorra.uuid();
-      base.append('div').attr('id', id).attr('class', 'plotarea');
+  //     var id = quorra.uuid();
+  //     base.append('div').attr('id', id).attr('class', 'plotarea');
 
-      var line = quorra.line()
-        .bind('#' + id)
-        .id(id)
-        .data(data)
-        .opacity(0.75)
-        .xrange([5, 40])
-        .lposition("outside")
-        .lshape("circle")
-        .labelposition("end")
-        .yaxis("inside")
-        .xaxis("outside")
-        .exportable(true)
-        .zoomable(true)
-        .exportable(true)
-        .points(5)
-        .xlabel("X Axis Label")
-        .ylabel("Y Axis Label")
-        .color(['firebrick','steelblue']);
+  //     var line = quorra.line()
+  //       .bind('#' + id)
+  //       .id(id)
+  //       .data(data)
+  //       .opacity(0.75)
+  //       .xrange([5, 40])
+  //       .lposition("outside")
+  //       .lshape("circle")
+  //       .labelposition("end")
+  //       .yaxis("inside")
+  //       .xaxis("outside")
+  //       .exportable(true)
+  //       .zoomable(true)
+  //       .exportable(true)
+  //       .points(5)
+  //       .xlabel("X Axis Label")
+  //       .ylabel("Y Axis Label")
+  //       .color(['firebrick','steelblue']);
 
-      quorra.render(line);
+  //     quorra.render(line);
 
-      checkplot(id);
-      checkaxis(id);
-      checkglyphs(id);
-  });
+  //     checkplot(id);
+  //     checkaxis(id);
+  //     checkglyphs(id);
+  // });
 
-  it("area", function () {
+  // it("area", function () {
 
-      var id = quorra.uuid();
-      base.append('div').attr('id', id).attr('class', 'plotarea');
+  //     var id = quorra.uuid();
+  //     base.append('div').attr('id', id).attr('class', 'plotarea');
 
-      var line = quorra.line()
-        .bind('#' + id)
-        .id(id)
-        .data(data)
-        .opacity(0.75)
-        .xrange([5, 40])
-        .layout('area')
-        .xticks(10)
-        .yticks(10)
-        .interpolate("cardinal")
-        .lposition("outside")
-        .lshape("circle")
-        .labelposition("end")
-        .yaxis("inside")
-        .xaxis("outside")
-        .zoomable(true)
-        .exportable(true)
-        .xlabel("X Axis Label")
-        .ylabel("Y Axis Label")
-        .color(['firebrick','steelblue']);
+  //     var line = quorra.line()
+  //       .bind('#' + id)
+  //       .id(id)
+  //       .data(data)
+  //       .opacity(0.75)
+  //       .xrange([5, 40])
+  //       .layout('area')
+  //       .xticks(10)
+  //       .yticks(10)
+  //       .interpolate("cardinal")
+  //       .lposition("outside")
+  //       .lshape("circle")
+  //       .labelposition("end")
+  //       .yaxis("inside")
+  //       .xaxis("outside")
+  //       .zoomable(true)
+  //       .exportable(true)
+  //       .xlabel("X Axis Label")
+  //       .ylabel("Y Axis Label")
+  //       .color(['firebrick','steelblue']);
 
-      quorra.render(line);
+  //     quorra.render(line);
 
-      checkplot(id);
-      checkaxis(id);
-      checkglyphs(id);
-  });
+  //     checkplot(id);
+  //     checkaxis(id);
+  //     checkglyphs(id);
+  // });
 
   it("textline", function () {
 
@@ -143,7 +143,6 @@ describe("line.js", function () {
         .zoomable(true)
         .exportable(true)
         .points(5)
-        .xrange([1, 4])
         .xlabel("X Axis Label")
         .ylabel("Y Axis Label")
         .color(['firebrick','steelblue']);

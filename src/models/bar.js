@@ -25,9 +25,13 @@ function Bar(attributes) {
         // responsible for ensuring that their data is complete
         var layers = [];
         var ugrps = _this.pallette.domain();
+        if (typeof _this.data[0].x === 'string') {
+            _this.data = _this.data.sort(function(a, b) { return a.x > b.x; });
+        }
+        console.log(_this.data);
         for (var grp in ugrps) {
             var flt = _.filter(_this.data, function(d){ return d.group == ugrps[grp]; });
-            flt = _.map(flt, function(d){
+            flt = _.map(flt, function(d) {
                 d.layer = grp;
                 return d;
             });
@@ -39,8 +43,9 @@ function Bar(attributes) {
                 d.y0 = y0[i];
                 y0[i] = y0[i] + d.y;
                 return d;
-            });  
+            });
         }
+        console.log(layers);
 
         // plotting bars
         var layer = _this.plotarea.selectAll(".layer")
@@ -56,11 +61,12 @@ function Bar(attributes) {
             })
             .attr("x", function(d, i) {
                 if (layers[0].length > 1){
+                    var offset = (typeof _this.attr.x(d, i) === 'string') ? 0.5 : 0;
                     if (_this.attr.layout === "stacked"){
-                        return _this.xscale(_this.attr.x(d, i));
+                        return _this.xscale(_this.xmapper(_this.attr.x(d, i)) - offset);
                     }else{
-                        var diff = Math.abs(_this.xscale(_this.attr.x(layers[0][1])) - _this.xscale(_this.attr.x(layers[0][0])));
-                        return _this.xscale(_this.attr.x(d, i)) + _this.pallette.range().indexOf(_this.pallette(d.group))*(diff / _this.pallette.domain().length);
+                        var diff = Math.abs(_this.xscale(_this.xmapper(_this.attr.x(layers[0][1]))) - _this.xscale(_this.xmapper(_this.attr.x(layers[0][0]))));
+                        return _this.xscale(_this.xmapper(_this.attr.x(d, i)) - offset) + _this.pallette.range().indexOf(_this.pallette(d.group))*(diff / _this.pallette.domain().length);
                     }
                 }else{
                     var range = _this.xscale.range();
@@ -69,11 +75,13 @@ function Bar(attributes) {
             })
             // NOTE: this needs to be fixed so that y0 is 
             // parameterized before this takes place.
-            .attr("y", function(d, i){ return (_this.attr.layout == "stacked") ? _this.yscale(d.y0 + d.y) : _this.yscale(d.y); })
-            .attr("height", function(d, i){ return (_this.attr.layout == "stacked") ? (_this.yscale(d.y0) - _this.yscale(d.y0 + d.y)) : _.max([_this.innerheight - _this.yscale(d.y), 0]); })
+            .attr("y", function(d, i) {
+                return (_this.attr.layout == "stacked") ? _this.yscale(_this.ymapper(d.y0 + d.y)) : _this.yscale(_this.ymapper(d.y));
+            })
+            .attr("height", function(d, i){ return (_this.attr.layout == "stacked") ? (_this.yscale(_this.ymapper(d.y0)) - _this.yscale(_this.ymapper(d.y0 + d.y))) : _.max([_this.innerheight - _this.yscale(_this.ymapper(d.y)), 0]); })
             .attr("width", function(d){
                 if (layers[0].length > 1){
-                    var diff = Math.abs(_this.xscale(_this.attr.x(layers[0][1])) - _this.xscale(_this.attr.x(layers[0][0])));
+                    var diff = Math.abs(_this.xscale(_this.xmapper(_this.attr.x(layers[0][1]))) - _this.xscale(_this.xmapper(_this.attr.x(layers[0][0]))));
                     if (_this.attr.layout === "stacked"){
                         return diff - 2;
                     }else{
