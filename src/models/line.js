@@ -66,12 +66,11 @@ function Line(attributes) {
                 .style("visibility", function(d, i){
                     return _.contains(_this.attr.toggled, _this.attr.group(d[0], i)) ? 'hidden' : 'visible';
                 })
-                .attr("clip-path", "url(#clip)")
                 .on("mouseover", function(d, i) {
                     d3.select(this).style("opacity", 0.25);
                     if (_this.attr.tooltip){
                         _this.attr.tooltip.html(d[0].group)
-                            .style("opacity", 1)
+                            .style("visibility", "visible")
                             .style("left", (d3.event.pageX + 5) + "px")
                             .style("top", (d3.event.pageY - 20) + "px");
                     }
@@ -84,7 +83,7 @@ function Line(attributes) {
                 }).on("mouseout", function(d) {
                     d3.select(this).style("opacity", _this.attr.opacity);
                     if (_this.attr.tooltip) {
-                        _this.attr.tooltip.style("opacity", 0);
+                        _this.attr.tooltip.style("visibility", "hidden");
                     }
                 }).on("click", _this.attr.groupclick);
         }
@@ -106,12 +105,11 @@ function Line(attributes) {
                 .style("visibility", function(d, i) {
                     return _.contains(_this.attr.toggled, _this.attr.group(d, i)) ? 'hidden' : 'visible';
                 })
-                .attr("clip-path", "url(#clip)")
                 .on("mouseover", function(d, i){
                     d3.select(this).style("opacity", 0.25);
                     if (_this.attr.tooltip){
                         _this.attr.tooltip.html(_this.attr.label(d, i))
-                            .style("opacity", 1)
+                            .style("visibility", "visible")
                             .style("left", (d3.event.pageX + 5) + "px")
                             .style("top", (d3.event.pageY - 20) + "px");
                     }
@@ -124,7 +122,7 @@ function Line(attributes) {
                 }).on("mouseout", function(d){
                     d3.select(this).style("opacity", _this.attr.opacity);
                     if (_this.attr.tooltip){
-                        _this.attr.tooltip.style("opacity", 0);
+                        _this.attr.tooltip.style("visibility", "hidden");
                     }
                 }).on("click", _this.attr.labelclick);
         }

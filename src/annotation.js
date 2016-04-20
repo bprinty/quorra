@@ -18,19 +18,27 @@ function Annotation(attributes) {
     this.go = function() {
         quorra.log('running annotation generator function');
 
+        // set up tooltip
+        if (_this.attr.tooltip) {
+            _this.attr.tooltip = _this.plot.selection.append("div")
+                .attr("class", "annotation-tooltip")
+                .style("position", "fixed")
+                .style("visibility", "hidden");
+        }
+
         // create wrapper element for annotation groups
         _this.plot.plotarea.selectAll('.annotation#' + _this.attr.id).remove();
         var cl = (_this.attr.group === null) ? 'annotation ' + _this.attr.type : 'annotation ' + _this.attr.type + ' g_' + _this.attr.group;
         var asel = _this.plot.plotarea.append('g')
             .attr('id', _this.attr.id).attr('class', cl)
-            .attr("clip-path", "url(#clip)")
             .style("visibility", function() {
-                return _.contains(_this.plot.attr.toggled, _this.plot.attr.group(_this.attr)) ? 'hidden' : 'visible';
-            }).on('mouseover', function() {
+                return _.contains(_this.plot.attr.toggled, _this.plot.attr.group(_this.attr)) ? 'none' : 'visible';
+            }).style('opacity', _this.attr.style.opacity)
+            .on('mouseover', function() {
                 d3.select(this).style('opacity', 0.75*_this.attr.style.opacity);
                 if (_this.attr.tooltip) {
                     _this.attr.tooltip.html(_this.attr.hovertext)
-                        .style("opacity", 1)
+                        .style("visibility", "visible")
                         .style("left", (d3.event.pageX + 5) + "px")
                         .style("top", (d3.event.pageY - 20) + "px");
                 }
@@ -43,9 +51,11 @@ function Annotation(attributes) {
             }).on('mouseout', function() {
                 d3.select(this).style('opacity', _this.attr.style.opacity);
                 if (_this.attr.tooltip) {
-                    _this.attr.tooltip.style("opacity", 0);
+                    _this.attr.tooltip.style("visibility", "hidden");
                 }
-            }).on('click', _this.attr.events.click);
+            }).on('click', function() {
+                _this.attr.events.click(_this.attr);
+            });
         
         // enable drag behavior for annotation (if available and specified)
         var x = _this.plot.xscale(_this.attr.x);
@@ -53,9 +63,9 @@ function Annotation(attributes) {
         if (_this.attr.draggable && !_this.plot.attr.zoomable) {
             var drag = d3.behavior.drag()
                 .on("dragstart", function() {
-                    _this.attr.events.dragstart();
+                    _this.attr.events.dragstart(_this.attr);
                 }).on("dragend", function() {
-                     _this.attr.events.dragend();
+                     _this.attr.events.dragend(_this.attr);
                 }).on("drag", function() {
                     // get mouse coordinates
                     var movement = mouse(_this.plot.attr.svg);
@@ -78,15 +88,16 @@ function Annotation(attributes) {
                     _this.attr.y = ymap(ymotion);
                     d3.select(this).select('text').text(_this.attr.text);
 
-                    _this.attr.events.drag();
+                    _this.attr.events.drag(_this.attr);
                 });
 
             asel.call(drag);
         }
 
         // extend annotation object with specific shape
+        var aobj;
         if (_this.attr.type === 'rect') {
-            asel.selectAll('.rect').data([_this.attr]).enter()
+            aobj = asel.selectAll('.rect').data([_this.attr]).enter()
                 .append('rect')
                 .attr('class', 'rect')
                 .attr('transform', 'rotate(' + _this.attr.rotate + ' ' + x + ' ' + y + ')')
@@ -95,14 +106,14 @@ function Annotation(attributes) {
                 .attr('x', x)
                 .attr('y', y);
         } else if (_this.attr.type === 'circle') {
-            asel.selectAll('.circle').data([_this.attr]).enter()
+            aobj = asel.selectAll('.circle').data([_this.attr]).enter()
                 .append('circle')
                 .attr('class', 'circle')
                 .attr('r', _this.attr.size / 2)
                 .attr('cx', x)
                 .attr('cy', y);
         } else if (_this.attr.type === 'triangle') {
-            asel.selectAll('.triangle').data([_this.attr]).enter()
+            aobj = asel.selectAll('.triangle').data([_this.attr]).enter()
                 .append('path')
                 .attr('class', 'triangle')
                 .attr('transform', 'rotate(' + _this.attr.rotate + ' ' + x + ' ' + y + ')')
@@ -114,6 +125,16 @@ function Annotation(attributes) {
                     'Z'].join('');
                 });
         }
+
+        // apply styling
+        if (_this.attr.type !== 'text'){
+            _.map(
+                _.without(Object.keys(_this.attr.style), 'opacity'),
+                function(i){ aobj.style(i, _this.attr.style[i]); }
+            );
+        }
+        
+        // show text
         if (_this.attr.text !== '') {
             asel.selectAll('.text').data([_this.attr]).enter()
                 .append('text')
@@ -126,7 +147,7 @@ function Annotation(attributes) {
                     } else if (d.type === 'circle') {
                         return x + d.tmargin.x;
                     } else if (d.type === 'triangle') {
-                        return x + d.tmargin.x + (d.size / 2) - txt.toString().length*2;
+                        return x + d.tmargin.x + (d.size / 2) - txt.toString().length*3;
                     } else {
                         return x + d.tmargin.x;
                     }
@@ -147,12 +168,6 @@ function Annotation(attributes) {
                 .style("text-anchor", "middle")
                 .text(_this.attr.text);
         }
-        
-        // apply styling
-        _.map(
-            Object.keys(_this.attr.style),
-            function(i){ asel.style(i, _this.attr.style[i]); }
-        );
 
         return _this;
     };
@@ -170,7 +185,7 @@ function Annotation(attributes) {
         size: 15,
         group: null,
         rotate: 0,
-        tsize: 13,
+        tsize: 12,
         tposition: {x: 0, y: 20},
         tmargin: {x: 0, y: 0},
         trotation: 0,
@@ -179,6 +194,7 @@ function Annotation(attributes) {
         width: 0,
         height: 0,
         draggable: false,
+        tooltip: true,
         events: {
             add: function() {
                 quorra.log('add event');
@@ -205,20 +221,6 @@ function Annotation(attributes) {
     _this.go.__parent__ = _this;
     
     // managing specialized attributes
-    _this.attr.tooltip = d3.select("body").append("div")
-        .attr("class", "annotation-tooltip")
-        .style("position", "absolute")
-        .style("opacity", 0);
-
-    _this.go.tooltip = function(value) {
-        if (!arguments.length) return _this.attr.tooltip;
-        if (value == false){
-            _this.attr.tooltip.remove();
-        } else if (value != false) {
-            _this.attr.tooltip = value;
-        }
-        return _this.go;
-    };
     _this.go.bind = function(value) {
         if (!arguments.length) return _this.plot;
         _this.attr.parent = value;

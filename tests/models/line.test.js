@@ -59,6 +59,7 @@ describe("line.js", function () {
         .xaxis("outside")
         .exportable(true)
         .zoomable(true)
+        .exportable(true)
         .points(5)
         .xlabel("X Axis Label")
         .ylabel("Y Axis Label")

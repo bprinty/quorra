@@ -56,7 +56,7 @@ function Pie(attributes) {
             .value(function(d){ return d.x; });
 
         // plot
-        var g = _this.plotarea
+        var g = _this.plotregion
             .attr("transform", "translate(" + (_this.innerwidth / 2) + "," + (_this.innerheight / 2) + ")")
             .selectAll(".arc")
             .data(pie(newdata))
@@ -76,7 +76,7 @@ function Pie(attributes) {
                 d3.select(this).style("opacity", 0.25);
                 if (_this.attr.tooltip){
                     _this.attr.tooltip.html(_this.attr.label(d.data, i))
-                        .style("opacity", 1)
+                        .style("visibility", "visible")
                         .style("left", (d3.event.pageX + 5) + "px")
                         .style("top", (d3.event.pageY - 20) + "px");
                 }
@@ -89,7 +89,7 @@ function Pie(attributes) {
             }).on("mouseout", function(d){
                 d3.select(this).style("opacity", _this.attr.opacity);
                 if (_this.attr.tooltip){
-                    _this.attr.tooltip.style("opacity", 0);
+                    _this.attr.tooltip.style("visibility", "hidden");
                 }
             }).on("click", _this.attr.labelclick);
     }

@@ -49,7 +49,7 @@ function Scatter(attributes) {
                 d3.select(this).style("opacity", 0.25);
                 if (_this.attr.tooltip){
                     _this.attr.tooltip.html(_this.attr.label(d, i))
-                        .style("opacity", 1)
+                        .style("visibility", "visible")
                         .style("left", (d3.event.pageX + 5) + "px")
                         .style("top", (d3.event.pageY - 20) + "px");
                 }
@@ -62,7 +62,7 @@ function Scatter(attributes) {
             }).on("mouseout", function(d){
                 d3.select(this).style("opacity", _this.attr.opacity);
                 if (_this.attr.tooltip){
-                    _this.attr.tooltip.style("opacity", 0);
+                    _this.attr.tooltip.style("visibility", "hidden");
                 }
             });
 
@@ -107,7 +107,7 @@ function Scatter(attributes) {
 
         // generating regression line with smoothing curve (if specified)
         if (_this.attr.lm != false){
-            console.log("Not yet implemented!");
+            quorra.error("Not yet implemented!");
         }
     }
 
