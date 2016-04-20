@@ -9,6 +9,7 @@ describe("line.js", function () {
 
   var base = null;
   var data = null;
+  var textdata = null;
   before(function() {
       
       // config
@@ -25,6 +26,24 @@ describe("line.js", function () {
       data = [];
       for(var i=0; i<x.length; i++){
           data.push({
+              x: x[i],
+              y: y[i],
+              group: group[i],
+              label: label[i]
+          });
+      }
+
+      // simulate text data
+      var entries = 5;
+      x = _.range(entries).map(function(d) { return 'Group' + d; });
+      y = _.range(entries).map(function(d) { return quorra.random() * d; });
+      group = _.range(entries).map(function(d) {
+          return quorra.random() > 0.5 ? 'Good' : 'Evil';
+      });
+      label = _.range(entries).map(function(d, i) { return group[i]+i; });
+      textdata = [];
+      for(var i=0; i<x.length; i++){
+          textdata.push({
               x: x[i],
               y: y[i],
               group: group[i],
@@ -94,6 +113,37 @@ describe("line.js", function () {
         .xaxis("outside")
         .zoomable(true)
         .exportable(true)
+        .xlabel("X Axis Label")
+        .ylabel("Y Axis Label")
+        .color(['firebrick','steelblue']);
+
+      quorra.render(line);
+
+      checkplot(id);
+      checkaxis(id);
+      checkglyphs(id);
+  });
+
+  it("textline", function () {
+
+      var id = quorra.uuid();
+      base.append('div').attr('id', id).attr('class', 'plotarea');
+
+      var line = quorra.line()
+        .bind('#' + id)
+        .id(id)
+        .data(textdata)
+        .opacity(0.75)
+        .lposition("outside")
+        .lshape("circle")
+        .labelposition("end")
+        .yaxis("inside")
+        .xaxis("outside")
+        .exportable(true)
+        .zoomable(true)
+        .exportable(true)
+        .points(5)
+        .xrange([1, 4])
         .xlabel("X Axis Label")
         .ylabel("Y Axis Label")
         .color(['firebrick','steelblue']);

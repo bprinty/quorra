@@ -22,10 +22,11 @@ function Line(attributes) {
 
     // overwrite render method
     this.plot = function() {
+        quorra.log('drawing plot data');
 
         // configuring path renderer
         var path = d3.svg.line()
-            .x(function(d, i) { return _this.xscale(_this.attr.x(d, i)); })
+            .x(function(d, i) { return _this.xscale(_this.xmapper(_this.attr.x(d, i))); })
             .y(function(d, i) { return _this.yscale(_this.attr.y(d, i)); })
             .interpolate(_this.attr.interpolate);
 
@@ -47,8 +48,8 @@ function Line(attributes) {
                     }else if (_this.attr.layout === "area"){
                         return [
                             p,
-                            "L" + _this.xscale(_this.domain[1]) + "," + _this.yscale(_this.range[0]),
-                            "L" + _this.xscale(_this.domain[0]) + "," + _this.yscale(_this.range[0]),
+                            "L" + _this.xscale(_this.xmapper(_this.domain[1])) + "," + _this.yscale(_this.range[0]),
+                            "L" + _this.xscale(_this.xmapper(_this.domain[0])) + "," + _this.yscale(_this.range[0]),
                             "Z"
                         ].join('');
                     }
@@ -71,14 +72,14 @@ function Line(attributes) {
                     if (_this.attr.tooltip){
                         _this.attr.tooltip.html(d[0].group)
                             .style("visibility", "visible")
-                            .style("left", (d3.event.pageX + 5) + "px")
-                            .style("top", (d3.event.pageY - 20) + "px");
+                            .style("left", (d3.event.clientX + 5) + "px")
+                            .style("top", (d3.event.clientY - 20) + "px");
                     }
                 }).on("mousemove", function(d) {
                     if (_this.attr.tooltip) {
                         _this.attr.tooltip
-                            .style("left", (d3.event.pageX + 5) + "px")
-                            .style("top", (d3.event.pageY - 20) + "px");
+                            .style("left", (d3.event.clientX + 5) + "px")
+                            .style("top", (d3.event.clientY - 20) + "px");
                     }
                 }).on("mouseout", function(d) {
                     d3.select(this).style("opacity", _this.attr.opacity);
@@ -98,7 +99,7 @@ function Line(attributes) {
                     return "dot " + "g_" + d.group;
                 })
                 .attr("r", _this.attr.points)
-                .attr("cx", function(d, i) { return _this.xscale(_this.attr.x(d, i)); })
+                .attr("cx", function(d, i) { return _this.xscale(_this.xmapper(_this.attr.x(d, i))); })
                 .attr("cy", function(d, i) { return _this.yscale(_this.attr.y(d, i)); })
                 .style("fill", function(d, i){ return _this.pallette(_this.attr.group(d, i)); })
                 .style("opacity", _this.attr.opacity)
@@ -110,14 +111,14 @@ function Line(attributes) {
                     if (_this.attr.tooltip){
                         _this.attr.tooltip.html(_this.attr.label(d, i))
                             .style("visibility", "visible")
-                            .style("left", (d3.event.pageX + 5) + "px")
-                            .style("top", (d3.event.pageY - 20) + "px");
+                            .style("left", (d3.event.clientX + 5) + "px")
+                            .style("top", (d3.event.clientY - 20) + "px");
                     }
                 }).on("mousemove", function(d){
                     if (_this.attr.tooltip){
                         _this.attr.tooltip
-                            .style("left", (d3.event.pageX + 5) + "px")
-                            .style("top", (d3.event.pageY - 20) + "px");
+                            .style("left", (d3.event.clientX + 5) + "px")
+                            .style("top", (d3.event.clientY - 20) + "px");
                     }
                 }).on("mouseout", function(d){
                     d3.select(this).style("opacity", _this.attr.opacity);
