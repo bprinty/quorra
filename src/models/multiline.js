@@ -82,7 +82,7 @@ function Multiline(attributes) {
 
         // x axis
         if (_this.attr.xaxis !== "hidden" && _this.attr.xaxis !== false) {
-            _this.plotarea
+            _this.plotregion
                 .append("g")
                 .attr("class", "x axis")
                 .attr("transform", "translate(0," + _this.innerheight + ")")
@@ -111,7 +111,7 @@ function Multiline(attributes) {
 
         // y axis
         if (_this.attr.yaxis !== "hidden" && _this.attr.yaxis !== false) {
-            _this.plotarea
+            _this.plotregion
                 .append("g")
                 .attr("class", "y axis")
                 .call(_this.yaxis)
@@ -141,7 +141,7 @@ function Multiline(attributes) {
 
     // overwrite render method
     this.plot = function() {
-
+        quorra.log('drawing plot data');
     }
 
     return this.go;

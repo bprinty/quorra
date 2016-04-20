@@ -78,6 +78,7 @@ function QuorraPlot(attributes) {
         }
         _this.attr.svg = (_this.attr.svg === null) ? _this.selection.append("svg") : _this.attr.svg;
 
+
         // calculate basic dimensions
         var width = (_this.attr.width === "auto") ? parseInt(_this.selection.style("width")) : _this.attr.width;
         var height = (_this.attr.height === "auto") ? parseInt(_this.selection.style("height")) : _this.attr.height;
@@ -237,16 +238,23 @@ function QuorraPlot(attributes) {
         // set up scaling for axes
         // TODO: allow users to pass in arbitrary scaling function
         //       i.e. d3.scale.log()
+        _this.xmapper = function(d) { return d; };
         if (typeof _this.data[0].x === 'string') {
-            _this.xscale = d3.scale.ordinal()
-                .domain(domain)
-                .range([0, _this.innerwidth])
-                .rangePoints([0, _this.innerwidth], 1);
-        } else {
-            _this.xscale = d3.scale.linear()
-                .domain(domain)
-                .range([0, _this.innerwidth]);
+            _this.xord = d3.scale.ordinal()
+                .domain(_this.domain)
+                .range(_.range(_this.domain.length));
+            _this.xordrev = d3.scale.ordinal()
+                .domain(_.range(_this.domain.length))
+                .range(_this.domain);
+            _this.xmapper = function(d) { return _this.xord(d); };
+            if (typeof domain[0] === 'string') {
+                domain = _.map(domain, _this.xmapper);
+            }
         }
+        _this.xscale = d3.scale.linear()
+            .domain([domain[0], domain[domain.length-1]])
+            .range([0, _this.innerwidth]));
+
         if (typeof _this.data[0].y === 'string') {
             _this.yscale = d3.scale.ordinal()
                 .domain(range)
@@ -258,21 +266,27 @@ function QuorraPlot(attributes) {
                 .range([ _this.innerheight, 0]);
         }
 
-        // tick formatting
+        // x tick formatting
         _this.xaxis = d3.svg.axis().scale(_this.xscale).orient(_this.attr.xorient);
         if (_this.attr.xticks !== "auto") {
             _this.xaxis = _this.xaxis.ticks(_this.attr.xticks);
         } else if (_this.type === 'histogram') {
             _this.xaxis = _this.xaxis.ticks(_this.attr.bins);
         }
+        if (_this.attr.xformat !== "auto") {
+            _this.xaxis = _this.xaxis.tickFormat(_this.attr.xformat);
+        }
+        if (typeof _this.data[0].x === 'string') {
+            if (typeof domain[0] == 'string') {
+                domain = _.map(domain, _this.xord);
+            }
+            _this.xaxis = _this.xaxis.tickValues(_.range(domain[0], domain[domain.length - 1] + 1)).tickFormat(_this.xordrev);
+        }
+
+        // y tick formatting
         _this.yaxis = d3.svg.axis().scale(_this.yscale).orient(_this.attr.yorient);
         if (_this.attr.yticks !== "auto") {
             _this.yaxis = _this.yaxis.ticks(_this.attr.yticks);
-        }
-
-        // number formatting
-        if (_this.attr.xformat !== "auto") {
-            _this.xaxis = _this.xaxis.tickFormat(_this.attr.xformat);
         }
         if (_this.attr.yformat !== "auto") {
             _this.yaxis = _this.yaxis.tickFormat(_this.attr.yformat);
@@ -520,14 +534,14 @@ function QuorraPlot(attributes) {
                     if (_this.attr.tooltip){
                         _this.attr.tooltip.html(d)
                                 .style("visibility", "visible")
-                                .style("left", (d3.event.pageX + 10) + "px")
-                                .style("top", (d3.event.pageY - 10) + "px");
+                                .style("left", (d3.event.clientX + 10) + "px")
+                                .style("top", (d3.event.clientY - 10) + "px");
                     }
                 }).on("mousemove", function(d) {
                     if (_this.attr.tooltip){
                         _this.attr.tooltip
-                            .style("left", (d3.event.pageX + 10) + "px")
-                            .style("top", (d3.event.pageY - 10) + "px");
+                            .style("left", (d3.event.clientX + 10) + "px")
+                            .style("top", (d3.event.clientY - 10) + "px");
                     }
                 }).on('mouseout', function(d) {
                     d3.select(this).style('opacity', 1);

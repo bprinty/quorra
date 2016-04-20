@@ -93,14 +93,14 @@ function Bar(attributes) {
                 if (_this.attr.tooltip){
                     _this.attr.tooltip.html(d.label)
                         .style("visibility", "visible")
-                        .style("left", (d3.event.pageX + 5) + "px")
-                        .style("top", (d3.event.pageY - 20) + "px");
+                        .style("left", (d3.event.clientX + 5) + "px")
+                        .style("top", (d3.event.clientY - 20) + "px");
                 }
             }).on("mousemove", function(d){
                 if (_this.attr.tooltip){
                     _this.attr.tooltip
-                        .style("left", (d3.event.pageX + 5) + "px")
-                        .style("top", (d3.event.pageY - 20) + "px");
+                        .style("left", (d3.event.clientX + 5) + "px")
+                        .style("top", (d3.event.clientY - 20) + "px");
                 }
             }).on("mouseout", function(d){
                 d3.select(this).style("opacity", _this.attr.opacity);
