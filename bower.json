@@ -32,7 +32,7 @@
     "dist/quorra.css"
   ],
   "dependencies": {
-    "d3": "~3.0.2",
+    "d3": "^3.0.2",
     "underscore": "~1.8.2"
   },
   "devDependencies": {
@@ -45,6 +45,7 @@
     "grunt-contrib-uglify": "~0.5.0",
     "grunt-contrib-watch": "~0.6.1",
     "chai": "1.10.0",
-    "mocha": "2.1.0"
+    "mocha": "2.1.0",
+    "mocha-phantomjs": "4.0.2"
   }
 }
