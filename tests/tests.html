@@ -11,7 +11,12 @@
             width: 550px;
             height: 350px;
             margin-bottom: 20px;
-            margin-top: 40px;
+            margin-top: 20px;
+        }
+
+        .slider {
+            width: 550px;
+            height: 100px;
         }
     </style>
 
@@ -39,11 +44,15 @@
     <script src="./models/density.test.js"></script>
     <script src="./models/pie.test.js"></script>
 
-    <!-- common -->
-    <script src="./common/annotation.test.js"></script>
-    <script src="./common/utils.test.js"></script>
-    <script src="./common/events.test.js"></script>
-    <script src="./common/stats.test.js"></script>
+    <!-- extensions -->
+    <script src="./ext/annotation.test.js"></script>
+    <script src="./ext/slider.test.js"></script>
+
+    <!-- utils -->
+    <script src="./utils/utils.test.js"></script>
+    <script src="./utils/events.test.js"></script>
+    <script src="./utils/stats.test.js"></script>
+
 
     <script>
         function bind(ident) {
@@ -66,9 +75,7 @@
                 pre.parentNode.insertBefore(post, pre);     
             }
             var nodes = base.node().childNodes;
-            for (var i = 1; i < nodes.length; i=i+2) {
-                swap(nodes[i-1], nodes[i]);
-            }
+            nodes[0].parentNode.insertBefore(nodes[nodes.length - 1], nodes[0]);
         }
 
         function checkplot(id) {

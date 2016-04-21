@@ -28,10 +28,8 @@ module.exports = function(grunt) {
                 },
                 src: [
                     'src/quorra.js',
-		    'src/annotation.js',
-                    'src/events.js',
-                    'src/utils.js',
-                    'src/stats.js',
+                    'src/utils/*.js',
+                    'src/ext/*.js',
                     'src/models/*.js'
                 ],
                 dest: 'dist/quorra.js'

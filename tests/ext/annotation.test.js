@@ -118,6 +118,7 @@ describe("annotation.js", function () {
         .id(id)
         .data(data)
         .opacity(0.75)
+        .interpolate("cardinal")
         .xlabel("X Axis Label")
         .ylabel("Y Axis Label")
         .color(['firebrick','steelblue']);
@@ -133,7 +134,7 @@ describe("annotation.js", function () {
               'fill': 'steelblue'
           });
 
-      line.add(square);
+      line.annotate(square);
       quorra.render(line);
 
       checkplot(id);

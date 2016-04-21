@@ -41,6 +41,7 @@ describe("scatter.js", function () {
           });
       }
 
+      // jitterline data
       var entries = 4;
       var samples = 5;
       ldata = [];

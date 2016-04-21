@@ -68,7 +68,12 @@ function Line(attributes) {
                     return _.contains(_this.attr.toggled, _this.attr.group(d[0], i)) ? 'hidden' : 'visible';
                 })
                 .on("mouseover", function(d, i) {
-                    d3.select(this).style("opacity", 0.25);
+                    if (_this.attr.hovercolor !== false) {
+                        _this.plotarea.selectAll('.dot.g_' + d[0].group).style("fill", _this.attr.hovercolor);
+                        _this.plotarea.selectAll('.line.g_' + d[0].group).style("stroke", _this.attr.hovercolor);
+                    } else {
+                        _this.plotarea.selectAll('.g_' + d[0].group).style("opacity", 0.25);
+                    }
                     if (_this.attr.tooltip){
                         _this.attr.tooltip.html(d[0].group)
                             .style("visibility", "visible")
@@ -82,7 +87,12 @@ function Line(attributes) {
                             .style("top", (d3.event.clientY - 20) + "px");
                     }
                 }).on("mouseout", function(d) {
-                    d3.select(this).style("opacity", _this.attr.opacity);
+                    if (_this.attr.hovercolor !== false) {
+                        _this.plotarea.selectAll('.dot.g_' + d[0].group).style("fill", _this.pallette(d[0].group));
+                        _this.plotarea.selectAll('.line.g_' + d[0].group).style("stroke", _this.pallette(d[0].group));
+                    } else {
+                        _this.plotarea.selectAll('.g_' + d[0].group).style("opacity", _this.attr.opacity);
+                    }
                     if (_this.attr.tooltip) {
                         _this.attr.tooltip.style("visibility", "hidden");
                     }

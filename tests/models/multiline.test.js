@@ -74,7 +74,6 @@ describe("multiline.js", function () {
         .points(3)
         .zoomable(true)
         .exportable(true)
-        .hovercolor('firebrick')
         .yranges({
           'Metric1': [0, 1],
           'Metric2': [0, 2],

@@ -222,6 +222,12 @@ function QuorraPlot(attributes) {
         if (_this.attr.annotation) {
             _this.annotate();
         }
+
+        // create slider
+        if (_this.attr.slider) {
+            _this.slider();
+        }
+
     };
     
     // rendering methods
@@ -393,6 +399,31 @@ function QuorraPlot(attributes) {
         _.map(_this.attr.annotation, function(d) {
             quorra.render(d);
         });
+    };
+
+    this.slider = function() {
+        quorra.log('instantiating plot slider');
+
+        if (_this.attr.slider == null) {
+            return;
+        }
+
+        var domain = _this.attr.xrange === "auto" ? _this.domain : _this.attr.xrange;
+        var range = _this.attr.yrange === "auto" ? _this.range : _this.attr.yrange;
+
+        var width = _this.xmapper(domain[domain.length - 1]) - _this.xmapper(domain[0]); 
+        _this.attr.slider.annotation([{
+            type: 'rect',
+            width: width,
+            height: range[range.length - 1] - range[0],
+            draggable: true,
+            x: _this.xmapper(domain[0]),
+            y: range[1]
+        }]);
+
+        quorra.render(_this.attr.slider);
+
+
     };
 
     this.drawlegend = function() {
@@ -1029,7 +1060,8 @@ function QuorraPlot(attributes) {
         gshape: "circle",
 
         // placeholder
-        annotation: []
+        annotation: [],
+        slider: null
         
     }, attributes);
 
@@ -1049,7 +1081,7 @@ function QuorraPlot(attributes) {
         return _this.go;
     };
 
-    _this.go.add = function(value) {
+    _this.go.annotate = function(value) {
         if (typeof _this.attr.annotation === 'undefined') {
             _this.attr.annotation = [value];
         } else {

@@ -108,9 +108,8 @@ function Scatter(attributes) {
                     _this.plotarea.selectAll('.line.g_' + d.group).style('visibility', 'visible');
                 }
                 if (_this.attr.hovercolor !== false) {
-                    d3.select(this).style("fill", _this.attr.hovercolor);
-                    d3.selectAll('.dot.g_' + d.group).style("fill", _this.attr.hovercolor);
-                    d3.selectAll('.line.g_' + d.group).style("stroke", _this.attr.hovercolor);
+                    _this.plotarea.selectAll('.dot.g_' + d.group).style("fill", _this.attr.hovercolor);
+                    _this.plotarea.selectAll('.line.g_' + d.group).style("stroke", _this.attr.hovercolor);
                 } else {
                     d3.select(this).style("opacity", 0.25);
                 }
@@ -131,9 +130,8 @@ function Scatter(attributes) {
                     _this.plotarea.selectAll('.line.g_' + d.group).style('visibility', 'hidden');
                 }
                 if (_this.attr.hovercolor !== false) {
-                    d3.select(this).style("fill", _this.pallette(_this.attr.group(d, i)));
-                    d3.selectAll('.dot.g_' + d.group).style("fill", _this.pallette(_this.attr.group(d, i)));
-                    d3.selectAll('.line.g_' + d.group).style("stroke", _this.pallette(_this.attr.group(d, i)));
+                    _this.plotarea.selectAll('.dot.g_' + d.group).style("fill", _this.pallette(_this.attr.group(d, i)));
+                    _this.plotarea.selectAll('.line.g_' + d.group).style("stroke", _this.pallette(_this.attr.group(d, i)));
                 } else {
                     d3.select(this).style("opacity", _this.attr.opacity);
                 }
