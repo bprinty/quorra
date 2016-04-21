@@ -71,8 +71,15 @@ function Line(attributes) {
                     if (_this.attr.hovercolor !== false) {
                         _this.plotarea.selectAll('.dot.g_' + d[0].group).style("fill", _this.attr.hovercolor);
                         _this.plotarea.selectAll('.line.g_' + d[0].group).style("stroke", _this.attr.hovercolor);
+                        if (_this.attr.slider !== null) {
+                            _this.attr.slider.__parent__.plotarea.selectAll('.dot.g_' + d[0].group).style("fill", _this.attr.hovercolor);
+                            _this.attr.slider.__parent__.plotarea.selectAll('.line.g_' + d[0].group).style("stroke", _this.attr.hovercolor);
+                        }
                     } else {
                         _this.plotarea.selectAll('.g_' + d[0].group).style("opacity", 0.25);
+                        if (_this.attr.slider !== null) {
+                            _this.attr.slider.__parent__.selectAll('.g_' + d[0].group).style("opacity", 0.25);
+                        }
                     }
                     if (_this.attr.tooltip){
                         _this.attr.tooltip.html(d[0].group)
@@ -90,8 +97,15 @@ function Line(attributes) {
                     if (_this.attr.hovercolor !== false) {
                         _this.plotarea.selectAll('.dot.g_' + d[0].group).style("fill", _this.pallette(d[0].group));
                         _this.plotarea.selectAll('.line.g_' + d[0].group).style("stroke", _this.pallette(d[0].group));
+                        if (_this.attr.slider !== null) {
+                            _this.attr.slider.__parent__.plotarea.selectAll('.dot.g_' + d[0].group).style("fill", _this.pallette(d[0].group));
+                            _this.attr.slider.__parent__.plotarea.selectAll('.line.g_' + d[0].group).style("stroke", _this.pallette(d[0].group));
+                        }
                     } else {
                         _this.plotarea.selectAll('.g_' + d[0].group).style("opacity", _this.attr.opacity);
+                        if (_this.attr.slider !== null) {
+                            _this.attr.slider.__parent__.selectAll('.g_' + d[0].group).style("opacity", _this.attr.opacity);
+                        }
                     }
                     if (_this.attr.tooltip) {
                         _this.attr.tooltip.style("visibility", "hidden");

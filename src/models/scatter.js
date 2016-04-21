@@ -110,8 +110,15 @@ function Scatter(attributes) {
                 if (_this.attr.hovercolor !== false) {
                     _this.plotarea.selectAll('.dot.g_' + d.group).style("fill", _this.attr.hovercolor);
                     _this.plotarea.selectAll('.line.g_' + d.group).style("stroke", _this.attr.hovercolor);
+                    if (_this.attr.slider !== null) {
+                        _this.attr.slider.__parent__.plotarea.selectAll('.dot.g_' + d.group).style("fill", _this.attr.hovercolor);
+                        _this.attr.slider.__parent__.plotarea.selectAll('.line.g_' + d.group).style("stroke", _this.attr.hovercolor);
+                    }
                 } else {
                     d3.select(this).style("opacity", 0.25);
+                    if (_this.attr.slider !== null) {
+                        _this.attr.slider.__parent__.plotarea.selectAll('.g_' + d.group).style("opacity", 0.25);
+                    }
                 }
                 if (_this.attr.tooltip){
                     _this.attr.tooltip.html(_this.attr.label(d, i))
@@ -132,8 +139,15 @@ function Scatter(attributes) {
                 if (_this.attr.hovercolor !== false) {
                     _this.plotarea.selectAll('.dot.g_' + d.group).style("fill", _this.pallette(_this.attr.group(d, i)));
                     _this.plotarea.selectAll('.line.g_' + d.group).style("stroke", _this.pallette(_this.attr.group(d, i)));
+                    if (_this.attr.slider !== null) {
+                        _this.attr.slider.__parent__.plotarea.selectAll('.dot.g_' + d.group).style("fill", _this.pallette(_this.attr.group(d, i)));
+                        _this.attr.slider.__parent__.plotarea.selectAll('.line.g_' + d.group).style("stroke", _this.pallette(_this.attr.group(d, i)));
+                    }
                 } else {
                     d3.select(this).style("opacity", _this.attr.opacity);
+                    if (_this.attr.slider !== null) {
+                        _this.attr.slider.__parent__.plotarea.selectAll('.g_' + d.group).style("opacity", _this.attr.opacity);
+                    }
                 }
                 d3.select(this).style("opacity", _this.attr.opacity);
                 if (_this.attr.tooltip){
