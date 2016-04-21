@@ -121,7 +121,11 @@ function QuorraPlot(attributes) {
         
         // get x domain and range
         if (typeof _this.data[0].x === 'string') {
-            _this.domain = _.uniquesort(_this.data, _this.attr.x);
+            if (_this.attr.xorder.length > 0) {
+                _this.domain = _this.attr.xorder;
+            } else {
+                _this.domain = _.uniquesort(_this.data, _this.attr.x);
+            }
         } else {
             _this.domain = [
                 _.min(_.map(_this.data, _this.attr.x)),
@@ -132,7 +136,11 @@ function QuorraPlot(attributes) {
         // get y domain and range
         var max;
         if (typeof _this.data[0].y === 'string') {
-            _this.range = _.uniquesort(_this.data, _this.attr.y);
+            if (_this.attr.yorder.length >  0) {
+                _this.range = _this.attr.yorder;
+            } else {
+                _this.range = _.uniquesort(_this.data, _this.attr.y);
+            }
         } else {
             if (_this.attr.layout === 'stacked'){
                 // for some reason, underscore's map function won't 
@@ -213,10 +221,10 @@ function QuorraPlot(attributes) {
 
         // remove old axes elements and render new axes
         _this.plotregion.selectAll("*").remove();
+        _this.axes();
         _this.plotarea = _this.plotregion.append('g')
             .attr('class', 'plotarea')
             .attr('clip-path', 'url(#clip-' + _this.attr.id + ')');
-        _this.axes();
         _this.plot();
 
         // add axis properties to stack
@@ -259,8 +267,8 @@ function QuorraPlot(attributes) {
             _this.xmapper = function(d) { return _this.xord(d); };
             if (typeof domain[0] === 'string') {
                 domain = _.map(domain, _this.xmapper);
-                domain[0] = domain[0] - _this.attr.xpad;
-                domain[domain.length - 1] = domain[domain.length - 1] + _this.attr.xpad;
+                domain[0] = domain[0] - 0.5;
+                domain[domain.length - 1] = domain[domain.length - 1] + 0.5;
             }
         }
         _this.xscale = d3.scale.linear()
@@ -299,8 +307,8 @@ function QuorraPlot(attributes) {
             _this.ymapper = function(d) { return _this.yord(d); };
             if (typeof range[0] === 'string') {
                 range = _.map(range, _this.ymapper);
-                range[0] = range[0] - _this.attr.ypad;
-                range[range.length - 1] = range[range.length - 1] + _this.attr.ypad;
+                range[0] = range[0] - 0.5;
+                range[range.length - 1] = range[range.length - 1] + 0.5;
             }
         }
         _this.yscale = d3.scale.linear()
@@ -410,17 +418,46 @@ function QuorraPlot(attributes) {
             return;
         }
 
+        // scaling methods
+        var updatePlot = function(outer, cache) {
+            var obj = outer.attr.slider.__parent__;
+            var x1 = obj.attr.annotation[0].x();
+            var x2 = x1 + obj.attr.annotation[0].width();
+            var y2 = obj.attr.annotation[0].y();
+            var y1 = y2 - obj.attr.annotation[0].height();
+            outer.redraw(
+                [x1, x2],
+                [y1, y2],
+                cache
+            );
+        }
+ 
+        var updateSlider = function(outer) {
+            var obj = outer.attr.slider.__parent__;
+            var xrange = outer.xscale.domain();
+            var yrange = outer.yscale.domain();
+            var annot = obj.attr.annotation[0];
+            var width = xrange[xrange.length - 1] - xrange[0];
+            var height = yrange[yrange.length - 1] - yrange[0];
+            annot.x(xrange[0]);
+            annot.y(yrange[yrange.length - 1]);
+            annot.width(width);
+            annot.height(height);
+            outer.attr.slider.__parent__.redraw();
+        }
+
         var domain = _this.attr.xrange === "auto" ? _this.domain : _this.attr.xrange;
         var range = _this.attr.yrange === "auto" ? _this.range : _this.attr.yrange;
 
         if (typeof domain[0] == 'string') {
             domain = _.map(domain, _this.xmapper);
         }
-        var width = Math.abs(domain[domain.length - 1] - domain[0]); 
+        var width = Math.abs(domain[domain.length - 1] - domain[0]);
+        var height = Math.abs(range[range.length - 1] - range[0]);
         _this.attr.slider.annotation([{
             type: 'rect',
             width: width,
-            height: range[range.length - 1] - range[0],
+            height: height,
             draggable: true,
             x: domain[0],
             y: range[1],
@@ -430,45 +467,25 @@ function QuorraPlot(attributes) {
             events: {
                 drag: function() {
                     quorra.log('dragging slider');
-                    var obj = _this.attr.slider.__parent__;
-                    var x1 = obj.attr.annotation[0].x();
-                    var x2 = x1 + obj.attr.annotation[0].width();
-                    var y2 = obj.attr.annotation[0].y();
-                    var y1 = y2 - obj.attr.annotation[0].height();
-                    _this.redraw([x1, x2], [y1, y2]);
+                    updatePlot(_this, false);
+                },
+                dragend: function() {
+                    quorra.log('dragging slider');
+                    updatePlot(_this, true);
                 }
+
             }
         }]);
 
         _this.attr.events.panold = _this.attr.events.pan
         _this.attr.events.pan = function() {
-            var xrange = _this.xscale.domain();
-            var yrange = _this.yscale.domain();
-            var obj = _this.attr.slider.__parent__;
-            var annot = obj.attr.annotation[0];
-            var width = xrange[1] - xrange[0];
-            var height = yrange[1] - yrange[0];
-            annot.x(xrange[0]);
-            annot.y(yrange[1]);
-            annot.width(width);
-            annot.height(height);
-            _this.attr.slider.__parent__.redraw();
+            updateSlider(_this);
             _this.attr.events.panold();
         }
 
         _this.attr.events.zoomold = _this.attr.events.zoom
         _this.attr.events.zoom = function() {
-            var xrange = _this.xscale.domain();
-            var yrange = _this.yscale.domain();
-            var obj = _this.attr.slider.__parent__;
-            var annot = obj.attr.annotation[0];
-            var width = xrange[1] - xrange[0];
-            var height = yrange[1] - yrange[0];
-            annot.x(xrange[0]);
-            annot.y(yrange[1]);
-            annot.width(width);
-            annot.height(height);
-            _this.attr.slider.__parent__.redraw();
+            updateSlider(_this);
             _this.attr.events.zoomold();
         }
 
@@ -1055,8 +1072,6 @@ function QuorraPlot(attributes) {
         yrange: "auto",
 
         // triggers
-        groupclick: function(d, i){},
-        labelclick: function(d, i){},
         zoomable: false,
         annotatable: false,
         exportable: false,
@@ -1078,6 +1093,9 @@ function QuorraPlot(attributes) {
             },
             postexport: function() {
                 quorra.log('post export event');
+            },
+            click: function(d, i){
+                quorra.log('clicked plot element');
             }
         },
 
@@ -1091,10 +1109,10 @@ function QuorraPlot(attributes) {
         yformat: "auto",
         xorient: "bottom",
         yorient: "left",
-        xpad: 0.5,
-        ypad: 0.5,
         xlabel: "",
         ylabel: "",
+        xorder: [],
+        yorder: [],
         labelposition: "middle",
         labelpadding: {x: 0, y: 0},
         opacity: 1,
@@ -1108,6 +1126,7 @@ function QuorraPlot(attributes) {
         lorder: [],
         toggle: true,
         toggled: [],
+        selected: [],
         tooltip: true,
 
         // glyphs
@@ -1871,7 +1890,7 @@ function Bar(attributes) {
                 if (_this.attr.tooltip){
                     _this.attr.tooltip.style("visibility", "hidden");
                 }
-            });
+            }).on("click", _this.attr.events.click);
     }
 
     return this.go;
@@ -2121,7 +2140,7 @@ function Line(attributes) {
                     if (_this.attr.tooltip) {
                         _this.attr.tooltip.style("visibility", "hidden");
                     }
-                }).on("click", _this.attr.groupclick);
+                }).on("click", _this.attr.events.click);
         }
 
         // draw points (if specified)
@@ -2160,7 +2179,7 @@ function Line(attributes) {
                     if (_this.attr.tooltip){
                         _this.attr.tooltip.style("visibility", "hidden");
                     }
-                }).on("click", _this.attr.labelclick);
+                }).on("click", _this.attr.events.click);
         }
     }
 
@@ -2305,6 +2324,9 @@ function Multiline(attributes) {
 
             // lines
             var subdat = _.filter(_this.data, function(d){ return d.group === ugrps[grp]; });
+            subdat = subdat.sort(function(a, b) {
+                return _this.domain.indexOf(a.x) - _this.domain.indexOf(b.x);
+            });
             _this.plotarea.append("path")
                 .datum(subdat)
                 .attr("class", function(d, i){
@@ -2365,7 +2387,7 @@ function Multiline(attributes) {
                     if (_this.attr.tooltip) {
                         _this.attr.tooltip.style("visibility", "hidden");
                     }
-                }).on("click", _this.attr.groupclick);
+                }).on("click", _this.attr.events.click);
 
         }
 
@@ -2415,7 +2437,7 @@ function Multiline(attributes) {
                     if (_this.attr.tooltip){
                         _this.attr.tooltip.style("visibility", "hidden");
                     }
-                }).on("click", _this.attr.labelclick);
+                }).on("click", _this.attr.events.click);
         }
 
     }
@@ -2521,7 +2543,7 @@ function Pie(attributes) {
                 if (_this.attr.tooltip){
                     _this.attr.tooltip.style("visibility", "hidden");
                 }
-            }).on("click", _this.attr.labelclick);
+            }).on("click", _this.attr.events.click);
     }
 
     return this.go;
@@ -2617,7 +2639,7 @@ function Scatter(attributes) {
                         } else if (_this.attr.line) {
                             return _.contains(_this.attr.toggled, _this.attr.group(d[0], i)) ? 'hidden' : 'visible';
                         }
-                    });
+                    }).on("click", _this.attr.events.click);
             }
         }
 
@@ -2687,7 +2709,7 @@ function Scatter(attributes) {
                 if (_this.attr.tooltip){
                     _this.attr.tooltip.style("visibility", "hidden");
                 }
-            });
+            }).on("click", _this.attr.events.click);
 
         // generating density ticks (if specified)
         if (_this.attr.xdensity){
