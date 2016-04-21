@@ -187,6 +187,11 @@ function QuorraPlot(attributes) {
         // draw plot
         _this.redraw();
 
+        // create slider
+        if (_this.attr.slider) {
+            _this.slider();
+        }
+
         return _this;
     };
 
@@ -223,11 +228,6 @@ function QuorraPlot(attributes) {
             _this.annotate();
         }
 
-        // create slider
-        if (_this.attr.slider) {
-            _this.slider();
-        }
-
     };
     
     // rendering methods
@@ -257,8 +257,8 @@ function QuorraPlot(attributes) {
             _this.xmapper = function(d) { return _this.xord(d); };
             if (typeof domain[0] === 'string') {
                 domain = _.map(domain, _this.xmapper);
-                domain[0] = domain[0] - 0.5;
-                domain[domain.length - 1] = domain[domain.length - 1] + 0.5;
+                domain[0] = domain[0] - _this.attr.xpad;
+                domain[domain.length - 1] = domain[domain.length - 1] + _this.attr.xpad;
             }
         }
         _this.xscale = d3.scale.linear()
@@ -297,8 +297,8 @@ function QuorraPlot(attributes) {
             _this.ymapper = function(d) { return _this.yord(d); };
             if (typeof range[0] === 'string') {
                 range = _.map(range, _this.ymapper);
-                range[0] = range[0] - 0.5;
-                range[range.length - 1] = range[range.length - 1] + 0.5;
+                range[0] = range[0] - _this.attr.ypad;
+                range[range.length - 1] = range[range.length - 1] + _this.attr.ypad;
             }
         }
         _this.yscale = d3.scale.linear()
@@ -411,14 +411,31 @@ function QuorraPlot(attributes) {
         var domain = _this.attr.xrange === "auto" ? _this.domain : _this.attr.xrange;
         var range = _this.attr.yrange === "auto" ? _this.range : _this.attr.yrange;
 
-        var width = _this.xmapper(domain[domain.length - 1]) - _this.xmapper(domain[0]); 
+        if (typeof domain[0] == 'string') {
+            domain = _.map(domain, _this.xmapper);
+        }
+        var width = Math.abs(domain[domain.length - 1] - domain[0]); 
         _this.attr.slider.annotation([{
             type: 'rect',
             width: width,
             height: range[range.length - 1] - range[0],
             draggable: true,
-            x: _this.xmapper(domain[0]),
-            y: range[1]
+            x: domain[0],
+            y: range[1],
+            style: {
+                opacity: 0.25
+            },
+            events: {
+                drag: function() {
+                    quorra.log('dragging slider');
+                    var obj = _this.attr.slider.__parent__;
+                    var x1 = obj.attr.annotation[0].x();
+                    var x2 = x1 + obj.attr.annotation[0].width();
+                    var y2 = obj.attr.annotation[0].y();
+                    var y1 = y2 - obj.attr.annotation[0].height();
+                    _this.redraw([x1, x2], [y1, y2]);
+                }
+            }
         }]);
 
         quorra.render(_this.attr.slider);
@@ -1038,6 +1055,8 @@ function QuorraPlot(attributes) {
         yformat: "auto",
         xorient: "bottom",
         yorient: "left",
+        xpad: 0.5,
+        ypad: 0.5,
         xlabel: "",
         ylabel: "",
         labelposition: "middle",

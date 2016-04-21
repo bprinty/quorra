@@ -55,7 +55,7 @@ describe("slider.js", function () {
           .exportable(true)
           .line("hover")
           .yrange([0, 10])
-          .xrange([0.5, 3.5])
+          .xrange([0.5, 2.5])
           .hovercolor('firebrick')
           .xlabel("X Axis Label")
           .ylabel("Y Axis Label")
@@ -68,7 +68,8 @@ describe("slider.js", function () {
           .bind('#' + slider)
           .id(slider)
           .data(data)
-          .margin({'left': -15, 'right': 5})
+          .xpad(0)
+          .yrange([0, 10])
           .opacity(0.75)
           .legend(false)
           .xaxis("hidden")
@@ -82,7 +83,7 @@ describe("slider.js", function () {
       checkplot(plot);
       checkaxis(plot);
       checkglyphs(plot);
-      // checkplot(slider);
+      checkplot(slider);
   });
 
 });
