@@ -438,6 +438,38 @@ function QuorraPlot(attributes) {
             }
         }]);
 
+        _this.attr.events.panold = _this.attr.events.pan
+        _this.attr.events.pan = function() {
+            var xrange = _this.xscale.domain();
+            var yrange = _this.yscale.domain();
+            var obj = _this.attr.slider.__parent__;
+            var annot = obj.attr.annotation[0];
+            var width = xrange[1] - xrange[0];
+            var height = yrange[1] - yrange[0];
+            annot.x(xrange[0]);
+            annot.y(yrange[1]);
+            annot.width(width);
+            annot.height(height);
+            _this.attr.slider.__parent__.redraw();
+            _this.attr.events.panold();
+        }
+
+        _this.attr.events.zoomold = _this.attr.events.zoom
+        _this.attr.events.zoom = function() {
+            var xrange = _this.xscale.domain();
+            var yrange = _this.yscale.domain();
+            var obj = _this.attr.slider.__parent__;
+            var annot = obj.attr.annotation[0];
+            var width = xrange[1] - xrange[0];
+            var height = yrange[1] - yrange[0];
+            annot.x(xrange[0]);
+            annot.y(yrange[1]);
+            annot.width(width);
+            annot.height(height);
+            _this.attr.slider.__parent__.redraw();
+            _this.attr.events.zoomold();
+        }
+
         quorra.render(_this.attr.slider);
 
 
@@ -644,6 +676,7 @@ function QuorraPlot(attributes) {
                             _this.xstack = [_this.xstack[0]];
                             _this.ystack = [_this.ystack[0]];
                             _this.redraw(_this.xstack[0].domain(), _this.ystack[0].domain(), false);
+                            _this.attr.events.zoom();
                             break;
 
                         case 'annotate':
@@ -894,6 +927,7 @@ function QuorraPlot(attributes) {
                 l = l - 1;
             }
             _this.redraw(_this.xstack[l-1].domain(), _this.ystack[l-1].domain(), false);
+            _this.attr.events.zoom();
         }).call(drag) // .call(zoom)
         .on("dblclick.zoom", null)
         .on("mousedown.zoom", null)
