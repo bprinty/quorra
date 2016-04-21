@@ -68,7 +68,6 @@ describe("slider.js", function () {
           .bind('#' + slider)
           .id(slider)
           .data(data)
-          .xpad(0)
           .yrange([0, 10])
           .opacity(0.75)
           .legend(false)

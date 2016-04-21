@@ -110,7 +110,7 @@ function Line(attributes) {
                     if (_this.attr.tooltip) {
                         _this.attr.tooltip.style("visibility", "hidden");
                     }
-                }).on("click", _this.attr.groupclick);
+                }).on("click", _this.attr.events.click);
         }
 
         // draw points (if specified)
@@ -149,7 +149,7 @@ function Line(attributes) {
                     if (_this.attr.tooltip){
                         _this.attr.tooltip.style("visibility", "hidden");
                     }
-                }).on("click", _this.attr.labelclick);
+                }).on("click", _this.attr.events.click);
         }
     }
 

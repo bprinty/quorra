@@ -91,7 +91,7 @@ function Pie(attributes) {
                 if (_this.attr.tooltip){
                     _this.attr.tooltip.style("visibility", "hidden");
                 }
-            }).on("click", _this.attr.labelclick);
+            }).on("click", _this.attr.events.click);
     }
 
     return this.go;

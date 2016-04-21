@@ -131,6 +131,9 @@ function Multiline(attributes) {
 
             // lines
             var subdat = _.filter(_this.data, function(d){ return d.group === ugrps[grp]; });
+            subdat = subdat.sort(function(a, b) {
+                return _this.domain.indexOf(a.x) - _this.domain.indexOf(b.x);
+            });
             _this.plotarea.append("path")
                 .datum(subdat)
                 .attr("class", function(d, i){
@@ -191,7 +194,7 @@ function Multiline(attributes) {
                     if (_this.attr.tooltip) {
                         _this.attr.tooltip.style("visibility", "hidden");
                     }
-                }).on("click", _this.attr.groupclick);
+                }).on("click", _this.attr.events.click);
 
         }
 
@@ -241,7 +244,7 @@ function Multiline(attributes) {
                     if (_this.attr.tooltip){
                         _this.attr.tooltip.style("visibility", "hidden");
                     }
-                }).on("click", _this.attr.labelclick);
+                }).on("click", _this.attr.events.click);
         }
 
     }

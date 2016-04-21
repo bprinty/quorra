@@ -83,7 +83,7 @@ function Scatter(attributes) {
                         } else if (_this.attr.line) {
                             return _.contains(_this.attr.toggled, _this.attr.group(d[0], i)) ? 'hidden' : 'visible';
                         }
-                    });
+                    }).on("click", _this.attr.events.click);
             }
         }
 
@@ -153,7 +153,7 @@ function Scatter(attributes) {
                 if (_this.attr.tooltip){
                     _this.attr.tooltip.style("visibility", "hidden");
                 }
-            });
+            }).on("click", _this.attr.events.click);
 
         // generating density ticks (if specified)
         if (_this.attr.xdensity){
