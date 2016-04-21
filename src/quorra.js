@@ -206,10 +206,10 @@ function QuorraPlot(attributes) {
 
         // remove old axes elements and render new axes
         _this.plotregion.selectAll("*").remove();
-        _this.axes();
         _this.plotarea = _this.plotregion.append('g')
             .attr('class', 'plotarea')
             .attr('clip-path', 'url(#clip-' + _this.attr.id + ')');
+        _this.axes();
         _this.plot();
 
         // add axis properties to stack
@@ -547,7 +547,7 @@ function QuorraPlot(attributes) {
 
         // drawing glyphs and setting up click events
         var gly = _this.attr.svg.append("g")
-                .attr("transform", "translate(" + (_this.innerwidth + _this.attr.margin.left + 7) + "," + (_this.innerheight - _this.attr.margin.bottom - gdata.length * 22 + 52) + ")")
+                .attr("transform", "translate(" + (_this.innerwidth + _this.attr.margin.left + 5) + "," + (_this.innerheight - _this.attr.margin.bottom - gdata.length * 22 + 52) + ")")
                 .selectAll(".glyphbox")
                 .data(gdata)
                 .enter().append("g")

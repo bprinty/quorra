@@ -28,7 +28,6 @@ function Bar(attributes) {
         if (typeof _this.data[0].x === 'string') {
             _this.data = _this.data.sort(function(a, b) { return a.x > b.x; });
         }
-        console.log(_this.data);
         for (var grp in ugrps) {
             var flt = _.filter(_this.data, function(d){ return d.group == ugrps[grp]; });
             flt = _.map(flt, function(d) {
@@ -45,7 +44,6 @@ function Bar(attributes) {
                 return d;
             });
         }
-        console.log(layers);
 
         // plotting bars
         var layer = _this.plotarea.selectAll(".layer")
