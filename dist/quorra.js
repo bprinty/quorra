@@ -80,6 +80,7 @@ function QuorraPlot(attributes) {
         }
         _this.attr.svg = (_this.attr.svg === null) ? _this.selection.append("svg") : _this.attr.svg;
 
+
         // calculate basic dimensions
         var width = (_this.attr.width === "auto") ? parseInt(_this.selection.style("width")) : _this.attr.width;
         var height = (_this.attr.height === "auto") ? parseInt(_this.selection.style("height")) : _this.attr.height;
@@ -188,6 +189,11 @@ function QuorraPlot(attributes) {
         // draw plot
         _this.redraw();
 
+        // create slider
+        if (_this.attr.slider) {
+            _this.slider();
+        }
+
         return _this;
     };
 
@@ -207,10 +213,10 @@ function QuorraPlot(attributes) {
 
         // remove old axes elements and render new axes
         _this.plotregion.selectAll("*").remove();
-        _this.axes();
         _this.plotarea = _this.plotregion.append('g')
             .attr('class', 'plotarea')
             .attr('clip-path', 'url(#clip-' + _this.attr.id + ')');
+        _this.axes();
         _this.plot();
 
         // add axis properties to stack
@@ -223,6 +229,7 @@ function QuorraPlot(attributes) {
         if (_this.attr.annotation) {
             _this.annotate();
         }
+
     };
     
     // rendering methods
@@ -239,45 +246,83 @@ function QuorraPlot(attributes) {
         // set up scaling for axes
         // TODO: allow users to pass in arbitrary scaling function
         //       i.e. d3.scale.log()
-        if (typeof _this.data[0].x === 'string') {
-            _this.xscale = d3.scale.ordinal()
-                .domain(domain)
-                .range([0, _this.innerwidth])
-                .rangePoints([0, _this.innerwidth], 1);
-        } else {
-            _this.xscale = d3.scale.linear()
-                .domain(domain)
-                .range([0, _this.innerwidth]);
-        }
-        if (typeof _this.data[0].y === 'string') {
-            _this.yscale = d3.scale.ordinal()
-                .domain(range)
-                .range([0, _this.innerheight])
-                .rangePoints([_this.innerheight, 0], 1);
-        } else {
-            _this.yscale = d3.scale.linear()
-                .domain(range)
-                .range([ _this.innerheight, 0]);
-        }
 
-        // tick formatting
+        // x scale formatting
+        _this.xmapper = function(d) { return d; };
+        if (typeof _this.data[0].x === 'string') {
+            _this.xord = d3.scale.ordinal()
+                .domain(_this.domain)
+                .range(_.range(_this.domain.length));
+            _this.xordrev = d3.scale.ordinal()
+                .domain(_this.xord.range())
+                .range(_this.xord.domain());
+            _this.xmapper = function(d) { return _this.xord(d); };
+            if (typeof domain[0] === 'string') {
+                domain = _.map(domain, _this.xmapper);
+                domain[0] = domain[0] - _this.attr.xpad;
+                domain[domain.length - 1] = domain[domain.length - 1] + _this.attr.xpad;
+            }
+        }
+        _this.xscale = d3.scale.linear()
+            .domain([domain[0], domain[domain.length-1]])
+            .range([0, _this.innerwidth]);
+
+        // x axis formatting
         _this.xaxis = d3.svg.axis().scale(_this.xscale).orient(_this.attr.xorient);
         if (_this.attr.xticks !== "auto") {
             _this.xaxis = _this.xaxis.ticks(_this.attr.xticks);
         } else if (_this.type === 'histogram') {
             _this.xaxis = _this.xaxis.ticks(_this.attr.bins);
         }
+        if (_this.attr.xformat !== "auto") {
+            _this.xaxis = _this.xaxis.tickFormat(_this.attr.xformat);
+        }
+        if (typeof _this.data[0].x === 'string') {
+            if (typeof domain[0] == 'string') {
+                domain = _.map(domain, _this.xord);
+            }
+            _this.xaxis = _this.xaxis.tickValues(_.range(
+                Math.ceil(domain[0]),
+                Math.floor(domain[domain.length - 1]) + 1
+            )).tickFormat(_this.xordrev);
+        }
+
+        // y scale formatting
+        _this.ymapper = function(d) { return d; };
+        if (typeof _this.data[0].y === 'string') {
+            _this.yord = d3.scale.ordinal()
+                .domain(_this.range)
+                .range(_.range(_this.range.length));
+            _this.yordrev = d3.scale.ordinal()
+                .domain(_this.yord.range())
+                .range(_this.yord.domain());
+            _this.ymapper = function(d) { return _this.yord(d); };
+            if (typeof range[0] === 'string') {
+                range = _.map(range, _this.ymapper);
+                range[0] = range[0] - _this.attr.ypad;
+                range[range.length - 1] = range[range.length - 1] + _this.attr.ypad;
+            }
+        }
+        _this.yscale = d3.scale.linear()
+            .domain([range[0], range[range.length-1]])
+            .range([ _this.innerheight, 0]);
+
+        // y axis formatting
         _this.yaxis = d3.svg.axis().scale(_this.yscale).orient(_this.attr.yorient);
         if (_this.attr.yticks !== "auto") {
             _this.yaxis = _this.yaxis.ticks(_this.attr.yticks);
         }
-
-        // number formatting
-        if (_this.attr.xformat !== "auto") {
-            _this.xaxis = _this.xaxis.tickFormat(_this.attr.xformat);
-        }
         if (_this.attr.yformat !== "auto") {
             _this.yaxis = _this.yaxis.tickFormat(_this.attr.yformat);
+        }
+        if (typeof _this.data[0].y === 'string') {
+            if (typeof range[0] == 'string') {
+                range = _.map(range, _this.yord);
+            }
+            _this.yaxis = _this.yaxis.tickValues(_.range(
+                Math.ceil(range[0]),
+                Math.floor(range[range.length - 1]) + 1
+            )).tickFormat(_this.yordrev);
         }
 
         // configure grid (if specified)
@@ -356,6 +401,80 @@ function QuorraPlot(attributes) {
         _.map(_this.attr.annotation, function(d) {
             quorra.render(d);
         });
+    };
+
+    this.slider = function() {
+        quorra.log('instantiating plot slider');
+
+        if (_this.attr.slider == null) {
+            return;
+        }
+
+        var domain = _this.attr.xrange === "auto" ? _this.domain : _this.attr.xrange;
+        var range = _this.attr.yrange === "auto" ? _this.range : _this.attr.yrange;
+
+        if (typeof domain[0] == 'string') {
+            domain = _.map(domain, _this.xmapper);
+        }
+        var width = Math.abs(domain[domain.length - 1] - domain[0]); 
+        _this.attr.slider.annotation([{
+            type: 'rect',
+            width: width,
+            height: range[range.length - 1] - range[0],
+            draggable: true,
+            x: domain[0],
+            y: range[1],
+            style: {
+                opacity: 0.25
+            },
+            events: {
+                drag: function() {
+                    quorra.log('dragging slider');
+                    var obj = _this.attr.slider.__parent__;
+                    var x1 = obj.attr.annotation[0].x();
+                    var x2 = x1 + obj.attr.annotation[0].width();
+                    var y2 = obj.attr.annotation[0].y();
+                    var y1 = y2 - obj.attr.annotation[0].height();
+                    _this.redraw([x1, x2], [y1, y2]);
+                }
+            }
+        }]);
+
+        _this.attr.events.panold = _this.attr.events.pan
+        _this.attr.events.pan = function() {
+            var xrange = _this.xscale.domain();
+            var yrange = _this.yscale.domain();
+            var obj = _this.attr.slider.__parent__;
+            var annot = obj.attr.annotation[0];
+            var width = xrange[1] - xrange[0];
+            var height = yrange[1] - yrange[0];
+            annot.x(xrange[0]);
+            annot.y(yrange[1]);
+            annot.width(width);
+            annot.height(height);
+            _this.attr.slider.__parent__.redraw();
+            _this.attr.events.panold();
+        }
+
+        _this.attr.events.zoomold = _this.attr.events.zoom
+        _this.attr.events.zoom = function() {
+            var xrange = _this.xscale.domain();
+            var yrange = _this.yscale.domain();
+            var obj = _this.attr.slider.__parent__;
+            var annot = obj.attr.annotation[0];
+            var width = xrange[1] - xrange[0];
+            var height = yrange[1] - yrange[0];
+            annot.x(xrange[0]);
+            annot.y(yrange[1]);
+            annot.width(width);
+            annot.height(height);
+            _this.attr.slider.__parent__.redraw();
+            _this.attr.events.zoomold();
+        }
+
+        quorra.render(_this.attr.slider);
+
+
     };
 
     this.drawlegend = function() {
@@ -510,7 +629,7 @@ function QuorraPlot(attributes) {
 
         // drawing glyphs and setting up click events
         var gly = _this.attr.svg.append("g")
-                .attr("transform", "translate(" + (_this.innerwidth + _this.attr.margin.left + 7) + "," + (_this.innerheight - _this.attr.margin.bottom - gdata.length * 22 + 52) + ")")
+                .attr("transform", "translate(" + (_this.innerwidth + _this.attr.margin.left + 5) + "," + (_this.innerheight - _this.attr.margin.bottom - gdata.length * 22 + 52) + ")")
                 .selectAll(".glyphbox")
                 .data(gdata)
                 .enter().append("g")
@@ -522,14 +641,14 @@ function QuorraPlot(attributes) {
                     if (_this.attr.tooltip){
                         _this.attr.tooltip.html(d)
                                 .style("visibility", "visible")
-                                .style("left", (d3.event.pageX + 10) + "px")
-                                .style("top", (d3.event.pageY - 10) + "px");
+                                .style("left", (d3.event.clientX + 10) + "px")
+                                .style("top", (d3.event.clientY - 10) + "px");
                     }
                 }).on("mousemove", function(d) {
                     if (_this.attr.tooltip){
                         _this.attr.tooltip
-                            .style("left", (d3.event.pageX + 10) + "px")
-                            .style("top", (d3.event.pageY - 10) + "px");
+                            .style("left", (d3.event.clientX + 10) + "px")
+                            .style("top", (d3.event.clientY - 10) + "px");
                     }
                 }).on('mouseout', function(d) {
                     d3.select(this).style('opacity', 1);
@@ -559,6 +678,7 @@ function QuorraPlot(attributes) {
                             _this.xstack = [_this.xstack[0]];
                             _this.ystack = [_this.ystack[0]];
                             _this.redraw(_this.xstack[0].domain(), _this.ystack[0].domain(), false);
+                            _this.attr.events.zoom();
                             break;
 
                         case 'annotate':
@@ -809,6 +929,7 @@ function QuorraPlot(attributes) {
                 l = l - 1;
             }
             _this.redraw(_this.xstack[l-1].domain(), _this.ystack[l-1].domain(), false);
+            _this.attr.events.zoom();
         }).call(drag) // .call(zoom)
         .on("dblclick.zoom", null)
         .on("mousedown.zoom", null)
@@ -970,11 +1091,14 @@ function QuorraPlot(attributes) {
         yformat: "auto",
         xorient: "bottom",
         yorient: "left",
+        xpad: 0.5,
+        ypad: 0.5,
         xlabel: "",
         ylabel: "",
         labelposition: "middle",
         labelpadding: {x: 0, y: 0},
         opacity: 1,
+        hovercolor: false,
         
         // legend
         legend: true,
@@ -991,7 +1115,8 @@ function QuorraPlot(attributes) {
         gshape: "circle",
 
         // placeholder
-        annotation: []
+        annotation: [],
+        slider: null
         
     }, attributes);
 
@@ -1011,7 +1136,7 @@ function QuorraPlot(attributes) {
         return _this.go;
     };
 
-    _this.go.add = function(value) {
+    _this.go.annotate = function(value) {
         if (typeof _this.attr.annotation === 'undefined') {
             _this.attr.annotation = [value];
         } else {
@@ -1022,6 +1147,376 @@ function QuorraPlot(attributes) {
 
     return this.go;
 }
+
+/**
+
+Event handling within quorra.
+
+@author <bprinty@gmail.com>
+
+*/
+
+
+// key map and default event definitions
+var baseKeys = { 16: 'Shift', 17: 'Ctrl', 18: 'Alt', 27: 'Esc'};
+var metaKeys = { 9: 'Tab', 13: 'Enter', 65: 'A', 66: 'B', 67: 'C', 68: 'D', 69: 'E', 70: 'F', 71: 'G', 72: 'H', 73: 'I', 74: 'J', 75: 'K', 76: 'L', 77: 'M', 78: 'N', 79: 'O', 80: 'P', 81: 'Q', 82: 'R', 83: 'S', 84: 'T', 85: 'U', 86: 'V', 87: 'W', 88: 'X', 89: 'Y', 90: 'Z'};
+var allKeys = _.extend(_.clone(baseKeys), metaKeys);
+
+
+// setting statuses for each key combination
+quorra.keys = {};
+_.each(allKeys, function(key){
+    quorra.keys[key] = false;
+});
+
+
+// setting default functions for each key combination
+quorra.events = {};
+_.each(baseKeys, function(base){
+
+    quorra.events[base] = {
+        down: function(){},
+        up: function(){}
+    }
+    _.each(metaKeys, function(meta){
+        quorra.events[base + meta] = {
+            down: function(){},
+            up: function(){}
+        }
+    });
+});
+
+
+document.onkeydown = function (e) {
+    /**
+    Key down event handlers. Allows for event triggering on
+    key press if methods for each key combination are specified.
+
+    To set a method for a specific key down event, do:
+
+    quorra.events.ShiftA.up = function(){
+        console.log('Shift + A Pressed!');
+    }
+
+    @author <bprinty@gmail.com>
+    */
+
+    e = e || window.event;
+    var k = e.which;
+    if (_.has(allKeys, k)){
+        quorra.keys[allKeys[k]] = true;
+        if (_.has(metaKeys, k)){
+            _.each(baseKeys, function(i){
+                if (quorra.keys[i]){
+                    quorra.events[i+metaKeys[k]].down();
+                }
+            });
+        }else{
+            quorra.events[allKeys[k]].down();
+        }
+    }
+};
+
+
+document.onkeyup = function (e) {
+     /**
+    Key up event handlers. Allows for event triggering on
+    key release if methods for each key combination are specified.
+
+    To set a method for a specific key down event, do:
+
+    quorra.events.ShiftA.down = function(){
+        console.log('Shift + A Released!');
+    }
+
+    @author <bprinty@gmail.com>
+    */
+
+    e = e || window.event;
+    var k = e.which;
+    if (_.has(allKeys, k)){
+        quorra.keys[allKeys[k]] = false;
+        if (_.has(metaKeys, k)){
+            _.each(baseKeys, function(i){
+                if (quorra.keys[i]){
+                    quorra.events[i+metaKeys[k]].up();
+                }
+            });
+        }else{
+            quorra.events[allKeys[k]].up();
+        }
+    }
+};
+
+
+// return processed mouse coordinates from selection
+function mouse(sel){
+    var coordinates = d3.mouse(sel.node());
+    var res = {};
+    res.x = coordinates[0];
+    res.y = coordinates[1];
+    res.scale = (d3.event.type == 'zoom') ? d3.event.scale : 1;
+    return res;
+}
+
+
+// return ratio of domain/range for scaling zoom
+function zoomscale(scale){
+    var d = scale.domain();
+    var r = scale.range();
+    var dx = Math.abs(d[1] - d[0]);
+    var dr = Math.abs(r[1] - r[0]);
+    return dx/dr;
+}
+
+
+/**
+
+Statistical functions used throughout quorra, including methods
+for kernel density estimation.
+
+@author <bprinty@gmail.com>
+
+*/
+
+
+function kdeEstimator(kernel, x) {
+    /**
+    quorra.kdeEstimator()
+
+    Kernel density esimator, using supplied kernel. This code was inspired
+    from http://bl.ocks.org/mbostock/4341954
+    */
+    return function(sample) {
+        return x.map(function(x) {
+            return {
+                x: x,
+                y: d3.mean(sample, function(v) { return kernel(x - v); }),
+            };
+        });
+    };
+}
+
+function epanechnikovKernel(scale) {
+    /**
+    quorra.epanechnikovKernel()
+
+    Epanechnikov Kernel for kernel density estinmation. This code was inspired
+    from http://bl.ocks.org/mbostock/4341954
+    */
+    return function(u) {
+        return Math.abs(u /= scale) <= 1 ? 0.75 * (1 - u * u) / scale : 0;
+    };
+}
+/**
+
+Common utilities used across plot generators.
+
+@author <bprinty@gmail.com>
+
+*/
+
+
+// set default seed for random number generation
+var seed = Math.round(Math.random()*100000);
+
+quorra.seed = function(value){
+    /**
+    quorra.seed()
+
+    Set seed for reproducable random number generation. 
+    */
+
+    if (!arguments.length) return seed;
+    seed = value;
+};
+
+
+quorra.random = function() {
+    /**
+    quorra.random()
+
+    Random number generation using internal seed. 
+    */
+
+    if (typeof seed === 'undefined') seed = 42;
+    var x = Math.sin(seed++) * 10000;
+    return x - Math.floor(x);
+};
+
+
+quorra.pseudorandom = function(seed) {
+    /**
+    quorra.pseudorandom()
+
+    Random number generation using specified seed. 
+    */
+    var x = Math.sin(seed) * 10000;
+    return x - Math.floor(x);
+};
+
+
+quorra.uuid = function() {
+    /**
+    quorra.uuid()
+
+    Generate random uuid with seed. 
+    */
+
+    function uk() {
+        return Math.floor((1 + quorra.random()) * 0x10000)
+            .toString(16).substring(1);
+    }
+    return 'u' + [
+        uk() + uk(),
+        uk(), uk(), uk(),
+        uk() + uk() + uk()
+    ].join('-');
+};
+
+
+quorra.export = function(svg, filename) {
+    /**
+    quorra.export()
+    
+    Export contents of svg to .png, with styling.
+    */
+    var sel = svg.attr({
+        'xmlns': 'http://www.w3.org/2000/svg',
+        version: '1.1'
+    }).node();
+    var cln = sel.cloneNode(true);
+    d3.select(cln).selectAll('clippath').attr('id', 'clip-export');
+    d3.select(cln).selectAll('.plotarea').attr('clip-path', 'url(#clip-export)');
+    cln.id = "export";
+    document.body.appendChild(cln);
+
+    // set styling for elements
+    d3.select(cln).style('background-color', '#fff');
+    d3.select(cln).selectAll('.glyphbox').remove();
+    d3.select(cln).selectAll('text').style('font-weight', 300).style('font-size', '12px').style('font-family', '"HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif');
+    d3.select(cln).selectAll('.axis line').style('stroke', '#bbb').style('fill', 'none').style('shape-rendering', 'crispEdges');
+    d3.select(cln).selectAll('.axis path').style('stroke', '#bbb').style('fill', 'none').style('shape-rendering', 'crispEdges');
+    d3.select(cln).selectAll('.axis .tick line').style('stroke', '#bbb').style('opacity', 0.5);
+    d3.select(cln).selectAll('.selector').style('stroke', '#bbb').style('stroke-width', '1px');
+    d3.select(cln).selectAll('.xtick').style('stroke-width', '1.5px');
+    d3.select(cln).selectAll('.ytick').style('stroke-width', '1.5px');
+
+    // set up html5 canvas for image
+    var canvas = document.createElement("canvas");
+    var ctx = canvas.getContext("2d");
+
+    // encode image in src tag
+    var svgSize = cln.getBoundingClientRect();
+    var svgData = new XMLSerializer().serializeToString(cln);
+    canvas.width = svgSize.width;
+    canvas.height = svgSize.height;
+    var img = document.createElement("img");
+    img.setAttribute("src", "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData))));
+
+    // draw with canvas and export
+    img.onload = function() {
+        ctx.drawImage(img, 0, 0);
+        var data = canvas.toDataURL("image/png");
+        var a = document.createElement("a");
+        a.download = filename + ".png";
+        a.href = data;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        canvas.remove();
+        document.body.removeChild(cln);
+    };
+};
+
+
+// underscore additions
+_.center = function(x, bounds){
+    return _.min([_.max([x, bounds[0]]), bounds[1]]);
+};
+
+_.uniquesort = function(x, func) {
+    if (typeof func === 'undefined') {
+        func = function(x){ return x; };
+    }
+    return _.unique(_.map(x, func)).sort();
+};
+
+
+// d3 additions
+d3.selection.prototype.stageup = function() {
+  return this.each(function(){
+    this.parentNode.appendChild(this);
+  });
+};
+
+d3.selection.prototype.stagedown = function() { 
+    return this.each(function() { 
+        var firstChild = this.parentNode.firstChild; 
+        if (firstChild) { 
+            this.parentNode.insertBefore(this, firstChild); 
+        } 
+    }); 
+};
+
+
+// common generator object utilities
+parameterize = function(attributes, generator) {
+    /**
+    parameterize()
+
+    Add getters and setters to generator functions for
+    specified attributes
+    */
+
+    // binding attributes to constructor function
+    Object.keys(attributes).forEach(function(i) {
+        generator[i] = function(value) {
+            if (!arguments.length) return attributes[i];
+
+            // maintain non-overridden object arguments
+            if (typeof value === 'object') {
+                if (typeof attributes[i] === 'object') {
+                    if (Array.isArray(attributes[i]) && ! Array.isArray(value)) {
+                        value = [value];
+                    }
+                    attributes[i] = _.extend(attributes[i], value);
+                } else {
+                    attributes[i] = value;
+                }
+            } else {
+                attributes[i] = value;
+            }
+            return generator;
+        };
+    });
+};
+
+extend = function(stock, custom) {
+    /**
+    extend()
+
+    Recursively extend attributes with specified parameters.
+    */
+    _.map(Object.keys(custom), function(d) {
+        if (typeof stock[d] === 'undefined') {
+            stock[d] = custom[d];
+        }
+    });
+
+    _.map(Object.keys(stock), function(d) {
+        if (typeof custom[d] !== 'undefined') {
+            if (typeof stock[d] === "object" && ! Array.isArray(stock[d]) && stock[d] != null) {
+                stock[d] = extend(stock[d], custom[d]);
+            } else if (Array.isArray(stock[d]) && !Array.isArray(custom[d])) { 
+                stock[d] = [custom[d]];
+            } else {
+                stock[d] = custom[d];
+            }
+        }
+    });
+    return stock;
+};
 
 function Annotation(attributes) {
     /**
@@ -1261,365 +1756,6 @@ quorra.annotation = function(attributes) {
     quorra.log('creating plot annotation');
     return new Annotation(attributes);
 };
-/**
-
-Event handling within quorra.
-
-@author <bprinty@gmail.com>
-
-*/
-
-
-// key map and default event definitions
-var baseKeys = { 16: 'Shift', 17: 'Ctrl', 18: 'Alt', 27: 'Esc'};
-var metaKeys = { 9: 'Tab', 13: 'Enter', 65: 'A', 66: 'B', 67: 'C', 68: 'D', 69: 'E', 70: 'F', 71: 'G', 72: 'H', 73: 'I', 74: 'J', 75: 'K', 76: 'L', 77: 'M', 78: 'N', 79: 'O', 80: 'P', 81: 'Q', 82: 'R', 83: 'S', 84: 'T', 85: 'U', 86: 'V', 87: 'W', 88: 'X', 89: 'Y', 90: 'Z'};
-var allKeys = _.extend(_.clone(baseKeys), metaKeys);
-
-
-// setting statuses for each key combination
-quorra.keys = {};
-_.each(allKeys, function(key){
-    quorra.keys[key] = false;
-});
-
-
-// setting default functions for each key combination
-quorra.events = {};
-_.each(baseKeys, function(base){
-
-    quorra.events[base] = {
-        down: function(){},
-        up: function(){}
-    }
-    _.each(metaKeys, function(meta){
-        quorra.events[base + meta] = {
-            down: function(){},
-            up: function(){}
-        }
-    });
-});
-
-
-document.onkeydown = function (e) {
-    /**
-    Key down event handlers. Allows for event triggering on
-    key press if methods for each key combination are specified.
-
-    To set a method for a specific key down event, do:
-
-    quorra.events.ShiftA.up = function(){
-        console.log('Shift + A Pressed!');
-    }
-
-    @author <bprinty@gmail.com>
-    */
-
-    e = e || window.event;
-    var k = e.which;
-    if (_.has(allKeys, k)){
-        quorra.keys[allKeys[k]] = true;
-        if (_.has(metaKeys, k)){
-            _.each(baseKeys, function(i){
-                if (quorra.keys[i]){
-                    quorra.events[i+metaKeys[k]].down();
-                }
-            });
-        }else{
-            quorra.events[allKeys[k]].down();
-        }
-    }
-};
-
-
-document.onkeyup = function (e) {
-     /**
-    Key up event handlers. Allows for event triggering on
-    key release if methods for each key combination are specified.
-
-    To set a method for a specific key down event, do:
-
-    quorra.events.ShiftA.down = function(){
-        console.log('Shift + A Released!');
-    }
-
-    @author <bprinty@gmail.com>
-    */
-
-    e = e || window.event;
-    var k = e.which;
-    if (_.has(allKeys, k)){
-        quorra.keys[allKeys[k]] = false;
-        if (_.has(metaKeys, k)){
-            _.each(baseKeys, function(i){
-                if (quorra.keys[i]){
-                    quorra.events[i+metaKeys[k]].up();
-                }
-            });
-        }else{
-            quorra.events[allKeys[k]].up();
-        }
-    }
-};
-
-
-// return processed mouse coordinates from selection
-function mouse(sel){
-    var coordinates = d3.mouse(sel.node());
-    var res = {};
-    res.x = coordinates[0];
-    res.y = coordinates[1];
-    res.scale = (d3.event.type == 'zoom') ? d3.event.scale : 1;
-    return res;
-}
-
-
-// return ratio of domain/range for scaling zoom
-function zoomscale(scale){
-    var d = scale.domain();
-    var r = scale.range();
-    var dx = Math.abs(d[1] - d[0]);
-    var dr = Math.abs(r[1] - r[0]);
-    return dx/dr;
-}
-
-
-/**
-
-Common utilities used across plot generators.
-
-@author <bprinty@gmail.com>
-
-*/
-
-
-// set default seed for random number generation
-var seed = Math.round(Math.random()*100000);
-
-quorra.seed = function(value){
-    /**
-    quorra.seed()
-
-    Set seed for reproducable random number generation. 
-    */
-
-    if (!arguments.length) return seed;
-    seed = value;
-};
-
-
-quorra.random = function() {
-    /**
-    quorra.random()
-
-    Random number generation using internal seed. 
-    */
-
-    if (typeof seed === 'undefined') seed = 42;
-    var x = Math.sin(seed++) * 10000;
-    return x - Math.floor(x);
-};
-
-
-quorra.uuid = function() {
-    /**
-    quorra.uuid()
-
-    Generate random uuid with seed. 
-    */
-
-    function uk() {
-        return Math.floor((1 + quorra.random()) * 0x10000)
-            .toString(16).substring(1);
-    }
-    return 'u' + [
-        uk() + uk(),
-        uk(), uk(), uk(),
-        uk() + uk() + uk()
-    ].join('-');
-};
-
-
-quorra.export = function(svg, filename) {
-    /**
-    quorra.export()
-    
-    Export contents of svg to .png, with styling.
-    */
-    var sel = svg.attr({
-        'xmlns': 'http://www.w3.org/2000/svg',
-        version: '1.1'
-    }).node();
-    var cln = sel.cloneNode(true);
-    d3.select(cln).selectAll('clippath').attr('id', 'clip-export');
-    d3.select(cln).selectAll('.plotarea').attr('clip-path', 'url(#clip-export)');
-    cln.id = "export";
-    document.body.appendChild(cln);
-
-    // set styling for elements
-    d3.select(cln).style('background-color', '#fff');
-    d3.select(cln).selectAll('.glyphbox').remove();
-    d3.select(cln).selectAll('text').style('font-weight', 300).style('font-size', '12px').style('font-family', '"HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif');
-    d3.select(cln).selectAll('.axis line').style('stroke', '#bbb').style('fill', 'none').style('shape-rendering', 'crispEdges');
-    d3.select(cln).selectAll('.axis path').style('stroke', '#bbb').style('fill', 'none').style('shape-rendering', 'crispEdges');
-    d3.select(cln).selectAll('.axis .tick line').style('stroke', '#bbb').style('opacity', 0.5);
-    d3.select(cln).selectAll('.selector').style('stroke', '#bbb').style('stroke-width', '1px');
-    d3.select(cln).selectAll('.xtick').style('stroke-width', '1.5px');
-    d3.select(cln).selectAll('.ytick').style('stroke-width', '1.5px');
-
-    // set up html5 canvas for image
-    var canvas = document.createElement("canvas");
-    var ctx = canvas.getContext("2d");
-
-    // encode image in src tag
-    var svgSize = cln.getBoundingClientRect();
-    var svgData = new XMLSerializer().serializeToString(cln);
-    canvas.width = svgSize.width;
-    canvas.height = svgSize.height;
-    var img = document.createElement("img");
-    img.setAttribute("src", "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData))));
-
-    // draw with canvas and export
-    img.onload = function() {
-        ctx.drawImage(img, 0, 0);
-        var data = canvas.toDataURL("image/png");
-        var a = document.createElement("a");
-        a.download = filename + ".png";
-        a.href = data;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        canvas.remove();
-        document.body.removeChild(cln);
-    };
-};
-
-
-// underscore additions
-_.center = function(x, bounds){
-    return _.min([_.max([x, bounds[0]]), bounds[1]]);
-};
-
-_.uniquesort = function(x, func) {
-    if (typeof func === 'undefined') {
-        func = function(x){ return x; };
-    }
-    return _.unique(_.map(x, func)).sort();
-};
-
-
-// d3 additions
-d3.selection.prototype.stageup = function() {
-  return this.each(function(){
-    this.parentNode.appendChild(this);
-  });
-};
-
-d3.selection.prototype.stagedown = function() { 
-    return this.each(function() { 
-        var firstChild = this.parentNode.firstChild; 
-        if (firstChild) { 
-            this.parentNode.insertBefore(this, firstChild); 
-        } 
-    }); 
-};
-
-
-// common generator object utilities
-parameterize = function(attributes, generator) {
-    /**
-    parameterize()
-
-    Add getters and setters to generator functions for
-    specified attributes
-    */
-
-    // binding attributes to constructor function
-    Object.keys(attributes).forEach(function(i) {
-        generator[i] = function(value) {
-            if (!arguments.length) return attributes[i];
-
-            // maintain non-overridden object arguments
-            if (typeof value === 'object') {
-                if (typeof attributes[i] === 'object') {
-                    if (Array.isArray(attributes[i]) && ! Array.isArray(value)) {
-                        value = [value];
-                    }
-                    attributes[i] = _.extend(attributes[i], value);
-                } else {
-                    attributes[i] = value;
-                }
-            } else {
-                attributes[i] = value;
-            }
-            return generator;
-        };
-    });
-};
-
-extend = function(stock, custom) {
-    /**
-    extend()
-
-    Recursively extend attributes with specified parameters.
-    */
-    _.map(Object.keys(custom), function(d) {
-        if (typeof stock[d] === 'undefined') {
-            stock[d] = custom[d];
-        }
-    });
-
-    _.map(Object.keys(stock), function(d) {
-        if (typeof custom[d] !== 'undefined') {
-            if (typeof stock[d] === "object" && ! Array.isArray(stock[d]) && stock[d] != null) {
-                stock[d] = extend(stock[d], custom[d]);
-            } else if (Array.isArray(stock[d]) && !Array.isArray(custom[d])) { 
-                stock[d] = [custom[d]];
-            } else {
-                stock[d] = custom[d];
-            }
-        }
-    });
-    return stock;
-};
-
-/**
-
-Statistical functions used throughout quorra, including methods
-for kernel density estimation.
-
-@author <bprinty@gmail.com>
-
-*/
-
-
-function kdeEstimator(kernel, x) {
-    /**
-    quorra.kdeEstimator()
-
-    Kernel density esimator, using supplied kernel. This code was inspired
-    from http://bl.ocks.org/mbostock/4341954
-    */
-    return function(sample) {
-        return x.map(function(x) {
-            return {
-                x: x,
-                y: d3.mean(sample, function(v) { return kernel(x - v); }),
-            };
-        });
-    };
-}
-
-function epanechnikovKernel(scale) {
-    /**
-    quorra.epanechnikovKernel()
-
-    Epanechnikov Kernel for kernel density estinmation. This code was inspired
-    from http://bl.ocks.org/mbostock/4341954
-    */
-    return function(u) {
-        return Math.abs(u /= scale) <= 1 ? 0.75 * (1 - u * u) / scale : 0;
-    };
-}
 function Bar(attributes) {
     /**
     quorra.bar()
@@ -1647,9 +1783,12 @@ function Bar(attributes) {
         // responsible for ensuring that their data is complete
         var layers = [];
         var ugrps = _this.pallette.domain();
+        if (typeof _this.data[0].x === 'string') {
+            _this.data = _this.data.sort(function(a, b) { return a.x > b.x; });
+        }
         for (var grp in ugrps) {
             var flt = _.filter(_this.data, function(d){ return d.group == ugrps[grp]; });
-            flt = _.map(flt, function(d){
+            flt = _.map(flt, function(d) {
                 d.layer = grp;
                 return d;
             });
@@ -1661,7 +1800,7 @@ function Bar(attributes) {
                 d.y0 = y0[i];
                 y0[i] = y0[i] + d.y;
                 return d;
-            });  
+            });
         }
 
         // plotting bars
@@ -1678,11 +1817,12 @@ function Bar(attributes) {
             })
             .attr("x", function(d, i) {
                 if (layers[0].length > 1){
+                    var offset = (typeof _this.attr.x(d, i) === 'string') ? 0.5 : 0;
                     if (_this.attr.layout === "stacked"){
-                        return _this.xscale(_this.attr.x(d, i));
+                        return _this.xscale(_this.xmapper(_this.attr.x(d, i)) - offset);
                     }else{
-                        var diff = Math.abs(_this.xscale(_this.attr.x(layers[0][1])) - _this.xscale(_this.attr.x(layers[0][0])));
-                        return _this.xscale(_this.attr.x(d, i)) + _this.pallette.range().indexOf(_this.pallette(d.group))*(diff / _this.pallette.domain().length);
+                        var diff = Math.abs(_this.xscale(_this.xmapper(_this.attr.x(layers[0][1]))) - _this.xscale(_this.xmapper(_this.attr.x(layers[0][0]))));
+                        return _this.xscale(_this.xmapper(_this.attr.x(d, i)) - offset) + _this.pallette.range().indexOf(_this.pallette(d.group))*(diff / _this.pallette.domain().length);
                     }
                 }else{
                     var range = _this.xscale.range();
@@ -1691,11 +1831,13 @@ function Bar(attributes) {
             })
             // NOTE: this needs to be fixed so that y0 is 
             // parameterized before this takes place.
-            .attr("y", function(d, i){ return (_this.attr.layout == "stacked") ? _this.yscale(d.y0 + d.y) : _this.yscale(d.y); })
-            .attr("height", function(d, i){ return (_this.attr.layout == "stacked") ? (_this.yscale(d.y0) - _this.yscale(d.y0 + d.y)) : _.max([_this.innerheight - _this.yscale(d.y), 0]); })
+            .attr("y", function(d, i) {
+                return (_this.attr.layout == "stacked") ? _this.yscale(_this.ymapper(d.y0 + d.y)) : _this.yscale(_this.ymapper(d.y));
+            })
+            .attr("height", function(d, i){ return (_this.attr.layout == "stacked") ? (_this.yscale(_this.ymapper(d.y0)) - _this.yscale(_this.ymapper(d.y0 + d.y))) : _.max([_this.innerheight - _this.yscale(_this.ymapper(d.y)), 0]); })
             .attr("width", function(d){
                 if (layers[0].length > 1){
-                    var diff = Math.abs(_this.xscale(_this.attr.x(layers[0][1])) - _this.xscale(_this.attr.x(layers[0][0])));
+                    var diff = Math.abs(_this.xscale(_this.xmapper(_this.attr.x(layers[0][1]))) - _this.xscale(_this.xmapper(_this.attr.x(layers[0][0]))));
                     if (_this.attr.layout === "stacked"){
                         return diff - 2;
                     }else{
@@ -1715,14 +1857,14 @@ function Bar(attributes) {
                 if (_this.attr.tooltip){
                     _this.attr.tooltip.html(d.label)
                         .style("visibility", "visible")
-                        .style("left", (d3.event.pageX + 5) + "px")
-                        .style("top", (d3.event.pageY - 20) + "px");
+                        .style("left", (d3.event.clientX + 5) + "px")
+                        .style("top", (d3.event.clientY - 20) + "px");
                 }
             }).on("mousemove", function(d){
                 if (_this.attr.tooltip){
                     _this.attr.tooltip
-                        .style("left", (d3.event.pageX + 5) + "px")
-                        .style("top", (d3.event.pageY - 20) + "px");
+                        .style("left", (d3.event.clientX + 5) + "px")
+                        .style("top", (d3.event.clientY - 20) + "px");
                 }
             }).on("mouseout", function(d){
                 d3.select(this).style("opacity", _this.attr.opacity);
@@ -1891,11 +2033,12 @@ function Line(attributes) {
 
     // overwrite render method
     this.plot = function() {
+        quorra.log('drawing plot data');
 
         // configuring path renderer
         var path = d3.svg.line()
-            .x(function(d, i) { return _this.xscale(_this.attr.x(d, i)); })
-            .y(function(d, i) { return _this.yscale(_this.attr.y(d, i)); })
+            .x(function(d, i) { return _this.xscale(_this.xmapper(_this.attr.x(d, i))); })
+            .y(function(d, i) { return _this.yscale(_this.ymapper(_this.attr.y(d, i))); })
             .interpolate(_this.attr.interpolate);
 
         // draw lines
@@ -1911,46 +2054,70 @@ function Line(attributes) {
                 })
                 .attr("d", function(d){
                     var p = path(d);
-                    if (_this.attr.layout === "line"){
+                    if (_this.attr.layout === "line") {
                         return p;
-                    }else if (_this.attr.layout === "area"){
+                    } else if (_this.attr.layout === "area") {
                         return [
                             p,
-                            "L" + _this.xscale(_this.domain[1]) + "," + _this.yscale(_this.range[0]),
-                            "L" + _this.xscale(_this.domain[0]) + "," + _this.yscale(_this.range[0]),
+                            "L" + _this.xscale(_this.xmapper(_this.domain[_this.domain.length - 1])) + "," + _this.yscale(_this.ymapper(_this.range[0])),
+                            "L" + _this.xscale(_this.xmapper(_this.domain[0])) + "," + _this.yscale(_this.ymapper(_this.range[0])),
                             "Z"
                         ].join('');
                     }
                 })
                 .style("fill", function(d){
-                    if (_this.attr.layout === "line"){
+                    if (_this.attr.layout === "line") {
                         return "none";
-                    }else if (_this.attr.layout === "area"){
+                    } else if (_this.attr.layout === "area") {
                         return _this.pallette(d[0].group);
                     }
                 })
                 .style("stroke", _this.pallette(ugrps[grp]))
                 .style("stroke-width", _this.attr.size)
                 .style("opacity", _this.attr.opacity)
-                .style("visibility", function(d, i){
+                .style("visibility", function(d, i) {
                     return _.contains(_this.attr.toggled, _this.attr.group(d[0], i)) ? 'hidden' : 'visible';
                 })
                 .on("mouseover", function(d, i) {
-                    d3.select(this).style("opacity", 0.25);
+                    if (_this.attr.hovercolor !== false) {
+                        _this.plotarea.selectAll('.dot.g_' + d[0].group).style("fill", _this.attr.hovercolor);
+                        _this.plotarea.selectAll('.line.g_' + d[0].group).style("stroke", _this.attr.hovercolor);
+                        if (_this.attr.slider !== null) {
+                            _this.attr.slider.__parent__.plotarea.selectAll('.dot.g_' + d[0].group).style("fill", _this.attr.hovercolor);
+                            _this.attr.slider.__parent__.plotarea.selectAll('.line.g_' + d[0].group).style("stroke", _this.attr.hovercolor);
+                        }
+                    } else {
+                        _this.plotarea.selectAll('.g_' + d[0].group).style("opacity", 0.25);
+                        if (_this.attr.slider !== null) {
+                            _this.attr.slider.__parent__.selectAll('.g_' + d[0].group).style("opacity", 0.25);
+                        }
+                    }
                     if (_this.attr.tooltip){
                         _this.attr.tooltip.html(d[0].group)
                             .style("visibility", "visible")
-                            .style("left", (d3.event.pageX + 5) + "px")
-                            .style("top", (d3.event.pageY - 20) + "px");
+                            .style("left", (d3.event.clientX + 5) + "px")
+                            .style("top", (d3.event.clientY - 20) + "px");
                     }
                 }).on("mousemove", function(d) {
                     if (_this.attr.tooltip) {
                         _this.attr.tooltip
-                            .style("left", (d3.event.pageX + 5) + "px")
-                            .style("top", (d3.event.pageY - 20) + "px");
+                            .style("left", (d3.event.clientX + 5) + "px")
+                            .style("top", (d3.event.clientY - 20) + "px");
                     }
                 }).on("mouseout", function(d) {
-                    d3.select(this).style("opacity", _this.attr.opacity);
+                    if (_this.attr.hovercolor !== false) {
+                        _this.plotarea.selectAll('.dot.g_' + d[0].group).style("fill", _this.pallette(d[0].group));
+                        _this.plotarea.selectAll('.line.g_' + d[0].group).style("stroke", _this.pallette(d[0].group));
+                        if (_this.attr.slider !== null) {
+                            _this.attr.slider.__parent__.plotarea.selectAll('.dot.g_' + d[0].group).style("fill", _this.pallette(d[0].group));
+                            _this.attr.slider.__parent__.plotarea.selectAll('.line.g_' + d[0].group).style("stroke", _this.pallette(d[0].group));
+                        }
+                    } else {
+                        _this.plotarea.selectAll('.g_' + d[0].group).style("opacity", _this.attr.opacity);
+                        if (_this.attr.slider !== null) {
+                            _this.attr.slider.__parent__.selectAll('.g_' + d[0].group).style("opacity", _this.attr.opacity);
+                        }
+                    }
                     if (_this.attr.tooltip) {
                         _this.attr.tooltip.style("visibility", "hidden");
                     }
@@ -1967,8 +2134,8 @@ function Line(attributes) {
                     return "dot " + "g_" + d.group;
                 })
                 .attr("r", _this.attr.points)
-                .attr("cx", function(d, i) { return _this.xscale(_this.attr.x(d, i)); })
-                .attr("cy", function(d, i) { return _this.yscale(_this.attr.y(d, i)); })
+                .attr("cx", function(d, i) { return _this.xscale(_this.xmapper(_this.attr.x(d, i))); })
+                .attr("cy", function(d, i) { return _this.yscale(_this.ymapper(_this.attr.y(d, i))); })
                 .style("fill", function(d, i){ return _this.pallette(_this.attr.group(d, i)); })
                 .style("opacity", _this.attr.opacity)
                 .style("visibility", function(d, i) {
@@ -1979,14 +2146,14 @@ function Line(attributes) {
                     if (_this.attr.tooltip){
                         _this.attr.tooltip.html(_this.attr.label(d, i))
                             .style("visibility", "visible")
-                            .style("left", (d3.event.pageX + 5) + "px")
-                            .style("top", (d3.event.pageY - 20) + "px");
+                            .style("left", (d3.event.clientX + 5) + "px")
+                            .style("top", (d3.event.clientY - 20) + "px");
                     }
                 }).on("mousemove", function(d){
                     if (_this.attr.tooltip){
                         _this.attr.tooltip
-                            .style("left", (d3.event.pageX + 5) + "px")
-                            .style("top", (d3.event.pageY - 20) + "px");
+                            .style("left", (d3.event.clientX + 5) + "px")
+                            .style("top", (d3.event.clientY - 20) + "px");
                     }
                 }).on("mouseout", function(d){
                     d3.select(this).style("opacity", _this.attr.opacity);
@@ -2022,7 +2189,9 @@ function Multiline(attributes) {
         points: 0,
         size: 3,
         layout: "line",
-        interpolate: "linear"
+        interpolate: "linear",
+        margin: {"top": 30, "bottom": 20, "left": 0, "right": 70},
+        yranges: {}
     }, attributes));
     this.type = "multiline";
 
@@ -2033,121 +2202,221 @@ function Multiline(attributes) {
         // parameterize axes scaling
         var domain = _this.attr.xrange === "auto" ? _this.domain : _this.attr.xrange;
         var range = _this.attr.yrange === "auto" ? _this.range : _this.attr.yrange;
-        if (_this.type === 'histogram') {
-            domain[1] = domain[1] + (domain[1] - domain[0])/(_this.attr.bins-1);
-        }
 
-        // set up scaling for axes
-        // TODO: allow users to pass in arbitrary scaling function
-        //       i.e. d3.scale.log()
-        if (typeof _this.data[0].x === 'string') {
-            _this.xscale = d3.scale.ordinal()
-                .domain(domain)
-                .range([0, _this.innerwidth])
-                .rangePoints([0, _this.innerwidth], 1);
-        } else {
-            _this.xscale = d3.scale.linear()
-                .domain(domain)
-                .range([0, _this.innerwidth]);
+        // x scale formatting
+        _this.xord = d3.scale.ordinal()
+            .domain(_this.domain)
+            .range(_.range(_this.domain.length));
+        _this.xordrev = d3.scale.ordinal()
+            .domain(_this.xord.range())
+            .range(_this.xord.domain());
+        _this.xmapper = function(d) { return _this.xord(d); };
+        if (typeof domain[0] === 'string') {
+            domain = _.map(domain, _this.xmapper);
+            domain[0] = domain[0] - 0.5;
+            domain[domain.length - 1] = domain[domain.length - 1] + 0.5;
         }
-        if (typeof _this.data[0].y === 'string') {
-            _this.yscale = d3.scale.ordinal()
-                .domain(range)
-                .range([0, _this.innerheight])
-                .rangePoints([_this.innerheight, 0], 1);
-        } else {
-            _this.yscale = d3.scale.linear()
-                .domain(range)
-                .range([ _this.innerheight, 0]);
-        }
+        _this.xscale = d3.scale.linear()
+            .domain([domain[0], domain[domain.length-1]])
+            .range([0, _this.innerwidth]);
 
-        // tick formatting
-        _this.xaxis = d3.svg.axis().scale(_this.xscale).orient(_this.attr.xorient);
+        // x axis formatting
+        _this.xaxis = d3.svg.axis().scale(_this.xscale).orient('top');
         if (_this.attr.xticks !== "auto") {
             _this.xaxis = _this.xaxis.ticks(_this.attr.xticks);
-        } else if (_this.type === 'histogram') {
-            _this.xaxis = _this.xaxis.ticks(_this.attr.bins);
         }
-        _this.yaxis = d3.svg.axis().scale(_this.yscale).orient(_this.attr.yorient);
-        if (_this.attr.yticks !== "auto") {
-            _this.yaxis = _this.yaxis.ticks(_this.attr.yticks);
-        }
-
-        // number formatting
         if (_this.attr.xformat !== "auto") {
             _this.xaxis = _this.xaxis.tickFormat(_this.attr.xformat);
         }
-        if (_this.attr.yformat !== "auto") {
-            _this.yaxis = _this.yaxis.tickFormat(_this.attr.yformat);
+        if (typeof domain[0] == 'string') {
+            domain = _.map(domain, _this.xord);
         }
-
-        // configure grid (if specified)
-        if (_this.attr.grid) {
-            _this.xaxis = _this.xaxis.tickSize(-_this.innerheight, 0, 0);
-            _this.yaxis = _this.yaxis.tickSize(-_this.innerwidth, 0, 0);
-        }
+        _this.xaxis = _this.xaxis.tickValues(_.range(
+            Math.ceil(domain[0]),
+            Math.floor(domain[domain.length - 1]) + 1
+        )).tickFormat(_this.xordrev).tickSize(0).tickPadding(15);
 
         // x axis
-        if (_this.attr.xaxis !== "hidden" && _this.attr.xaxis !== false) {
-            _this.plotarea
-                .append("g")
-                .attr("class", "x axis")
-                .attr("transform", "translate(0," + _this.innerheight + ")")
-                .call(_this.xaxis)
-                .append("text")
-                    .attr("class", "label")
-                    .attr("x", function(x){
-                        if (_this.attr.labelposition === "end"){
-                            return _this.innerwidth;
-                        }else if (_this.attr.labelposition === "middle"){
-                            return _this.innerwidth / 2;
-                        }else if (_this.attr.labelposition === "beginning"){
-                            return 0;
-                        }
-                    })
-                    .attr("y", function(){
-                        if (_this.attr.xaxis === "inside"){
-                            return -6 + _this.attr.labelpadding.x;
-                        }else if(_this.attr.xaxis === "outside"){
-                            return 35 + _this.attr.labelpadding.x;
-                        }
-                    })
-                    .style("text-anchor", _this.attr.labelposition)
-                    .text(_this.attr.xlabel);
-        }
+        _this.plotregion
+            .append("g")
+            .attr("class", "x axis")
+            .call(_this.xaxis);
 
-        // y axis
-        if (_this.attr.yaxis !== "hidden" && _this.attr.yaxis !== false) {
-            _this.plotarea
+        _this.plotregion.selectAll(".x.axis .domain").remove();
+
+        // y scale formatting
+        _this.yscale = d3.scale.linear()
+            .domain([0, 1])
+            .range([_this.innerheight, 0]);
+        _this.yscales = [];
+        _this.yaxes = [];
+        var xdiff = _this.xscale(1) - _this.xscale(0);
+        for (var i=0; i<_this.domain.length; i++) {
+            var xdat = _.filter(_this.data, function(d){ return d.x === _this.domain[i]; });
+            xdat = _.map(xdat, function(d){ return d.y; });
+            
+            // configure scaling for each x group
+            if (_this.attr.yranges[_this.domain[i]] !== undefined) {
+                var domain = _this.attr.yranges[_this.domain[i]];
+            } else {
+                var domain = [_.min(xdat), _.max(xdat)];
+            }
+            var scale = d3.scale.linear()
+                .domain(domain)
+                .range([0, 1]);
+            _this.yscales.push(scale);
+            var vscale = d3.scale.linear()
+                .domain(domain)
+                .range(_this.yscale.range()).nice();
+
+            // set up each vertical axis
+            var axis = d3.svg.axis().scale(vscale).orient('left')
+            if (_this.attr.yticks !== "auto") {
+                axis = axis.ticks(_this.attr.yticks);
+            }
+            if (_this.attr.yformat !== "auto") {
+                axis = axis.tickFormat(_this.attr.yformat);
+            }
+            _this.yaxes.push(axis);
+
+            _this.plotregion
                 .append("g")
+                .attr("transform", "translate(" + _this.xscale(i) + ",0)")
                 .attr("class", "y axis")
-                .call(_this.yaxis)
-                .append("text")
-                    .attr("class", "label")
-                    .attr("transform", "rotate(-90)")
-                    .attr("x", function(x){
-                        if (_this.attr.labelposition === "end"){
-                            return 0;
-                        }else if (_this.attr.labelposition === "middle"){
-                            return -_this.innerheight / 2;
-                        }else if (_this.attr.labelposition === "beginning"){
-                            return -_this.innerheight;
-                        }
-                    }).attr("y", function(){
-                        if (_this.attr.yaxis === "inside"){
-                            return 6 + _this.attr.labelpadding.y;
-                        }else if(_this.attr.yaxis === "outside"){
-                            return -40 + _this.attr.labelpadding.y;
-                        }
-                    })
-                    .attr("dy", ".71em")
-                    .style("text-anchor", _this.attr.labelposition)
-                    .text(_this.attr.ylabel);
+                .call(axis);
         }
     }
 
     // overwrite render method
     this.plot = function() {
+        quorra.log('drawing plot data');
+
+        // draw lines
+        var ugrps = _this.pallette.domain();
+        for (var grp in ugrps) {
+
+            // configuring path
+            var path = d3.svg.line()
+                .x(function(d, i) { return _this.xscale(_this.xmapper(_this.attr.x(d, i))); })
+                .y(function(d, i) {
+                    return _this.yscale(_this.yscales[_this.xord(d.x)](d.y));
+                })
+                .interpolate(_this.attr.interpolate);
+
+            // lines
+            var subdat = _.filter(_this.data, function(d){ return d.group === ugrps[grp]; });
+            _this.plotarea.append("path")
+                .datum(subdat)
+                .attr("class", function(d, i){
+                    return "line " + "g_" + d[0].group;
+                })
+                .attr("d", function(d){
+                    var p = path(d);
+                    if (_this.attr.layout === "line") {
+                        return p;
+                    } else if (_this.attr.layout === "area") {
+                        return [
+                            p,
+                            "L" + _this.xscale(_this.xmapper(_this.domain[_this.domain.length - 1])) + "," + _this.yscale(0),
+                            "L" + _this.xscale(_this.xmapper(_this.domain[0])) + "," + _this.yscale(1),
+                            "Z"
+                        ].join('');
+                    }
+                })
+                .style("fill", function(d){
+                    if (_this.attr.layout === "line") {
+                        return "none";
+                    } else if (_this.attr.layout === "area") {
+                        return _this.pallette(d[0].group);
+                    }
+                })
+                .style("stroke", _this.pallette(ugrps[grp]))
+                .style("stroke-width", _this.attr.size)
+                .style("opacity", _this.attr.opacity)
+                .style("visibility", function(d, i) {
+                    return _.contains(_this.attr.toggled, _this.attr.group(d[0], i)) ? 'hidden' : 'visible';
+                })
+                .on("mouseover", function(d, i) {
+                    if (_this.attr.hovercolor !== false) {
+                        _this.plotarea.selectAll('.dot.g_' + d[0].group).style("fill", _this.attr.hovercolor);
+                        _this.plotarea.selectAll('.line.g_' + d[0].group).style("stroke", _this.attr.hovercolor);
+                    } else {
+                        _this.plotarea.selectAll('.g_' + d[0].group).style("opacity", 0.25);
+                    }
+                    if (_this.attr.tooltip){
+                        _this.attr.tooltip.html(d[0].group)
+                            .style("visibility", "visible")
+                            .style("left", (d3.event.clientX + 5) + "px")
+                            .style("top", (d3.event.clientY - 20) + "px");
+                    }
+                }).on("mousemove", function(d) {
+                    if (_this.attr.tooltip) {
+                        _this.attr.tooltip
+                            .style("left", (d3.event.clientX + 5) + "px")
+                            .style("top", (d3.event.clientY - 20) + "px");
+                    }
+                }).on("mouseout", function(d, i) {
+                    if (_this.attr.hovercolor !== false) {
+                        _this.plotarea.selectAll('.dot.g_' + d[0].group).style("fill", _this.pallette(d[0].group));
+                        _this.plotarea.selectAll('.line.g_' + d[0].group).style("stroke", _this.pallette(d[0].group));
+                    } else {
+                        _this.plotarea.selectAll('.g_' + d[0].group).style("opacity", _this.attr.opacity);
+                    }
+                    if (_this.attr.tooltip) {
+                        _this.attr.tooltip.style("visibility", "hidden");
+                    }
+                }).on("click", _this.attr.groupclick);
+
+        }
+
+        // draw points (if specified)
+        if (_this.attr.points > 0) {
+
+            _this.plotarea.selectAll(".dot")
+                .remove().data(_this.data)
+                .enter().append("circle")
+                .attr("class", function(d, i){
+                    return "dot " + "g_" + d.group;
+                })
+                .attr("r", _this.attr.points)
+                .attr("cx", function(d, i) { return _this.xscale(_this.xmapper(_this.attr.x(d, i))); })
+                .attr("cy", function(d, i) { return _this.yscale(_this.yscales[_this.xord(d.x)](d.y)); })
+                .style("fill", function(d, i){ return _this.pallette(_this.attr.group(d, i)); })
+                .style("opacity", _this.attr.opacity)
+                .style("visibility", function(d, i) {
+                    return _.contains(_this.attr.toggled, _this.attr.group(d, i)) ? 'hidden' : 'visible';
+                })
+                .on("mouseover", function(d, i){
+                    if (_this.attr.hovercolor !== false) {
+                        _this.plotarea.selectAll('.dot.g_' + d.group).style("fill", _this.attr.hovercolor);
+                        _this.plotarea.selectAll('.line.g_' + d.group).style("stroke", _this.attr.hovercolor);
+                    } else {
+                        _this.plotarea.selectAll('.g_' + d.group).style("opacity", 0.25);
+                    }
+                    if (_this.attr.tooltip){
+                        _this.attr.tooltip.html(_this.attr.label(d, i))
+                            .style("visibility", "visible")
+                            .style("left", (d3.event.clientX + 5) + "px")
+                            .style("top", (d3.event.clientY - 20) + "px");
+                    }
+                }).on("mousemove", function(d){
+                    if (_this.attr.tooltip){
+                        _this.attr.tooltip
+                            .style("left", (d3.event.clientX + 5) + "px")
+                            .style("top", (d3.event.clientY - 20) + "px");
+                    }
+                }).on("mouseout", function(d, i){
+                    if (_this.attr.hovercolor !== false) {
+                        _this.plotarea.selectAll('.dot.g_' + d.group).style("fill", _this.pallette(_this.attr.group(d, i)));
+                        _this.plotarea.selectAll('.line.g_' + d.group).style("stroke", _this.pallette(_this.attr.group(d, i)));
+                    } else {
+                        _this.plotarea.selectAll('.g_' + d.group).style("opacity", _this.attr.opacity);
+                    }
+                    if (_this.attr.tooltip){
+                        _this.attr.tooltip.style("visibility", "hidden");
+                    }
+                }).on("click", _this.attr.labelclick);
+        }
 
     }
 
@@ -2238,14 +2507,14 @@ function Pie(attributes) {
                 if (_this.attr.tooltip){
                     _this.attr.tooltip.html(_this.attr.label(d.data, i))
                         .style("visibility", "visible")
-                        .style("left", (d3.event.pageX + 5) + "px")
-                        .style("top", (d3.event.pageY - 20) + "px");
+                        .style("left", (d3.event.clientX + 5) + "px")
+                        .style("top", (d3.event.clientY - 20) + "px");
                 }
             }).on("mousemove", function(d){
                 if (_this.attr.tooltip){
                     _this.attr.tooltip
-                        .style("left", (d3.event.pageX + 5) + "px")
-                        .style("top", (d3.event.pageY - 20) + "px");
+                        .style("left", (d3.event.clientX + 5) + "px")
+                        .style("top", (d3.event.clientY - 20) + "px");
                 }
             }).on("mouseout", function(d){
                 d3.select(this).style("opacity", _this.attr.opacity);
@@ -2284,26 +2553,84 @@ function Scatter(attributes) {
         xjitter: 0,
         yjitter: 0,
         size: 5,
+        line: false,
+        lineinterpolate: "linear",
+        linelayout: "line",
+        linesize: 3
     }, attributes));
     this.type = "scatter";
 
     // overwrite render method
     this.plot = function() {
 
+        // re-rendering data with jitter
+        _this.plotdata = _.map(_this.data, function(d, i) {
+            var c = extend({}, d);
+            c.x = (quorra.pseudorandom(i) - 0.5) * _this.attr.xjitter + _this.xscale(_this.xmapper(_this.attr.x(d, i)));
+            c.y = (quorra.pseudorandom(i) - 0.5) * _this.attr.yjitter + _this.yscale(_this.ymapper(_this.attr.y(d, i)));
+            return c;
+        });
+
+        // plotting line
+        if (_this.attr.line !== false) {
+            var path = d3.svg.line()
+                .x(function(d, i) { return d.x; })
+                .y(function(d, i) { return d.y; })
+                .interpolate(_this.attr.lineinterpolate);
+    
+            var ugrps = _this.pallette.domain();
+            for (var grp in ugrps) {
+                var subdat = _.filter(_this.plotdata, function(d){ return d.group == ugrps[grp]; });
+                _this.plotarea.append("path")
+                    .datum(subdat)
+                    .attr("class", function(d, i){
+                        return "line " + "g_" + d[0].group;
+                    })
+                    .attr("d", function(d){
+                        var p = path(d);
+                        if (_this.attr.linelayout === "line") {
+                            return p;
+                        } else if (_this.attr.linelayout === "area") {
+                            return [
+                                p,
+                                "L" + _this.xscale(_this.xmapper(_this.domain[_this.domain.length - 1])) + "," + _this.yscale(_this.ymapper(_this.range[0])),
+                                "L" + _this.xscale(_this.xmapper(_this.domain[0])) + "," + _this.yscale(_this.ymapper(_this.range[0])),
+                                "Z"
+                            ].join('');
+                        }
+                    })
+                    .style("fill", function(d){
+                        if (_this.attr.linelayout === "line") {
+                            return "none";
+                        } else if (_this.attr.linelayout === "area") {
+                            return _this.pallette(d[0].group);
+                        }
+                    })
+                    .style("stroke", function(d){
+                        return _this.pallette(d[0].group);
+                    })
+                    .style("stroke-width", _this.attr.linesize)
+                    .style("opacity", _this.attr.opacity)
+                    .style("visibility", function(d, i) {
+                        if (_this.attr.line === 'hover') {
+                            return 'hidden';
+                        } else if (_this.attr.line) {
+                            return _.contains(_this.attr.toggled, _this.attr.group(d[0], i)) ? 'hidden' : 'visible';
+                        }
+                    });
+            }
+        }
+
         // plotting points
         _this.plotarea.selectAll(".dot")
-            .remove().data(_this.data)
+            .remove().data(_this.plotdata)
             .enter().append("circle")
             .attr("class", function(d, i){
                 return "dot " + "g_" + d.group;
             })
             .attr("r", _this.attr.size)
-            .attr("cx", function(d, i) {
-                return (quorra.random() - 0.5) * _this.attr.xjitter + _this.xscale(_this.attr.x(d, i));
-            })
-            .attr("cy", function(d, i) {
-                return (quorra.random() - 0.5) * _this.attr.yjitter + _this.yscale(_this.attr.y(d, i));
-            })
+            .attr("cx", function(d, i) { return d.x; })
+            .attr("cy", function(d, i) { return d.y; })
             .style("fill", function(d, i) { return _this.pallette(_this.attr.group(d, i)); })
             .style("opacity", _this.attr.opacity)
             .style("visibility", function(d){
@@ -2311,20 +2638,51 @@ function Scatter(attributes) {
             })
             .attr("clip-path", "url(#clip)")
             .on("mouseover", function(d, i){
-                d3.select(this).style("opacity", 0.25);
+                if (_this.attr.line === 'hover') {
+                    _this.plotarea.selectAll('.line.g_' + d.group).style('visibility', 'visible');
+                }
+                if (_this.attr.hovercolor !== false) {
+                    _this.plotarea.selectAll('.dot.g_' + d.group).style("fill", _this.attr.hovercolor);
+                    _this.plotarea.selectAll('.line.g_' + d.group).style("stroke", _this.attr.hovercolor);
+                    if (_this.attr.slider !== null) {
+                        _this.attr.slider.__parent__.plotarea.selectAll('.dot.g_' + d.group).style("fill", _this.attr.hovercolor);
+                        _this.attr.slider.__parent__.plotarea.selectAll('.line.g_' + d.group).style("stroke", _this.attr.hovercolor);
+                    }
+                } else {
+                    d3.select(this).style("opacity", 0.25);
+                    if (_this.attr.slider !== null) {
+                        _this.attr.slider.__parent__.plotarea.selectAll('.g_' + d.group).style("opacity", 0.25);
+                    }
+                }
                 if (_this.attr.tooltip){
                     _this.attr.tooltip.html(_this.attr.label(d, i))
                         .style("visibility", "visible")
-                        .style("left", (d3.event.pageX + 5) + "px")
-                        .style("top", (d3.event.pageY - 20) + "px");
+                        .style("left", (d3.event.clientX + 5) + "px")
+                        .style("top", (d3.event.clientY - 20) + "px");
                 }
             }).on("mousemove", function(d){
                 if (_this.attr.tooltip){
                     _this.attr.tooltip
-                        .style("left", (d3.event.pageX + 5) + "px")
-                        .style("top", (d3.event.pageY - 20) + "px");
+                        .style("left", (d3.event.clientX + 5) + "px")
+                        .style("top", (d3.event.clientY - 20) + "px");
                 }
-            }).on("mouseout", function(d){
+            }).on("mouseout", function(d, i){
+                if (_this.attr.line === 'hover') {
+                    _this.plotarea.selectAll('.line.g_' + d.group).style('visibility', 'hidden');
+                }
+                if (_this.attr.hovercolor !== false) {
+                    _this.plotarea.selectAll('.dot.g_' + d.group).style("fill", _this.pallette(_this.attr.group(d, i)));
+                    _this.plotarea.selectAll('.line.g_' + d.group).style("stroke", _this.pallette(_this.attr.group(d, i)));
+                    if (_this.attr.slider !== null) {
+                        _this.attr.slider.__parent__.plotarea.selectAll('.dot.g_' + d.group).style("fill", _this.pallette(_this.attr.group(d, i)));
+                        _this.attr.slider.__parent__.plotarea.selectAll('.line.g_' + d.group).style("stroke", _this.pallette(_this.attr.group(d, i)));
+                    }
+                } else {
+                    d3.select(this).style("opacity", _this.attr.opacity);
+                    if (_this.attr.slider !== null) {
+                        _this.attr.slider.__parent__.plotarea.selectAll('.g_' + d.group).style("opacity", _this.attr.opacity);
+                    }
+                }
                 d3.select(this).style("opacity", _this.attr.opacity);
                 if (_this.attr.tooltip){
                     _this.attr.tooltip.style("visibility", "hidden");
@@ -2340,8 +2698,8 @@ function Scatter(attributes) {
                 .attr("class", function(d, i){
                     return "xtick " + "g_" + d.group;
                 })
-                .attr("x1", function(d, i) { return _this.xscale(_this.attr.x(d, i)); })
-                .attr("x2", function(d, i) { return _this.xscale(_this.attr.x(d, i)); })
+                .attr("x1", function(d, i) { return _this.xscale(_this.xmapper(_this.attr.x(d, i))); })
+                .attr("x2", function(d, i) { return _this.xscale(_this.xmapper(_this.attr.x(d, i))); })
                 .attr("y1", function(d, i) { return _this.innerheight; })
                 .attr("y2", function(d, i) { return _this.innerheight-10; })
                 .attr("stroke", function(d, i){ return _this.pallette(_this.attr.group(d, i)); })
@@ -2361,8 +2719,8 @@ function Scatter(attributes) {
                 })
                 .attr("x1", function(d, i) { return 0; })
                 .attr("x2", function(d, i) { return 10; })
-                .attr("y1", function(d, i) { return _this.yscale(_this.attr.y(d, i)); })
-                .attr("y2", function(d, i) { return _this.yscale(_this.attr.y(d, i)); })
+                .attr("y1", function(d, i) { return _this.yscale(_this.ymapper(_this.attr.y(d, i))); })
+                .attr("y2", function(d, i) { return _this.yscale(_this.ymapper(_this.attr.y(d, i))); })
                 .attr("stroke", function(d, i){ return _this.pallette(_this.attr.group(d, i)); })
                 .style("opacity", _this.attr.opacity)
                 .style("visibility", function(d, i){
