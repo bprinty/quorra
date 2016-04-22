@@ -282,9 +282,7 @@ function QuorraPlot(attributes) {
         } else if (_this.type === 'histogram') {
             _this.xaxis = _this.xaxis.ticks(_this.attr.bins);
         }
-        if (_this.attr.xformat !== "auto") {
-            _this.xaxis = _this.xaxis.tickFormat(_this.attr.xformat);
-        }
+        _this.xaxis = _this.xaxis.tickFormat(_this.attr.xformat);
         if (typeof _this.data[0].x === 'string') {
             if (typeof domain[0] == 'string') {
                 domain = _.map(domain, _this.xord);
@@ -292,7 +290,9 @@ function QuorraPlot(attributes) {
             _this.xaxis = _this.xaxis.tickValues(_.range(
                 Math.ceil(domain[0]),
                 Math.floor(domain[domain.length - 1]) + 1
-            )).tickFormat(_this.xordrev);
+            )).tickFormat(function(d){
+                return _this.attr.xformat(_this.xordrev(d));
+            });
         }
 
         // y scale formatting
@@ -320,9 +320,7 @@ function QuorraPlot(attributes) {
         if (_this.attr.yticks !== "auto") {
             _this.yaxis = _this.yaxis.ticks(_this.attr.yticks);
         }
-        if (_this.attr.yformat !== "auto") {
-            _this.yaxis = _this.yaxis.tickFormat(_this.attr.yformat);
-        }
+        _this.yaxis = _this.yaxis.tickFormat(_this.attr.yformat);
         if (typeof _this.data[0].y === 'string') {
             if (typeof range[0] == 'string') {
                 range = _.map(range, _this.yord);
@@ -330,7 +328,9 @@ function QuorraPlot(attributes) {
             _this.yaxis = _this.yaxis.tickValues(_.range(
                 Math.ceil(range[0]),
                 Math.floor(range[range.length - 1]) + 1
-            )).tickFormat(_this.yordrev);
+            )).tickFormat(function(d){
+                return _this.attr.yformat(_this.yordrev(d));
+            });
         }
 
         // configure grid (if specified)
@@ -421,10 +421,11 @@ function QuorraPlot(attributes) {
         // scaling methods
         var updatePlot = function(outer, cache) {
             var obj = outer.attr.slider.__parent__;
-            var x1 = obj.attr.annotation[0].x();
-            var x2 = x1 + obj.attr.annotation[0].width();
-            var y2 = obj.attr.annotation[0].y();
-            var y1 = y2 - obj.attr.annotation[0].height();
+            var aidx = obj.attr.annotation.length - 1;
+            var x1 = obj.attr.annotation[aidx].x();
+            var x2 = x1 + obj.attr.annotation[aidx].width();
+            var y2 = obj.attr.annotation[aidx].y();
+            var y1 = y2 - obj.attr.annotation[aidx].height();
             outer.redraw(
                 [x1, x2],
                 [y1, y2],
@@ -436,7 +437,8 @@ function QuorraPlot(attributes) {
             var obj = outer.attr.slider.__parent__;
             var xrange = outer.xscale.domain();
             var yrange = outer.yscale.domain();
-            var annot = obj.attr.annotation[0];
+            var aidx = obj.attr.annotation.length - 1;
+            var annot = obj.attr.annotation[aidx];
             var width = xrange[xrange.length - 1] - xrange[0];
             var height = yrange[yrange.length - 1] - yrange[0];
             annot.x(xrange[0]);
@@ -454,7 +456,7 @@ function QuorraPlot(attributes) {
         }
         var width = Math.abs(domain[domain.length - 1] - domain[0]);
         var height = Math.abs(range[range.length - 1] - range[0]);
-        _this.attr.slider.annotation([{
+        var annot = _this.attr.slider.annotation().concat([{
             type: 'rect',
             width: width,
             height: height,
@@ -464,6 +466,7 @@ function QuorraPlot(attributes) {
             style: {
                 opacity: 0.25
             },
+            hoveropacity: 0.20,
             events: {
                 drag: function() {
                     quorra.log('dragging slider');
@@ -476,6 +479,7 @@ function QuorraPlot(attributes) {
 
             }
         }]);
+        _this.attr.slider.annotation(annot);
 
         _this.attr.events.panold = _this.attr.events.pan
         _this.attr.events.pan = function() {
@@ -1075,6 +1079,7 @@ function QuorraPlot(attributes) {
         zoomable: false,
         annotatable: false,
         exportable: false,
+        selectable: false,
         events: {
             zoom: function() {
                 quorra.log('zoom event');
@@ -1105,8 +1110,8 @@ function QuorraPlot(attributes) {
         yticks: "auto",
         xaxis: "outside",
         yaxis: "outside",
-        xformat: "auto",
-        yformat: "auto",
+        xformat: function(d){ return d; },
+        yformat: function(d){ return d; },
         xorient: "bottom",
         yorient: "left",
         xlabel: "",
@@ -1537,7 +1542,25 @@ extend = function(stock, custom) {
     return stock;
 };
 
-function Annotation(attributes) {
+selectmerge = function(selection, entry, type) {
+    /**
+    selectmerge()
+
+    Merge selection for selectable objects based on selection type.
+    */
+    if (typeof type === 'undefined') type = true;
+
+    var sel = selection;
+    if (type == 'single') {
+        selection = [];    
+    }
+    if (_.contains(sel, entry)) {   
+        selection = _.without(selection, entry);
+    } else {
+        selection.push(entry);
+    }
+    return selection;
+};function Annotation(attributes) {
     /**
     Annotation()
 
@@ -1574,7 +1597,7 @@ function Annotation(attributes) {
                 return _.contains(_this.plot.attr.toggled, _this.plot.attr.group(_this.attr)) ? 'none' : 'visible';
             }).style('opacity', _this.attr.style.opacity)
             .on('mouseover', function() {
-                d3.select(this).style('opacity', 0.75*_this.attr.style.opacity);
+                d3.select(this).style('opacity', _this.attr.hoveropacity);
                 if (_this.attr.tooltip) {
                     _this.attr.tooltip.html(_this.attr.hovertext)
                         .style("visibility", "visible")
@@ -1597,8 +1620,10 @@ function Annotation(attributes) {
             });
         
         // enable drag behavior for annotation (if available and specified)
-        var x = _this.plot.xscale(_this.attr.x);
-        var y = _this.plot.yscale(_this.attr.y);
+        var xscale = _this.attr.xfixed ? _this.plot.xstack[0] : _this.plot.xscale;
+        var yscale = _this.attr.yfixed ? _this.plot.ystack[0] : _this.plot.yscale;
+        var x = xscale(_this.attr.x);
+        var y = yscale(_this.attr.y);
         if (_this.attr.draggable && !_this.plot.attr.zoomable) {
             var drag = d3.behavior.drag()
                 .on("dragstart", function() {
@@ -1608,8 +1633,8 @@ function Annotation(attributes) {
                 }).on("drag", function() {
                     // get mouse coordinates
                     var movement = mouse(_this.plot.attr.svg);
-                    var xoffset = Math.abs(_this.plot.xscale(_this.attr.width) - _this.plot.xscale(0));
-                    var yoffset = Math.abs(_this.plot.yscale(_this.attr.height) - _this.plot.yscale(0));
+                    var xoffset = Math.abs(xscale(_this.attr.width) - xscale(0));
+                    var yoffset = Math.abs(yscale(_this.attr.height) - yscale(0));
                     xoffset = (_this.attr.type === 'rect') ? xoffset / 2 : 0;
                     yoffset = (_this.attr.type === 'rect') ? yoffset / 2: 0;
                     var xcoord = movement.x - _this.plot.attr.margin.left - xoffset;
@@ -1621,8 +1646,8 @@ function Annotation(attributes) {
                     d3.select(this).attr('transform', 'translate(' + (xmotion - x) + ',' + (ymotion - y) + ')');
                     
                     // update annotation attributes with new data
-                    var xmap = d3.scale.linear().domain(_this.plot.xscale.range()).range(_this.plot.xscale.domain());
-                    var ymap = d3.scale.linear().domain(_this.plot.yscale.range()).range(_this.plot.yscale.domain());
+                    var xmap = d3.scale.linear().domain(xscale.range()).range(xscale.domain());
+                    var ymap = d3.scale.linear().domain(yscale.range()).range(yscale.domain());
                     _this.attr.x = xmap(xmotion);
                     _this.attr.y = ymap(ymotion);
                     d3.select(this).select('text').text(_this.attr.text);
@@ -1640,8 +1665,8 @@ function Annotation(attributes) {
                 .append('rect')
                 .attr('class', 'rect')
                 .attr('transform', 'rotate(' + _this.attr.rotate + ' ' + x + ' ' + y + ')')
-                .attr('width', Math.abs(_this.plot.xscale(_this.attr.width) - _this.plot.xscale(0)))
-                .attr('height', Math.abs(_this.plot.yscale(_this.attr.height) - _this.plot.yscale(0)))
+                .attr('width', Math.abs(xscale(_this.attr.width) - xscale(0)))
+                .attr('height', Math.abs(yscale(_this.attr.height) - yscale(0)))
                 .attr('x', x)
                 .attr('y', y);
         } else if (_this.attr.type === 'circle') {
@@ -1663,6 +1688,9 @@ function Annotation(attributes) {
                     'L' + x + ',' + (y + (d.size / 2)),
                     'Z'].join('');
                 });
+        }
+        if (_this.attr.stack === 'bottom') {
+            asel.stagedown();
         }
 
         // apply styling
@@ -1719,6 +1747,7 @@ function Annotation(attributes) {
         text: '',
         // text: function(d){ return d3.format('.2f')(d.x); },
         hovertext: '',
+        hoveropacity: 0.75,
         xfixed: false,
         yfixed: false,
         size: 15,
@@ -1734,6 +1763,7 @@ function Annotation(attributes) {
         height: 0,
         draggable: false,
         tooltip: true,
+        stack: 'top',
         events: {
             add: function() {
                 quorra.log('add event');
@@ -2084,20 +2114,33 @@ function Line(attributes) {
                         ].join('');
                     }
                 })
-                .style("fill", function(d){
+                .style("fill", function(d) {
                     if (_this.attr.layout === "line") {
                         return "none";
                     } else if (_this.attr.layout === "area") {
                         return _this.pallette(d[0].group);
                     }
                 })
-                .style("stroke", _this.pallette(ugrps[grp]))
+                .style("stroke", function(d, i) {
+                    if (_.contains(_this.attr.selected, _this.attr.group(d[0], i))) {
+                        if (_this.attr.hovercolor !== false) {
+                            return _this.attr.hovercolor;
+                        } else {
+                            return 'firebrick';
+                        }
+                    } else {
+                        return _this.pallette(_this.attr.group(d[0], i));
+                    }
+                })
                 .style("stroke-width", _this.attr.size)
                 .style("opacity", _this.attr.opacity)
                 .style("visibility", function(d, i) {
                     return _.contains(_this.attr.toggled, _this.attr.group(d[0], i)) ? 'hidden' : 'visible';
                 })
                 .on("mouseover", function(d, i) {
+                    if (_.contains(_this.attr.selected, _this.attr.group(d[0], i))) {
+                        return;
+                    }
                     if (_this.attr.hovercolor !== false) {
                         _this.plotarea.selectAll('.dot.g_' + d[0].group).style("fill", _this.attr.hovercolor);
                         _this.plotarea.selectAll('.line.g_' + d[0].group).style("stroke", _this.attr.hovercolor);
@@ -2140,7 +2183,17 @@ function Line(attributes) {
                     if (_this.attr.tooltip) {
                         _this.attr.tooltip.style("visibility", "hidden");
                     }
-                }).on("click", _this.attr.events.click);
+                }).on("click", function(d, i) {
+                    if (_this.attr.selectable !== false) {
+                        _this.attr.selected = selectmerge(_this.attr.selected, d[0].group, _this.attr.selectable);
+                        _this.redraw(_this.xscale.domain(), _this.yscale.domain(), false);
+                    }
+                    if (_this.attr.slider) {
+                        _this.attr.slider.__parent__.attr.selected = _this.attr.selected;
+                        _this.attr.slider.__parent__.redraw();
+                    }
+                    _this.attr.events.click(d, i);
+                });
         }
 
         // draw points (if specified)
@@ -2155,7 +2208,17 @@ function Line(attributes) {
                 .attr("r", _this.attr.points)
                 .attr("cx", function(d, i) { return _this.xscale(_this.xmapper(_this.attr.x(d, i))); })
                 .attr("cy", function(d, i) { return _this.yscale(_this.ymapper(_this.attr.y(d, i))); })
-                .style("fill", function(d, i){ return _this.pallette(_this.attr.group(d, i)); })
+                .style("fill", function(d, i){
+                    if (_.contains(_this.attr.selected, _this.attr.group(d, i))) {
+                        if (_this.attr.hovercolor !== false) {
+                            return _this.attr.hovercolor;
+                        } else {
+                            return 'firebrick';
+                        }
+                    } else {
+                        return _this.pallette(_this.attr.group(d, i));
+                    }
+                })
                 .style("opacity", _this.attr.opacity)
                 .style("visibility", function(d, i) {
                     return _.contains(_this.attr.toggled, _this.attr.group(d, i)) ? 'hidden' : 'visible';
@@ -2179,7 +2242,17 @@ function Line(attributes) {
                     if (_this.attr.tooltip){
                         _this.attr.tooltip.style("visibility", "hidden");
                     }
-                }).on("click", _this.attr.events.click);
+                }).on("click", function(d, i){
+                    if (_this.attr.selectable !== false) {
+                        _this.attr.selected = selectmerge(_this.attr.selected, d.group, _this.attr.selectable);
+                        _this.redraw(_this.xscale.domain(), _this.yscale.domain(), false);
+                    }
+                    if (_this.attr.slider) {
+                        _this.attr.slider.__parent__.attr.selected = _this.attr.selected;
+                        _this.attr.slider.__parent__.redraw();
+                    }
+                    _this.attr.events.click(d, i);
+                });
         }
     }
 
@@ -2244,16 +2317,16 @@ function Multiline(attributes) {
         if (_this.attr.xticks !== "auto") {
             _this.xaxis = _this.xaxis.ticks(_this.attr.xticks);
         }
-        if (_this.attr.xformat !== "auto") {
-            _this.xaxis = _this.xaxis.tickFormat(_this.attr.xformat);
-        }
+        _this.xaxis = _this.xaxis.tickFormat(_this.attr.xformat);
         if (typeof domain[0] == 'string') {
             domain = _.map(domain, _this.xord);
         }
         _this.xaxis = _this.xaxis.tickValues(_.range(
             Math.ceil(domain[0]),
             Math.floor(domain[domain.length - 1]) + 1
-        )).tickFormat(_this.xordrev).tickSize(0).tickPadding(15);
+        )).tickFormat(function(d){
+            return _this.attr.xformat(_this.xordrev(d));
+        }).tickSize(0).tickPadding(15);
 
         // x axis
         _this.plotregion
@@ -2293,9 +2366,7 @@ function Multiline(attributes) {
             if (_this.attr.yticks !== "auto") {
                 axis = axis.ticks(_this.attr.yticks);
             }
-            if (_this.attr.yformat !== "auto") {
-                axis = axis.tickFormat(_this.attr.yformat);
-            }
+            axis = axis.tickFormat(_this.attr.yformat);
             _this.yaxes.push(axis);
 
             _this.plotregion
@@ -2352,13 +2423,26 @@ function Multiline(attributes) {
                         return _this.pallette(d[0].group);
                     }
                 })
-                .style("stroke", _this.pallette(ugrps[grp]))
+                .style("stroke", function(d, i){
+                    if (_.contains(_this.attr.selected, _this.attr.group(d[0], i))) {
+                        if (_this.attr.hovercolor !== false) {
+                            return _this.attr.hovercolor;
+                        } else {
+                            return 'firebrick';
+                        }
+                    } else {
+                        return _this.pallette(_this.attr.group(d[0], i));
+                    }
+                })
                 .style("stroke-width", _this.attr.size)
                 .style("opacity", _this.attr.opacity)
                 .style("visibility", function(d, i) {
                     return _.contains(_this.attr.toggled, _this.attr.group(d[0], i)) ? 'hidden' : 'visible';
                 })
                 .on("mouseover", function(d, i) {
+                    if (_.contains(_this.attr.selected, _this.attr.group(d[0], i))) {
+                        return;
+                    }
                     if (_this.attr.hovercolor !== false) {
                         _this.plotarea.selectAll('.dot.g_' + d[0].group).style("fill", _this.attr.hovercolor);
                         _this.plotarea.selectAll('.line.g_' + d[0].group).style("stroke", _this.attr.hovercolor);
@@ -2378,6 +2462,9 @@ function Multiline(attributes) {
                             .style("top", (d3.event.clientY - 20) + "px");
                     }
                 }).on("mouseout", function(d, i) {
+                    if (_.contains(_this.attr.selected, _this.attr.group(d[0], i))) {
+                        return;
+                    }
                     if (_this.attr.hovercolor !== false) {
                         _this.plotarea.selectAll('.dot.g_' + d[0].group).style("fill", _this.pallette(d[0].group));
                         _this.plotarea.selectAll('.line.g_' + d[0].group).style("stroke", _this.pallette(d[0].group));
@@ -2387,7 +2474,17 @@ function Multiline(attributes) {
                     if (_this.attr.tooltip) {
                         _this.attr.tooltip.style("visibility", "hidden");
                     }
-                }).on("click", _this.attr.events.click);
+                }).on("click", function(d, i){
+                    if (_this.attr.selectable !== false) {
+                        _this.attr.selected = selectmerge(_this.attr.selected, d[0].group, _this.attr.selectable);
+                        _this.redraw(_this.xscale.domain(), _this.yscale.domain(), false);
+                    }
+                    if (_this.attr.slider) {
+                        _this.attr.slider.__parent__.attr.selected = _this.attr.selected;
+                        _this.attr.slider.__parent__.redraw();
+                    }
+                    _this.attr.events.click(d, i);
+                });
 
         }
 
@@ -2403,12 +2500,25 @@ function Multiline(attributes) {
                 .attr("r", _this.attr.points)
                 .attr("cx", function(d, i) { return _this.xscale(_this.xmapper(_this.attr.x(d, i))); })
                 .attr("cy", function(d, i) { return _this.yscale(_this.yscales[_this.xord(d.x)](d.y)); })
-                .style("fill", function(d, i){ return _this.pallette(_this.attr.group(d, i)); })
+                .style("fill", function(d, i){
+                    if (_.contains(_this.attr.selected, _this.attr.group(d, i))) {
+                        if (_this.attr.hovercolor !== false) {
+                            return _this.attr.hovercolor;
+                        } else {
+                            return 'firebrick';
+                        }
+                    } else {
+                        return _this.pallette(_this.attr.group(d, i));
+                    }
+                })
                 .style("opacity", _this.attr.opacity)
                 .style("visibility", function(d, i) {
                     return _.contains(_this.attr.toggled, _this.attr.group(d, i)) ? 'hidden' : 'visible';
                 })
                 .on("mouseover", function(d, i){
+                    if (_.contains(_this.attr.selected, _this.attr.group(d, i))) {
+                        return;
+                    }
                     if (_this.attr.hovercolor !== false) {
                         _this.plotarea.selectAll('.dot.g_' + d.group).style("fill", _this.attr.hovercolor);
                         _this.plotarea.selectAll('.line.g_' + d.group).style("stroke", _this.attr.hovercolor);
@@ -2428,6 +2538,9 @@ function Multiline(attributes) {
                             .style("top", (d3.event.clientY - 20) + "px");
                     }
                 }).on("mouseout", function(d, i){
+                    if (_.contains(_this.attr.selected, _this.attr.group(d, i))) {
+                        return;
+                    }
                     if (_this.attr.hovercolor !== false) {
                         _this.plotarea.selectAll('.dot.g_' + d.group).style("fill", _this.pallette(_this.attr.group(d, i)));
                         _this.plotarea.selectAll('.line.g_' + d.group).style("stroke", _this.pallette(_this.attr.group(d, i)));
@@ -2437,7 +2550,17 @@ function Multiline(attributes) {
                     if (_this.attr.tooltip){
                         _this.attr.tooltip.style("visibility", "hidden");
                     }
-                }).on("click", _this.attr.events.click);
+                }).on("click", function(d, i){
+                    if (_this.attr.selectable !== false) {
+                        _this.attr.selected = selectmerge(_this.attr.selected, d.group, _this.attr.selectable);
+                        _this.redraw(_this.xscale.domain(), _this.yscale.domain(), false);
+                    }
+                    if (_this.attr.slider) {
+                        _this.attr.slider.__parent__.attr.selected = _this.attr.selected;
+                        _this.attr.slider.__parent__.redraw();
+                    }
+                    _this.attr.events.click(d, i);
+                });
         }
 
     }
@@ -2628,18 +2751,39 @@ function Scatter(attributes) {
                             return _this.pallette(d[0].group);
                         }
                     })
-                    .style("stroke", function(d){
-                        return _this.pallette(d[0].group);
+                    .style("stroke", function(d, i) {
+                        if (_.contains(_this.attr.selected, _this.attr.group(d[0], i))) {
+                            if (_this.attr.hovercolor !== false) {
+                                return _this.attr.hovercolor;
+                            } else {
+                                return 'firebrick';
+                            }
+                        } else {
+                            return _this.pallette(_this.attr.group(d[0], i));
+                        }
                     })
                     .style("stroke-width", _this.attr.linesize)
                     .style("opacity", _this.attr.opacity)
                     .style("visibility", function(d, i) {
+                        if (_.contains(_this.attr.selected, _this.attr.group(d[0], i))) {
+                            return 'visible';
+                        }
                         if (_this.attr.line === 'hover') {
                             return 'hidden';
                         } else if (_this.attr.line) {
                             return _.contains(_this.attr.toggled, _this.attr.group(d[0], i)) ? 'hidden' : 'visible';
                         }
-                    }).on("click", _this.attr.events.click);
+                    }).on("click", function(d, i){
+                        if (_this.attr.selectable !== false) {
+                            _this.attr.selected = selectmerge(_this.attr.selected, d[0].group, _this.attr.selectable);
+                            _this.redraw(_this.xscale.domain(), _this.yscale.domain(), false);
+                        }
+                        if (_this.attr.slider) {
+                            _this.attr.slider.__parent__.attr.selected = _this.attr.selected;
+                            _this.attr.slider.__parent__.redraw();
+                        }
+                        _this.attr.events.click(d, i);
+                    });
             }
         }
 
@@ -2653,13 +2797,26 @@ function Scatter(attributes) {
             .attr("r", _this.attr.size)
             .attr("cx", function(d, i) { return d.x; })
             .attr("cy", function(d, i) { return d.y; })
-            .style("fill", function(d, i) { return _this.pallette(_this.attr.group(d, i)); })
+            .style("fill", function(d, i){
+                if (_.contains(_this.attr.selected, _this.attr.group(d, i))) {
+                    if (_this.attr.hovercolor !== false) {
+                        return _this.attr.hovercolor;
+                    } else {
+                        return 'firebrick';
+                    }
+                } else {
+                    return _this.pallette(_this.attr.group(d, i));
+                }
+            })
             .style("opacity", _this.attr.opacity)
             .style("visibility", function(d){
                 return _.contains(_this.attr.toggled, _this.attr.group(d)) ? 'hidden' : 'visible';
             })
             .attr("clip-path", "url(#clip)")
             .on("mouseover", function(d, i){
+                if (_.contains(_this.attr.selected, _this.attr.group(d, i))) {
+                    return;
+                }
                 if (_this.attr.line === 'hover') {
                     _this.plotarea.selectAll('.line.g_' + d.group).style('visibility', 'visible');
                 }
@@ -2689,6 +2846,9 @@ function Scatter(attributes) {
                         .style("top", (d3.event.clientY - 20) + "px");
                 }
             }).on("mouseout", function(d, i){
+                if (_.contains(_this.attr.selected, _this.attr.group(d, i))) {
+                    return;
+                }
                 if (_this.attr.line === 'hover') {
                     _this.plotarea.selectAll('.line.g_' + d.group).style('visibility', 'hidden');
                 }
@@ -2709,7 +2869,17 @@ function Scatter(attributes) {
                 if (_this.attr.tooltip){
                     _this.attr.tooltip.style("visibility", "hidden");
                 }
-            }).on("click", _this.attr.events.click);
+            }).on("click", function(d, i){
+                if (_this.attr.selectable !== false) {
+                    _this.attr.selected = selectmerge(_this.attr.selected, d.group, _this.attr.selectable);
+                    _this.redraw(_this.xscale.domain(), _this.yscale.domain(), false);
+                }
+                if (_this.attr.slider) {
+                    _this.attr.slider.__parent__.attr.selected = _this.attr.selected;
+                    _this.attr.slider.__parent__.redraw();
+                }
+                _this.attr.events.click(d, i);
+            });
 
         // generating density ticks (if specified)
         if (_this.attr.xdensity){

@@ -54,20 +54,33 @@ function Line(attributes) {
                         ].join('');
                     }
                 })
-                .style("fill", function(d){
+                .style("fill", function(d) {
                     if (_this.attr.layout === "line") {
                         return "none";
                     } else if (_this.attr.layout === "area") {
                         return _this.pallette(d[0].group);
                     }
                 })
-                .style("stroke", _this.pallette(ugrps[grp]))
+                .style("stroke", function(d, i) {
+                    if (_.contains(_this.attr.selected, _this.attr.group(d[0], i))) {
+                        if (_this.attr.hovercolor !== false) {
+                            return _this.attr.hovercolor;
+                        } else {
+                            return 'firebrick';
+                        }
+                    } else {
+                        return _this.pallette(_this.attr.group(d[0], i));
+                    }
+                })
                 .style("stroke-width", _this.attr.size)
                 .style("opacity", _this.attr.opacity)
                 .style("visibility", function(d, i) {
                     return _.contains(_this.attr.toggled, _this.attr.group(d[0], i)) ? 'hidden' : 'visible';
                 })
                 .on("mouseover", function(d, i) {
+                    if (_.contains(_this.attr.selected, _this.attr.group(d[0], i))) {
+                        return;
+                    }
                     if (_this.attr.hovercolor !== false) {
                         _this.plotarea.selectAll('.dot.g_' + d[0].group).style("fill", _this.attr.hovercolor);
                         _this.plotarea.selectAll('.line.g_' + d[0].group).style("stroke", _this.attr.hovercolor);
@@ -110,7 +123,17 @@ function Line(attributes) {
                     if (_this.attr.tooltip) {
                         _this.attr.tooltip.style("visibility", "hidden");
                     }
-                }).on("click", _this.attr.events.click);
+                }).on("click", function(d, i) {
+                    if (_this.attr.selectable !== false) {
+                        _this.attr.selected = selectmerge(_this.attr.selected, d[0].group, _this.attr.selectable);
+                        _this.redraw(_this.xscale.domain(), _this.yscale.domain(), false);
+                    }
+                    if (_this.attr.slider) {
+                        _this.attr.slider.__parent__.attr.selected = _this.attr.selected;
+                        _this.attr.slider.__parent__.redraw();
+                    }
+                    _this.attr.events.click(d, i);
+                });
         }
 
         // draw points (if specified)
@@ -125,7 +148,17 @@ function Line(attributes) {
                 .attr("r", _this.attr.points)
                 .attr("cx", function(d, i) { return _this.xscale(_this.xmapper(_this.attr.x(d, i))); })
                 .attr("cy", function(d, i) { return _this.yscale(_this.ymapper(_this.attr.y(d, i))); })
-                .style("fill", function(d, i){ return _this.pallette(_this.attr.group(d, i)); })
+                .style("fill", function(d, i){
+                    if (_.contains(_this.attr.selected, _this.attr.group(d, i))) {
+                        if (_this.attr.hovercolor !== false) {
+                            return _this.attr.hovercolor;
+                        } else {
+                            return 'firebrick';
+                        }
+                    } else {
+                        return _this.pallette(_this.attr.group(d, i));
+                    }
+                })
                 .style("opacity", _this.attr.opacity)
                 .style("visibility", function(d, i) {
                     return _.contains(_this.attr.toggled, _this.attr.group(d, i)) ? 'hidden' : 'visible';
@@ -149,7 +182,17 @@ function Line(attributes) {
                     if (_this.attr.tooltip){
                         _this.attr.tooltip.style("visibility", "hidden");
                     }
-                }).on("click", _this.attr.events.click);
+                }).on("click", function(d, i){
+                    if (_this.attr.selectable !== false) {
+                        _this.attr.selected = selectmerge(_this.attr.selected, d.group, _this.attr.selectable);
+                        _this.redraw(_this.xscale.domain(), _this.yscale.domain(), false);
+                    }
+                    if (_this.attr.slider) {
+                        _this.attr.slider.__parent__.attr.selected = _this.attr.selected;
+                        _this.attr.slider.__parent__.redraw();
+                    }
+                    _this.attr.events.click(d, i);
+                });
         }
     }
 

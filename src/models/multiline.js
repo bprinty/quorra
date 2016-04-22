@@ -51,16 +51,16 @@ function Multiline(attributes) {
         if (_this.attr.xticks !== "auto") {
             _this.xaxis = _this.xaxis.ticks(_this.attr.xticks);
         }
-        if (_this.attr.xformat !== "auto") {
-            _this.xaxis = _this.xaxis.tickFormat(_this.attr.xformat);
-        }
+        _this.xaxis = _this.xaxis.tickFormat(_this.attr.xformat);
         if (typeof domain[0] == 'string') {
             domain = _.map(domain, _this.xord);
         }
         _this.xaxis = _this.xaxis.tickValues(_.range(
             Math.ceil(domain[0]),
             Math.floor(domain[domain.length - 1]) + 1
-        )).tickFormat(_this.xordrev).tickSize(0).tickPadding(15);
+        )).tickFormat(function(d){
+            return _this.attr.xformat(_this.xordrev(d));
+        }).tickSize(0).tickPadding(15);
 
         // x axis
         _this.plotregion
@@ -100,9 +100,7 @@ function Multiline(attributes) {
             if (_this.attr.yticks !== "auto") {
                 axis = axis.ticks(_this.attr.yticks);
             }
-            if (_this.attr.yformat !== "auto") {
-                axis = axis.tickFormat(_this.attr.yformat);
-            }
+            axis = axis.tickFormat(_this.attr.yformat);
             _this.yaxes.push(axis);
 
             _this.plotregion
@@ -159,13 +157,26 @@ function Multiline(attributes) {
                         return _this.pallette(d[0].group);
                     }
                 })
-                .style("stroke", _this.pallette(ugrps[grp]))
+                .style("stroke", function(d, i){
+                    if (_.contains(_this.attr.selected, _this.attr.group(d[0], i))) {
+                        if (_this.attr.hovercolor !== false) {
+                            return _this.attr.hovercolor;
+                        } else {
+                            return 'firebrick';
+                        }
+                    } else {
+                        return _this.pallette(_this.attr.group(d[0], i));
+                    }
+                })
                 .style("stroke-width", _this.attr.size)
                 .style("opacity", _this.attr.opacity)
                 .style("visibility", function(d, i) {
                     return _.contains(_this.attr.toggled, _this.attr.group(d[0], i)) ? 'hidden' : 'visible';
                 })
                 .on("mouseover", function(d, i) {
+                    if (_.contains(_this.attr.selected, _this.attr.group(d[0], i))) {
+                        return;
+                    }
                     if (_this.attr.hovercolor !== false) {
                         _this.plotarea.selectAll('.dot.g_' + d[0].group).style("fill", _this.attr.hovercolor);
                         _this.plotarea.selectAll('.line.g_' + d[0].group).style("stroke", _this.attr.hovercolor);
@@ -185,6 +196,9 @@ function Multiline(attributes) {
                             .style("top", (d3.event.clientY - 20) + "px");
                     }
                 }).on("mouseout", function(d, i) {
+                    if (_.contains(_this.attr.selected, _this.attr.group(d[0], i))) {
+                        return;
+                    }
                     if (_this.attr.hovercolor !== false) {
                         _this.plotarea.selectAll('.dot.g_' + d[0].group).style("fill", _this.pallette(d[0].group));
                         _this.plotarea.selectAll('.line.g_' + d[0].group).style("stroke", _this.pallette(d[0].group));
@@ -194,7 +208,17 @@ function Multiline(attributes) {
                     if (_this.attr.tooltip) {
                         _this.attr.tooltip.style("visibility", "hidden");
                     }
-                }).on("click", _this.attr.events.click);
+                }).on("click", function(d, i){
+                    if (_this.attr.selectable !== false) {
+                        _this.attr.selected = selectmerge(_this.attr.selected, d[0].group, _this.attr.selectable);
+                        _this.redraw(_this.xscale.domain(), _this.yscale.domain(), false);
+                    }
+                    if (_this.attr.slider) {
+                        _this.attr.slider.__parent__.attr.selected = _this.attr.selected;
+                        _this.attr.slider.__parent__.redraw();
+                    }
+                    _this.attr.events.click(d, i);
+                });
 
         }
 
@@ -210,12 +234,25 @@ function Multiline(attributes) {
                 .attr("r", _this.attr.points)
                 .attr("cx", function(d, i) { return _this.xscale(_this.xmapper(_this.attr.x(d, i))); })
                 .attr("cy", function(d, i) { return _this.yscale(_this.yscales[_this.xord(d.x)](d.y)); })
-                .style("fill", function(d, i){ return _this.pallette(_this.attr.group(d, i)); })
+                .style("fill", function(d, i){
+                    if (_.contains(_this.attr.selected, _this.attr.group(d, i))) {
+                        if (_this.attr.hovercolor !== false) {
+                            return _this.attr.hovercolor;
+                        } else {
+                            return 'firebrick';
+                        }
+                    } else {
+                        return _this.pallette(_this.attr.group(d, i));
+                    }
+                })
                 .style("opacity", _this.attr.opacity)
                 .style("visibility", function(d, i) {
                     return _.contains(_this.attr.toggled, _this.attr.group(d, i)) ? 'hidden' : 'visible';
                 })
                 .on("mouseover", function(d, i){
+                    if (_.contains(_this.attr.selected, _this.attr.group(d, i))) {
+                        return;
+                    }
                     if (_this.attr.hovercolor !== false) {
                         _this.plotarea.selectAll('.dot.g_' + d.group).style("fill", _this.attr.hovercolor);
                         _this.plotarea.selectAll('.line.g_' + d.group).style("stroke", _this.attr.hovercolor);
@@ -235,6 +272,9 @@ function Multiline(attributes) {
                             .style("top", (d3.event.clientY - 20) + "px");
                     }
                 }).on("mouseout", function(d, i){
+                    if (_.contains(_this.attr.selected, _this.attr.group(d, i))) {
+                        return;
+                    }
                     if (_this.attr.hovercolor !== false) {
                         _this.plotarea.selectAll('.dot.g_' + d.group).style("fill", _this.pallette(_this.attr.group(d, i)));
                         _this.plotarea.selectAll('.line.g_' + d.group).style("stroke", _this.pallette(_this.attr.group(d, i)));
@@ -244,7 +284,17 @@ function Multiline(attributes) {
                     if (_this.attr.tooltip){
                         _this.attr.tooltip.style("visibility", "hidden");
                     }
-                }).on("click", _this.attr.events.click);
+                }).on("click", function(d, i){
+                    if (_this.attr.selectable !== false) {
+                        _this.attr.selected = selectmerge(_this.attr.selected, d.group, _this.attr.selectable);
+                        _this.redraw(_this.xscale.domain(), _this.yscale.domain(), false);
+                    }
+                    if (_this.attr.slider) {
+                        _this.attr.slider.__parent__.attr.selected = _this.attr.selected;
+                        _this.attr.slider.__parent__.redraw();
+                    }
+                    _this.attr.events.click(d, i);
+                });
         }
 
     }

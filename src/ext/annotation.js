@@ -35,7 +35,7 @@ function Annotation(attributes) {
                 return _.contains(_this.plot.attr.toggled, _this.plot.attr.group(_this.attr)) ? 'none' : 'visible';
             }).style('opacity', _this.attr.style.opacity)
             .on('mouseover', function() {
-                d3.select(this).style('opacity', 0.75*_this.attr.style.opacity);
+                d3.select(this).style('opacity', _this.attr.hoveropacity);
                 if (_this.attr.tooltip) {
                     _this.attr.tooltip.html(_this.attr.hovertext)
                         .style("visibility", "visible")
@@ -58,8 +58,10 @@ function Annotation(attributes) {
             });
         
         // enable drag behavior for annotation (if available and specified)
-        var x = _this.plot.xscale(_this.attr.x);
-        var y = _this.plot.yscale(_this.attr.y);
+        var xscale = _this.attr.xfixed ? _this.plot.xstack[0] : _this.plot.xscale;
+        var yscale = _this.attr.yfixed ? _this.plot.ystack[0] : _this.plot.yscale;
+        var x = xscale(_this.attr.x);
+        var y = yscale(_this.attr.y);
         if (_this.attr.draggable && !_this.plot.attr.zoomable) {
             var drag = d3.behavior.drag()
                 .on("dragstart", function() {
@@ -69,8 +71,8 @@ function Annotation(attributes) {
                 }).on("drag", function() {
                     // get mouse coordinates
                     var movement = mouse(_this.plot.attr.svg);
-                    var xoffset = Math.abs(_this.plot.xscale(_this.attr.width) - _this.plot.xscale(0));
-                    var yoffset = Math.abs(_this.plot.yscale(_this.attr.height) - _this.plot.yscale(0));
+                    var xoffset = Math.abs(xscale(_this.attr.width) - xscale(0));
+                    var yoffset = Math.abs(yscale(_this.attr.height) - yscale(0));
                     xoffset = (_this.attr.type === 'rect') ? xoffset / 2 : 0;
                     yoffset = (_this.attr.type === 'rect') ? yoffset / 2: 0;
                     var xcoord = movement.x - _this.plot.attr.margin.left - xoffset;
@@ -82,8 +84,8 @@ function Annotation(attributes) {
                     d3.select(this).attr('transform', 'translate(' + (xmotion - x) + ',' + (ymotion - y) + ')');
                     
                     // update annotation attributes with new data
-                    var xmap = d3.scale.linear().domain(_this.plot.xscale.range()).range(_this.plot.xscale.domain());
-                    var ymap = d3.scale.linear().domain(_this.plot.yscale.range()).range(_this.plot.yscale.domain());
+                    var xmap = d3.scale.linear().domain(xscale.range()).range(xscale.domain());
+                    var ymap = d3.scale.linear().domain(yscale.range()).range(yscale.domain());
                     _this.attr.x = xmap(xmotion);
                     _this.attr.y = ymap(ymotion);
                     d3.select(this).select('text').text(_this.attr.text);
@@ -101,8 +103,8 @@ function Annotation(attributes) {
                 .append('rect')
                 .attr('class', 'rect')
                 .attr('transform', 'rotate(' + _this.attr.rotate + ' ' + x + ' ' + y + ')')
-                .attr('width', Math.abs(_this.plot.xscale(_this.attr.width) - _this.plot.xscale(0)))
-                .attr('height', Math.abs(_this.plot.yscale(_this.attr.height) - _this.plot.yscale(0)))
+                .attr('width', Math.abs(xscale(_this.attr.width) - xscale(0)))
+                .attr('height', Math.abs(yscale(_this.attr.height) - yscale(0)))
                 .attr('x', x)
                 .attr('y', y);
         } else if (_this.attr.type === 'circle') {
@@ -124,6 +126,9 @@ function Annotation(attributes) {
                     'L' + x + ',' + (y + (d.size / 2)),
                     'Z'].join('');
                 });
+        }
+        if (_this.attr.stack === 'bottom') {
+            asel.stagedown();
         }
 
         // apply styling
@@ -180,6 +185,7 @@ function Annotation(attributes) {
         text: '',
         // text: function(d){ return d3.format('.2f')(d.x); },
         hovertext: '',
+        hoveropacity: 0.75,
         xfixed: false,
         yfixed: false,
         size: 15,
@@ -195,6 +201,7 @@ function Annotation(attributes) {
         height: 0,
         draggable: false,
         tooltip: true,
+        stack: 'top',
         events: {
             add: function() {
                 quorra.log('add event');

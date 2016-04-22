@@ -280,9 +280,7 @@ function QuorraPlot(attributes) {
         } else if (_this.type === 'histogram') {
             _this.xaxis = _this.xaxis.ticks(_this.attr.bins);
         }
-        if (_this.attr.xformat !== "auto") {
-            _this.xaxis = _this.xaxis.tickFormat(_this.attr.xformat);
-        }
+        _this.xaxis = _this.xaxis.tickFormat(_this.attr.xformat);
         if (typeof _this.data[0].x === 'string') {
             if (typeof domain[0] == 'string') {
                 domain = _.map(domain, _this.xord);
@@ -290,7 +288,9 @@ function QuorraPlot(attributes) {
             _this.xaxis = _this.xaxis.tickValues(_.range(
                 Math.ceil(domain[0]),
                 Math.floor(domain[domain.length - 1]) + 1
-            )).tickFormat(_this.xordrev);
+            )).tickFormat(function(d){
+                return _this.attr.xformat(_this.xordrev(d));
+            });
         }
 
         // y scale formatting
@@ -318,9 +318,7 @@ function QuorraPlot(attributes) {
         if (_this.attr.yticks !== "auto") {
             _this.yaxis = _this.yaxis.ticks(_this.attr.yticks);
         }
-        if (_this.attr.yformat !== "auto") {
-            _this.yaxis = _this.yaxis.tickFormat(_this.attr.yformat);
-        }
+        _this.yaxis = _this.yaxis.tickFormat(_this.attr.yformat);
         if (typeof _this.data[0].y === 'string') {
             if (typeof range[0] == 'string') {
                 range = _.map(range, _this.yord);
@@ -328,7 +326,9 @@ function QuorraPlot(attributes) {
             _this.yaxis = _this.yaxis.tickValues(_.range(
                 Math.ceil(range[0]),
                 Math.floor(range[range.length - 1]) + 1
-            )).tickFormat(_this.yordrev);
+            )).tickFormat(function(d){
+                return _this.attr.yformat(_this.yordrev(d));
+            });
         }
 
         // configure grid (if specified)
@@ -419,10 +419,11 @@ function QuorraPlot(attributes) {
         // scaling methods
         var updatePlot = function(outer, cache) {
             var obj = outer.attr.slider.__parent__;
-            var x1 = obj.attr.annotation[0].x();
-            var x2 = x1 + obj.attr.annotation[0].width();
-            var y2 = obj.attr.annotation[0].y();
-            var y1 = y2 - obj.attr.annotation[0].height();
+            var aidx = obj.attr.annotation.length - 1;
+            var x1 = obj.attr.annotation[aidx].x();
+            var x2 = x1 + obj.attr.annotation[aidx].width();
+            var y2 = obj.attr.annotation[aidx].y();
+            var y1 = y2 - obj.attr.annotation[aidx].height();
             outer.redraw(
                 [x1, x2],
                 [y1, y2],
@@ -434,7 +435,8 @@ function QuorraPlot(attributes) {
             var obj = outer.attr.slider.__parent__;
             var xrange = outer.xscale.domain();
             var yrange = outer.yscale.domain();
-            var annot = obj.attr.annotation[0];
+            var aidx = obj.attr.annotation.length - 1;
+            var annot = obj.attr.annotation[aidx];
             var width = xrange[xrange.length - 1] - xrange[0];
             var height = yrange[yrange.length - 1] - yrange[0];
             annot.x(xrange[0]);
@@ -452,7 +454,7 @@ function QuorraPlot(attributes) {
         }
         var width = Math.abs(domain[domain.length - 1] - domain[0]);
         var height = Math.abs(range[range.length - 1] - range[0]);
-        _this.attr.slider.annotation([{
+        var annot = _this.attr.slider.annotation().concat([{
             type: 'rect',
             width: width,
             height: height,
@@ -462,6 +464,7 @@ function QuorraPlot(attributes) {
             style: {
                 opacity: 0.25
             },
+            hoveropacity: 0.20,
             events: {
                 drag: function() {
                     quorra.log('dragging slider');
@@ -474,6 +477,7 @@ function QuorraPlot(attributes) {
 
             }
         }]);
+        _this.attr.slider.annotation(annot);
 
         _this.attr.events.panold = _this.attr.events.pan
         _this.attr.events.pan = function() {
@@ -1073,6 +1077,7 @@ function QuorraPlot(attributes) {
         zoomable: false,
         annotatable: false,
         exportable: false,
+        selectable: false,
         events: {
             zoom: function() {
                 quorra.log('zoom event');
@@ -1103,8 +1108,8 @@ function QuorraPlot(attributes) {
         yticks: "auto",
         xaxis: "outside",
         yaxis: "outside",
-        xformat: "auto",
-        yformat: "auto",
+        xformat: function(d){ return d; },
+        yformat: function(d){ return d; },
         xorient: "bottom",
         yorient: "left",
         xlabel: "",

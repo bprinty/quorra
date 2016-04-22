@@ -208,3 +208,22 @@ extend = function(stock, custom) {
     return stock;
 };
 
+selectmerge = function(selection, entry, type) {
+    /**
+    selectmerge()
+
+    Merge selection for selectable objects based on selection type.
+    */
+    if (typeof type === 'undefined') type = true;
+
+    var sel = selection;
+    if (type == 'single') {
+        selection = [];    
+    }
+    if (_.contains(sel, entry)) {   
+        selection = _.without(selection, entry);
+    } else {
+        selection.push(entry);
+    }
+    return selection;
+};

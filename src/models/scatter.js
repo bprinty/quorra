@@ -72,18 +72,39 @@ function Scatter(attributes) {
                             return _this.pallette(d[0].group);
                         }
                     })
-                    .style("stroke", function(d){
-                        return _this.pallette(d[0].group);
+                    .style("stroke", function(d, i) {
+                        if (_.contains(_this.attr.selected, _this.attr.group(d[0], i))) {
+                            if (_this.attr.hovercolor !== false) {
+                                return _this.attr.hovercolor;
+                            } else {
+                                return 'firebrick';
+                            }
+                        } else {
+                            return _this.pallette(_this.attr.group(d[0], i));
+                        }
                     })
                     .style("stroke-width", _this.attr.linesize)
                     .style("opacity", _this.attr.opacity)
                     .style("visibility", function(d, i) {
+                        if (_.contains(_this.attr.selected, _this.attr.group(d[0], i))) {
+                            return 'visible';
+                        }
                         if (_this.attr.line === 'hover') {
                             return 'hidden';
                         } else if (_this.attr.line) {
                             return _.contains(_this.attr.toggled, _this.attr.group(d[0], i)) ? 'hidden' : 'visible';
                         }
-                    }).on("click", _this.attr.events.click);
+                    }).on("click", function(d, i){
+                        if (_this.attr.selectable !== false) {
+                            _this.attr.selected = selectmerge(_this.attr.selected, d[0].group, _this.attr.selectable);
+                            _this.redraw(_this.xscale.domain(), _this.yscale.domain(), false);
+                        }
+                        if (_this.attr.slider) {
+                            _this.attr.slider.__parent__.attr.selected = _this.attr.selected;
+                            _this.attr.slider.__parent__.redraw();
+                        }
+                        _this.attr.events.click(d, i);
+                    });
             }
         }
 
@@ -97,13 +118,26 @@ function Scatter(attributes) {
             .attr("r", _this.attr.size)
             .attr("cx", function(d, i) { return d.x; })
             .attr("cy", function(d, i) { return d.y; })
-            .style("fill", function(d, i) { return _this.pallette(_this.attr.group(d, i)); })
+            .style("fill", function(d, i){
+                if (_.contains(_this.attr.selected, _this.attr.group(d, i))) {
+                    if (_this.attr.hovercolor !== false) {
+                        return _this.attr.hovercolor;
+                    } else {
+                        return 'firebrick';
+                    }
+                } else {
+                    return _this.pallette(_this.attr.group(d, i));
+                }
+            })
             .style("opacity", _this.attr.opacity)
             .style("visibility", function(d){
                 return _.contains(_this.attr.toggled, _this.attr.group(d)) ? 'hidden' : 'visible';
             })
             .attr("clip-path", "url(#clip)")
             .on("mouseover", function(d, i){
+                if (_.contains(_this.attr.selected, _this.attr.group(d, i))) {
+                    return;
+                }
                 if (_this.attr.line === 'hover') {
                     _this.plotarea.selectAll('.line.g_' + d.group).style('visibility', 'visible');
                 }
@@ -133,6 +167,9 @@ function Scatter(attributes) {
                         .style("top", (d3.event.clientY - 20) + "px");
                 }
             }).on("mouseout", function(d, i){
+                if (_.contains(_this.attr.selected, _this.attr.group(d, i))) {
+                    return;
+                }
                 if (_this.attr.line === 'hover') {
                     _this.plotarea.selectAll('.line.g_' + d.group).style('visibility', 'hidden');
                 }
@@ -153,7 +190,17 @@ function Scatter(attributes) {
                 if (_this.attr.tooltip){
                     _this.attr.tooltip.style("visibility", "hidden");
                 }
-            }).on("click", _this.attr.events.click);
+            }).on("click", function(d, i){
+                if (_this.attr.selectable !== false) {
+                    _this.attr.selected = selectmerge(_this.attr.selected, d.group, _this.attr.selectable);
+                    _this.redraw(_this.xscale.domain(), _this.yscale.domain(), false);
+                }
+                if (_this.attr.slider) {
+                    _this.attr.slider.__parent__.attr.selected = _this.attr.selected;
+                    _this.attr.slider.__parent__.redraw();
+                }
+                _this.attr.events.click(d, i);
+            });
 
         // generating density ticks (if specified)
         if (_this.attr.xdensity){
