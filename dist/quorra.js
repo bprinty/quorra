@@ -498,6 +498,19 @@ function QuorraPlot(attributes) {
 
     };
 
+    this.hotdata = function() {
+        var domain = _this.xscale.domain();
+        var range = _this.yscale.domain();
+        return _.filter(_this.data, function(d, i) {
+            var xval = _this.xmapper(_this.attr.x(d, i));
+            var yval = _this.ymapper(_this.attr.y(d, i));
+            if (xval >= domain[0] && xval <= domain[1] && yval >= range[0] && yval <= range[1]) {
+                return true;
+            }
+            return false;
+        });
+    };
+
     this.drawlegend = function() {
         quorra.log('drawing plot legend');
 
@@ -1560,7 +1573,8 @@ selectmerge = function(selection, entry, type) {
         selection.push(entry);
     }
     return selection;
-};function Annotation(attributes) {
+};
+function Annotation(attributes) {
     /**
     Annotation()
 
@@ -1827,16 +1841,19 @@ function Bar(attributes) {
     // overwrite render method
     this.plot = function() {
 
+        // get hot data
+        _this.plotdata = _this.hotdata();
+
         // organizing data
         // no interpolation should happen here because users should be
         // responsible for ensuring that their data is complete
         var layers = [];
         var ugrps = _this.pallette.domain();
-        if (typeof _this.data[0].x === 'string') {
-            _this.data = _this.data.sort(function(a, b) { return a.x > b.x; });
+        if (typeof _this.plotdata[0].x === 'string') {
+            _this.plotdata = _this.plotdata.sort(function(a, b) { return a.x > b.x; });
         }
         for (var grp in ugrps) {
-            var flt = _.filter(_this.data, function(d){ return d.group == ugrps[grp]; });
+            var flt = _.filter(_this.plotdata, function(d){ return d.group == ugrps[grp]; });
             flt = _.map(flt, function(d) {
                 d.layer = grp;
                 return d;
@@ -2090,12 +2107,18 @@ function Line(attributes) {
             .y(function(d, i) { return _this.yscale(_this.ymapper(_this.attr.y(d, i))); })
             .interpolate(_this.attr.interpolate);
 
+        // get hot data
+        _this.plotdata = _this.hotdata();
+
         // draw lines
         var ugrps = _this.pallette.domain();
         for (var grp in ugrps) {
 
             // lines
-            var subdat = _.filter(_this.data, function(d){ return d.group == ugrps[grp]; });
+            var subdat = _.filter(_this.plotdata, function(d){ return d.group == ugrps[grp]; });
+            if (subdat.length == 0) {
+                continue;
+            }
             _this.plotarea.append("path")
                 .datum(subdat)
                 .attr("class", function(d, i){
@@ -2200,7 +2223,7 @@ function Line(attributes) {
         if (_this.attr.points > 0) {
 
             _this.plotarea.selectAll(".dot")
-                .remove().data(_this.data)
+                .remove().data(_this.plotdata)
                 .enter().append("circle")
                 .attr("class", function(d, i){
                     return "dot " + "g_" + d.group;
@@ -2381,6 +2404,9 @@ function Multiline(attributes) {
     this.plot = function() {
         quorra.log('drawing plot data');
 
+        // get current view data
+        _this.plotdata =_this.data;
+
         // draw lines
         var ugrps = _this.pallette.domain();
         for (var grp in ugrps) {
@@ -2394,7 +2420,10 @@ function Multiline(attributes) {
                 .interpolate(_this.attr.interpolate);
 
             // lines
-            var subdat = _.filter(_this.data, function(d){ return d.group === ugrps[grp]; });
+            var subdat = _.filter(_this.plotdata, function(d){ return d.group === ugrps[grp]; });
+            if (subdat.length == 0) {
+                continue;
+            }
             subdat = subdat.sort(function(a, b) {
                 return _this.domain.indexOf(a.x) - _this.domain.indexOf(b.x);
             });
@@ -2492,7 +2521,7 @@ function Multiline(attributes) {
         if (_this.attr.points > 0) {
 
             _this.plotarea.selectAll(".dot")
-                .remove().data(_this.data)
+                .remove().data(_this.plotdata)
                 .enter().append("circle")
                 .attr("class", function(d, i){
                     return "dot " + "g_" + d.group;
@@ -2709,7 +2738,9 @@ function Scatter(attributes) {
     this.plot = function() {
 
         // re-rendering data with jitter
-        _this.plotdata = _.map(_this.data, function(d, i) {
+        var domain = _this.xscale.domain();
+        _this.plotdata = _.map(
+            _this.hotdata(), function(d, i) {
             var c = extend({}, d);
             c.x = (quorra.pseudorandom(i) - 0.5) * _this.attr.xjitter + _this.xscale(_this.xmapper(_this.attr.x(d, i)));
             c.y = (quorra.pseudorandom(i) - 0.5) * _this.attr.yjitter + _this.yscale(_this.ymapper(_this.attr.y(d, i)));
@@ -2726,6 +2757,9 @@ function Scatter(attributes) {
             var ugrps = _this.pallette.domain();
             for (var grp in ugrps) {
                 var subdat = _.filter(_this.plotdata, function(d){ return d.group == ugrps[grp]; });
+                if (subdat.length == 0) {
+                    continue;
+                }
                 _this.plotarea.append("path")
                     .datum(subdat)
                     .attr("class", function(d, i){
@@ -2884,7 +2918,7 @@ function Scatter(attributes) {
         // generating density ticks (if specified)
         if (_this.attr.xdensity){
             _this.plotarea.selectAll(".xtick")
-                .remove().data(_this.data)
+                .remove().data(_this.plotdata)
                 .enter().append("line")
                 .attr("clip-path", "url(#clip)")
                 .attr("class", function(d, i){
@@ -2903,7 +2937,7 @@ function Scatter(attributes) {
 
         if (_this.attr.ydensity){
             _this.plotarea.selectAll(".ytick")
-                .remove().data(_this.data)
+                .remove().data(_this.plotdata)
                 .enter().append("line")
                 .attr("clip-path", "url(#clip)")
                 .attr("class", function(d, i){

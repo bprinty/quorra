@@ -30,12 +30,18 @@ function Line(attributes) {
             .y(function(d, i) { return _this.yscale(_this.ymapper(_this.attr.y(d, i))); })
             .interpolate(_this.attr.interpolate);
 
+        // get hot data
+        _this.plotdata = _this.hotdata();
+
         // draw lines
         var ugrps = _this.pallette.domain();
         for (var grp in ugrps) {
 
             // lines
-            var subdat = _.filter(_this.data, function(d){ return d.group == ugrps[grp]; });
+            var subdat = _.filter(_this.plotdata, function(d){ return d.group == ugrps[grp]; });
+            if (subdat.length == 0) {
+                continue;
+            }
             _this.plotarea.append("path")
                 .datum(subdat)
                 .attr("class", function(d, i){
@@ -140,7 +146,7 @@ function Line(attributes) {
         if (_this.attr.points > 0) {
 
             _this.plotarea.selectAll(".dot")
-                .remove().data(_this.data)
+                .remove().data(_this.plotdata)
                 .enter().append("circle")
                 .attr("class", function(d, i){
                     return "dot " + "g_" + d.group;

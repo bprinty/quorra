@@ -20,16 +20,19 @@ function Bar(attributes) {
     // overwrite render method
     this.plot = function() {
 
+        // get hot data
+        _this.plotdata = _this.hotdata();
+
         // organizing data
         // no interpolation should happen here because users should be
         // responsible for ensuring that their data is complete
         var layers = [];
         var ugrps = _this.pallette.domain();
-        if (typeof _this.data[0].x === 'string') {
-            _this.data = _this.data.sort(function(a, b) { return a.x > b.x; });
+        if (typeof _this.plotdata[0].x === 'string') {
+            _this.plotdata = _this.plotdata.sort(function(a, b) { return a.x > b.x; });
         }
         for (var grp in ugrps) {
-            var flt = _.filter(_this.data, function(d){ return d.group == ugrps[grp]; });
+            var flt = _.filter(_this.plotdata, function(d){ return d.group == ugrps[grp]; });
             flt = _.map(flt, function(d) {
                 d.layer = grp;
                 return d;

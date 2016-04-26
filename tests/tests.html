@@ -75,7 +75,9 @@
                 pre.parentNode.insertBefore(post, pre);     
             }
             var nodes = base.node().childNodes;
-            nodes[0].parentNode.insertBefore(nodes[nodes.length - 1], nodes[0]);
+            for (var i=0; i<nodes.length; i = i + 2) {
+                swap(nodes[i], nodes[i+1]);
+            }
         }
 
         function checkplot(id) {

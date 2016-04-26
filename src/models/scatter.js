@@ -30,7 +30,9 @@ function Scatter(attributes) {
     this.plot = function() {
 
         // re-rendering data with jitter
-        _this.plotdata = _.map(_this.data, function(d, i) {
+        var domain = _this.xscale.domain();
+        _this.plotdata = _.map(
+            _this.hotdata(), function(d, i) {
             var c = extend({}, d);
             c.x = (quorra.pseudorandom(i) - 0.5) * _this.attr.xjitter + _this.xscale(_this.xmapper(_this.attr.x(d, i)));
             c.y = (quorra.pseudorandom(i) - 0.5) * _this.attr.yjitter + _this.yscale(_this.ymapper(_this.attr.y(d, i)));
@@ -47,6 +49,9 @@ function Scatter(attributes) {
             var ugrps = _this.pallette.domain();
             for (var grp in ugrps) {
                 var subdat = _.filter(_this.plotdata, function(d){ return d.group == ugrps[grp]; });
+                if (subdat.length == 0) {
+                    continue;
+                }
                 _this.plotarea.append("path")
                     .datum(subdat)
                     .attr("class", function(d, i){
@@ -205,7 +210,7 @@ function Scatter(attributes) {
         // generating density ticks (if specified)
         if (_this.attr.xdensity){
             _this.plotarea.selectAll(".xtick")
-                .remove().data(_this.data)
+                .remove().data(_this.plotdata)
                 .enter().append("line")
                 .attr("clip-path", "url(#clip)")
                 .attr("class", function(d, i){
@@ -224,7 +229,7 @@ function Scatter(attributes) {
 
         if (_this.attr.ydensity){
             _this.plotarea.selectAll(".ytick")
-                .remove().data(_this.data)
+                .remove().data(_this.plotdata)
                 .enter().append("line")
                 .attr("clip-path", "url(#clip)")
                 .attr("class", function(d, i){

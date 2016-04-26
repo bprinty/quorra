@@ -40,8 +40,10 @@ describe("slider.js", function () {
 
   it("slider", function () {
 
+      var container = quorra.uuid();
       var plot = quorra.uuid();
-      base.append('div').attr('id', plot).attr('class', 'plotarea');
+      var sel = base.append('div').attr('id', container);
+      sel.append('div').attr('id', plot).attr('class', 'plotarea');
 
       var jitterline = quorra.scatter()
           .bind('#' + plot)
@@ -62,7 +64,7 @@ describe("slider.js", function () {
           .color(['steelblue']);
 
       var slider = quorra.uuid();
-      base.append('div').attr('id', slider).attr('class', 'slider');
+      sel.append('div').attr('id', slider).attr('class', 'slider');
       
       var thumbnail = quorra.line()
           .bind('#' + slider)

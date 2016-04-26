@@ -115,6 +115,9 @@ function Multiline(attributes) {
     this.plot = function() {
         quorra.log('drawing plot data');
 
+        // get current view data
+        _this.plotdata =_this.data;
+
         // draw lines
         var ugrps = _this.pallette.domain();
         for (var grp in ugrps) {
@@ -128,7 +131,10 @@ function Multiline(attributes) {
                 .interpolate(_this.attr.interpolate);
 
             // lines
-            var subdat = _.filter(_this.data, function(d){ return d.group === ugrps[grp]; });
+            var subdat = _.filter(_this.plotdata, function(d){ return d.group === ugrps[grp]; });
+            if (subdat.length == 0) {
+                continue;
+            }
             subdat = subdat.sort(function(a, b) {
                 return _this.domain.indexOf(a.x) - _this.domain.indexOf(b.x);
             });
@@ -226,7 +232,7 @@ function Multiline(attributes) {
         if (_this.attr.points > 0) {
 
             _this.plotarea.selectAll(".dot")
-                .remove().data(_this.data)
+                .remove().data(_this.plotdata)
                 .enter().append("circle")
                 .attr("class", function(d, i){
                     return "dot " + "g_" + d.group;

@@ -496,6 +496,19 @@ function QuorraPlot(attributes) {
 
     };
 
+    this.hotdata = function() {
+        var domain = _this.xscale.domain();
+        var range = _this.yscale.domain();
+        return _.filter(_this.data, function(d, i) {
+            var xval = _this.xmapper(_this.attr.x(d, i));
+            var yval = _this.ymapper(_this.attr.y(d, i));
+            if (xval >= domain[0] && xval <= domain[1] && yval >= range[0] && yval <= range[1]) {
+                return true;
+            }
+            return false;
+        });
+    };
+
     this.drawlegend = function() {
         quorra.log('drawing plot legend');
 
