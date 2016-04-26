@@ -70,6 +70,10 @@
         }
 
         function reorder(base) {
+            if (typeof d3.select('#mocha-report').selectAll('li.suite')[0] == 'undefined') {
+                // no need to reorder if running through phantom
+                return;
+            }
             function swap(pre, post) {
                 pre.parentNode.replaceChild(pre, post);
                 pre.parentNode.insertBefore(post, pre);     
