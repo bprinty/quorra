@@ -138,6 +138,9 @@ function Line(attributes) {
                         _this.attr.slider.__parent__.attr.selected = _this.attr.selected;
                         _this.attr.slider.__parent__.redraw();
                     }
+                    if (_this.attr.tooltip){
+                        _this.attr.tooltip.style("visibility", "hidden");
+                    }
                     _this.attr.events.click(d, i);
                 });
         }
@@ -196,6 +199,9 @@ function Line(attributes) {
                     if (_this.attr.slider) {
                         _this.attr.slider.__parent__.attr.selected = _this.attr.selected;
                         _this.attr.slider.__parent__.redraw();
+                    }
+                    if (_this.attr.tooltip){
+                        _this.attr.tooltip.style("visibility", "hidden");
                     }
                     _this.attr.events.click(d, i);
                 });

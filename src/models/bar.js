@@ -116,7 +116,12 @@ function Bar(attributes) {
                 if (_this.attr.tooltip){
                     _this.attr.tooltip.style("visibility", "hidden");
                 }
-            }).on("click", _this.attr.events.click);
+            }).on("click", function(d, i) {
+                _this.attr.events.click(d, i);
+                if (_this.attr.tooltip){
+                    _this.attr.tooltip.style("visibility", "hidden");
+                }
+            });
     }
 
     return this.go;

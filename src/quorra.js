@@ -86,12 +86,14 @@ function QuorraPlot(attributes) {
         _this.innerheight = height - _this.attr.margin.top - _this.attr.margin.bottom;
 
         // set up tooltip
-        _this.selection.selectAll("div.tooltip").remove();
+        d3.selectAll("div.quorra-tooltip#" + _this.attr.id + "-tooltip").remove();
         if (_this.attr.tooltip === true) {
-            _this.attr.tooltip = _this.selection.append("div")
-                .attr("class", "tooltip")
+            _this.attr.tooltip = d3.select("body").append("div")
+                .attr("class", "quorra-tooltip")
+                .attr("id", _this.attr.id + "-tooltip")
                 .style("position", "fixed")
-                .style("visibility", "hidden");
+                .style("visibility", "hidden")
+                .style("z-index", 999);
         }
 
         // create svg and relevant plot areas
@@ -403,7 +405,6 @@ function QuorraPlot(attributes) {
     this.annotate = function() {
         quorra.log('drawing plot annotation');
 
-        _this.selection.selectAll("div.annotation-tooltip").remove();
         _.map(_this.attr.annotation, function(d) {
             quorra.render(d);
         });

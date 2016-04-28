@@ -50,8 +50,8 @@
 .legend text,
 .annotation text,
 .glyph text,
-.tooltip,
-.annotation-tooltip {
+.quorra-tooltip,
+.quorra-annotation-tooltip {
     font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif; 
     font-weight: 100;
     font-size: 12px;

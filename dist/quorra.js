@@ -88,12 +88,14 @@ function QuorraPlot(attributes) {
         _this.innerheight = height - _this.attr.margin.top - _this.attr.margin.bottom;
 
         // set up tooltip
-        _this.selection.selectAll("div.tooltip").remove();
+        d3.selectAll("div.quorra-tooltip#" + _this.attr.id + "-tooltip").remove();
         if (_this.attr.tooltip === true) {
-            _this.attr.tooltip = _this.selection.append("div")
-                .attr("class", "tooltip")
+            _this.attr.tooltip = d3.select("body").append("div")
+                .attr("class", "quorra-tooltip")
+                .attr("id", _this.attr.id + "-tooltip")
                 .style("position", "fixed")
-                .style("visibility", "hidden");
+                .style("visibility", "hidden")
+                .style("z-index", 999);
         }
 
         // create svg and relevant plot areas
@@ -405,7 +407,6 @@ function QuorraPlot(attributes) {
     this.annotate = function() {
         quorra.log('drawing plot annotation');
 
-        _this.selection.selectAll("div.annotation-tooltip").remove();
         _.map(_this.attr.annotation, function(d) {
             quorra.render(d);
         });
@@ -1595,11 +1596,14 @@ function Annotation(attributes) {
         quorra.log('running annotation generator function');
 
         // set up tooltip
-        if (_this.attr.tooltip) {
-            _this.attr.tooltip = _this.plot.selection.append("div")
+        d3.selectAll("div.annotation-tooltip#" + _this.attr.id + "-tooltip").remove();
+        if (_this.attr.tooltip == true) {
+            _this.attr.tooltip = d3.select("body").append("div")
                 .attr("class", "annotation-tooltip")
+                .attr("id", + _this.attr.id + "-tooltip")
                 .style("position", "fixed")
-                .style("visibility", "hidden");
+                .style("visibility", "hidden")
+                .style("zindex", 999);
         }
 
         // create wrapper element for annotation groups
@@ -1937,7 +1941,12 @@ function Bar(attributes) {
                 if (_this.attr.tooltip){
                     _this.attr.tooltip.style("visibility", "hidden");
                 }
-            }).on("click", _this.attr.events.click);
+            }).on("click", function(d, i) {
+                _this.attr.events.click(d, i);
+                if (_this.attr.tooltip){
+                    _this.attr.tooltip.style("visibility", "hidden");
+                }
+            });
     }
 
     return this.go;
@@ -2215,6 +2224,9 @@ function Line(attributes) {
                         _this.attr.slider.__parent__.attr.selected = _this.attr.selected;
                         _this.attr.slider.__parent__.redraw();
                     }
+                    if (_this.attr.tooltip){
+                        _this.attr.tooltip.style("visibility", "hidden");
+                    }
                     _this.attr.events.click(d, i);
                 });
         }
@@ -2273,6 +2285,9 @@ function Line(attributes) {
                     if (_this.attr.slider) {
                         _this.attr.slider.__parent__.attr.selected = _this.attr.selected;
                         _this.attr.slider.__parent__.redraw();
+                    }
+                    if (_this.attr.tooltip){
+                        _this.attr.tooltip.style("visibility", "hidden");
                     }
                     _this.attr.events.click(d, i);
                 });
@@ -2512,6 +2527,9 @@ function Multiline(attributes) {
                         _this.attr.slider.__parent__.attr.selected = _this.attr.selected;
                         _this.attr.slider.__parent__.redraw();
                     }
+                    if (_this.attr.tooltip){
+                        _this.attr.tooltip.style("visibility", "hidden");
+                    }
                     _this.attr.events.click(d, i);
                 });
 
@@ -2587,6 +2605,9 @@ function Multiline(attributes) {
                     if (_this.attr.slider) {
                         _this.attr.slider.__parent__.attr.selected = _this.attr.selected;
                         _this.attr.slider.__parent__.redraw();
+                    }
+                    if (_this.attr.tooltip){
+                        _this.attr.tooltip.style("visibility", "hidden");
                     }
                     _this.attr.events.click(d, i);
                 });
@@ -2816,6 +2837,9 @@ function Scatter(attributes) {
                             _this.attr.slider.__parent__.attr.selected = _this.attr.selected;
                             _this.attr.slider.__parent__.redraw();
                         }
+                        if (_this.attr.tooltip){
+                            _this.attr.tooltip.style("visibility", "hidden");
+                        }
                         _this.attr.events.click(d, i);
                     });
             }
@@ -2911,6 +2935,9 @@ function Scatter(attributes) {
                 if (_this.attr.slider) {
                     _this.attr.slider.__parent__.attr.selected = _this.attr.selected;
                     _this.attr.slider.__parent__.redraw();
+                }
+                if (_this.attr.tooltip){
+                    _this.attr.tooltip.style("visibility", "hidden");
                 }
                 _this.attr.events.click(d, i);
             });

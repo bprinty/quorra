@@ -19,11 +19,14 @@ function Annotation(attributes) {
         quorra.log('running annotation generator function');
 
         // set up tooltip
-        if (_this.attr.tooltip) {
-            _this.attr.tooltip = _this.plot.selection.append("div")
+        d3.selectAll("div.annotation-tooltip#" + _this.attr.id + "-tooltip").remove();
+        if (_this.attr.tooltip == true) {
+            _this.attr.tooltip = d3.select("body").append("div")
                 .attr("class", "annotation-tooltip")
+                .attr("id", + _this.attr.id + "-tooltip")
                 .style("position", "fixed")
-                .style("visibility", "hidden");
+                .style("visibility", "hidden")
+                .style("zindex", 999);
         }
 
         // create wrapper element for annotation groups
