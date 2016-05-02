@@ -120,6 +120,10 @@ function QuorraPlot(attributes) {
 
         // perform provided data transformations
         _this.data = _this.attr.transform(_this.attr.data);
+
+        // configure color pallette
+        _this.pallette = (_this.attr.color === "auto") ? d3.scale.category10() : d3.scale.ordinal().range(_this.attr.color);
+        _this.pallette = _this.pallette.domain(_.uniquesort(_this.data, _this.attr.group));
         
         // get x domain and range
         if (typeof _this.data[0].x === 'string') {
@@ -128,11 +132,13 @@ function QuorraPlot(attributes) {
             } else {
                 _this.domain = _.uniquesort(_this.data, _this.attr.x);
             }
+            _this.xdelta = 1;
         } else {
             _this.domain = [
                 _.min(_.map(_this.data, _this.attr.x)),
                 _.max(_.map(_this.data, _this.attr.x))
             ];
+            _this.xdelta = (Math.abs(_this.domain[1] - _this.domain[0]) * _this.pallette.length)/_this.data.length;
         }
 
         // get y domain and range
@@ -143,6 +149,7 @@ function QuorraPlot(attributes) {
             } else {
                 _this.range = _.uniquesort(_this.data, _this.attr.y);
             }
+            _this.ydelta = 1;
         } else {
             if (_this.attr.layout === 'stacked'){
                 // for some reason, underscore's map function won't 
@@ -161,11 +168,8 @@ function QuorraPlot(attributes) {
                 _.min(_.map(_this.data, _this.attr.y)),
                 max
             ];
+            _this.ydelta = (Math.abs(_this.range[1] - _this.range[0]) * _this.pallette.length)/_this.data.length;
         }
-
-        // configure color pallette
-        _this.pallette = (_this.attr.color === "auto") ? d3.scale.category10() : d3.scale.ordinal().range(_this.attr.color);
-        _this.pallette = _this.pallette.domain(_.uniquesort(_this.data, _this.attr.group));
 
         // set default behavior
         _this.enabled = {
@@ -505,7 +509,8 @@ function QuorraPlot(attributes) {
         return _.filter(_this.data, function(d, i) {
             var xval = _this.xmapper(_this.attr.x(d, i));
             var yval = _this.ymapper(_this.attr.y(d, i));
-            if (xval >= domain[0] && xval <= domain[1] && yval >= range[0] && yval <= range[1]) {
+            if (xval >= (domain[0] - _this.xdelta) && xval <= (domain[1] + _this.xdelta) &&
+                yval >= (range[0] - _this.ydelta) && yval <= (range[1] + _this.ydelta)) {
                 return true;
             }
             return false;
@@ -612,8 +617,10 @@ function QuorraPlot(attributes) {
         _this.defs.append('symbol')
             .attr('id', 'glyph-refresh')
             .attr('viewBox', '0 0 1024 1024')
-            .append('path')
-            .attr('d', 'M1024 384h-384l143.53-143.53c-72.53-72.526-168.96-112.47-271.53-112.47s-199 39.944-271.53 112.47c-72.526 72.53-112.47 168.96-112.47 271.53s39.944 199 112.47 271.53c72.53 72.526 168.96 112.47 271.53 112.47s199-39.944 271.528-112.472c6.056-6.054 11.86-12.292 17.456-18.668l96.32 84.282c-93.846 107.166-231.664 174.858-385.304 174.858-282.77 0-512-229.23-512-512s229.23-512 512-512c141.386 0 269.368 57.326 362.016 149.984l149.984-149.984v384z');
+            .html([
+                '<path d="M134.32 166.32c93.608-102.216 228.154-166.32 377.68-166.32 282.77 0 512 229.23 512 512h-96c0-229.75-186.25-416-416-416-123.020 0-233.542 53.418-309.696 138.306l149.696 149.694h-352v-352l134.32 134.32z"></path>',
+                '<path d="M96 512c0 229.75 186.25 416 416 416 123.020 0 233.542-53.418 309.694-138.306l-149.694-149.694h352v352l-134.32-134.32c-93.608 102.216-228.154 166.32-377.68 166.32-282.77 0-512-229.23-512-512h96z"></path>'
+            ].join(''));
 
         // zoom glyph
         _this.defs.append('symbol')
@@ -637,10 +644,8 @@ function QuorraPlot(attributes) {
             .attr('id', 'glyph-pan')
             .attr('viewBox', '0 0 1024 1024')
             .html([
-                '<path d="M1024 0h-416l160 160-192 192 96 96 192-192 160 160z"></path>',
-                '<path d="M1024 1024v-416l-160 160-192-192-96 96 192 192-160 160z"></path>',
-                '<path d="M0 1024h416l-160-160 192-192-96-96-192 192-160-160z"></path>',
-                '<path d="M0 0v416l160-160 192 192 96-96-192-192 160-160z"></path>'
+                '<path d="M320 704h704v128h-704v160l-224-224 224-224v160z"></path>',
+                '<path d="M704 320h-704v-128h704v-160l224 224-224 224z"></path>'
             ].join(''));
 
         // annotate glyph
