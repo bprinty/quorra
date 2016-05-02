@@ -643,10 +643,8 @@ function QuorraPlot(attributes) {
         _this.defs.append('symbol')
             .attr('id', 'glyph-pan')
             .attr('viewBox', '0 0 1024 1024')
-            .html([
-                '<path d="M320 704h704v128h-704v160l-224-224 224-224v160z"></path>',
-                '<path d="M704 320h-704v-128h704v-160l224 224-224 224z"></path>'
-            ].join(''));
+            .append('path')
+            .attr('d', 'M512 704l64-64v192h128l-192 192-192-192h128v-192zM512 321.984l-64 62.016v-192h-128l192-192 192 192h-128v192zM320 512l64 64h-192v128l-192-192 192-192v128h192zM702.016 512l-62.016-64h192v-128l192 192-192 192v-128h-192z');
 
         // annotate glyph
         _this.defs.append('symbol')
