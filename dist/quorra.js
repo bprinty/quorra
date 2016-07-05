@@ -1,20 +1,18 @@
 /* quorra version 0.0.2 (http://github.com/bprinty/quorra) */
 (function(){
+/***
+ *
+ * Quorra base.
+ * 
+ * @author  <bprinty@gmail.com>
+ */
+
+
 /**
+ * Base object exposing all internal functionality.
+ */
+function quorra() {}
 
-quorra base
-
-@author <bprinty@gmail.com>
-
-*/
-
-function quorra() {
-    /**
-    quorra()
-
-    Base class for all visualization components.
-    */
-}
 
 quorra.debug = false;
 quorra.error = function(text) {
@@ -39,12 +37,13 @@ quorra.log = function(text) {
     }
 };
 
+
+/**
+ * Render plot object.
+ * @param {function} generator Plot generator function.
+ * @return {object} Plot object.
+ */
 quorra.render = function(generator) {
-    /**
-    quorra.render()
-    
-    Render created plot object.
-    */
     quorra.log('rendering element');
     var obj = generator();
     if (typeof generator.parent === 'undefined') {
@@ -52,6 +51,7 @@ quorra.render = function(generator) {
     }
     return obj;
 };
+
 
 quorra.plots = {};
 function QuorraPlot(attributes) {
@@ -1189,7 +1189,7 @@ function QuorraPlot(attributes) {
     return this.go;
 }
 
-/**
+/*
 
 Event handling within quorra.
 
@@ -1311,7 +1311,7 @@ function zoomscale(scale){
 }
 
 
-/**
+/*
 
 Statistical functions used throughout quorra, including methods
 for kernel density estimation.
@@ -1349,61 +1349,54 @@ function epanechnikovKernel(scale) {
         return Math.abs(u /= scale) <= 1 ? 0.75 * (1 - u * u) / scale : 0;
     };
 }
-/**
-
-Common utilities used across plot generators.
-
-@author <bprinty@gmail.com>
-
-*/
+/***
+ *
+ * Common utilities used in plot generation.
+ * 
+ * @author  <bprinty@gmail.com>
+ */
 
 
 // set default seed for random number generation
 var seed = Math.round(Math.random()*100000);
 
-quorra.seed = function(value){
-    /**
-    quorra.seed()
 
-    Set seed for reproducable random number generation. 
-    */
-
+/**
+ * Set seed for reproducable random number generation. 
+ * @param {number} value - The seed value to set.
+ */
+quorra.seed = function(value) {
     if (!arguments.length) return seed;
     seed = value;
 };
 
 
+/**
+ * Random number generation using global seed.
+ */
 quorra.random = function() {
-    /**
-    quorra.random()
-
-    Random number generation using internal seed. 
-    */
-
     if (typeof seed === 'undefined') seed = 42;
     var x = Math.sin(seed++) * 10000;
     return x - Math.floor(x);
 };
 
 
+/**
+ * Random number generation using specified seed.
+ * @param {number} seed - An explicit seed to use in number
+ *                        generation
+ */
 quorra.pseudorandom = function(seed) {
-    /**
-    quorra.pseudorandom()
-
-    Random number generation using specified seed. 
-    */
     var x = Math.sin(seed) * 10000;
     return x - Math.floor(x);
 };
 
 
+/**
+ * Generate random uuid with global seed.
+ * @return {string} Unique UUID identifier
+ */
 quorra.uuid = function() {
-    /**
-    quorra.uuid()
-
-    Generate random uuid with seed. 
-    */
-
     function uk() {
         return Math.floor((1 + quorra.random()) * 0x10000)
             .toString(16).substring(1);

@@ -31,7 +31,17 @@ test: build
 	./node_modules/mocha-phantomjs/bin/mocha-phantomjs tests/tests.html 
 
 
-clean:
+.PHONY: docs
+docs:
+	./node_modules/.bin/jsdoc -c .jsdoc.json
+
+
+.PHONY: clean-docs
+clean-docs:
+	rm -rf docs/_html
+
+
+clean: clean-docs
 	rm -rf build node_modules lib
 
 

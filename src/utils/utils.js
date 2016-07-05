@@ -1,58 +1,51 @@
-/**
-
-Common utilities used across plot generators.
-
-@author <bprinty@gmail.com>
-
-*/
+/***
+ *
+ * Common utilities used in plot generation.
+ * 
+ * @author  <bprinty@gmail.com>
+ */
 
 
 // set default seed for random number generation
 var seed = Math.round(Math.random()*100000);
 
-quorra.seed = function(value){
-    /**
-    quorra.seed()
 
-    Set seed for reproducable random number generation. 
-    */
-
+/**
+ * Set seed for reproducable random number generation. 
+ * @param {number} value - The seed value to set.
+ */
+quorra.seed = function(value) {
     if (!arguments.length) return seed;
     seed = value;
 };
 
 
+/**
+ * Random number generation using global seed.
+ */
 quorra.random = function() {
-    /**
-    quorra.random()
-
-    Random number generation using internal seed. 
-    */
-
     if (typeof seed === 'undefined') seed = 42;
     var x = Math.sin(seed++) * 10000;
     return x - Math.floor(x);
 };
 
 
+/**
+ * Random number generation using specified seed.
+ * @param {number} seed - An explicit seed to use in number
+ *                        generation
+ */
 quorra.pseudorandom = function(seed) {
-    /**
-    quorra.pseudorandom()
-
-    Random number generation using specified seed. 
-    */
     var x = Math.sin(seed) * 10000;
     return x - Math.floor(x);
 };
 
 
+/**
+ * Generate random uuid with global seed.
+ * @return {string} Unique UUID identifier
+ */
 quorra.uuid = function() {
-    /**
-    quorra.uuid()
-
-    Generate random uuid with seed. 
-    */
-
     function uk() {
         return Math.floor((1 + quorra.random()) * 0x10000)
             .toString(16).substring(1);

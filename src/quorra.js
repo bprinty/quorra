@@ -1,18 +1,16 @@
+/***
+ *
+ * Quorra base.
+ * 
+ * @author  <bprinty@gmail.com>
+ */
+
+
 /**
+ * Base object exposing all internal functionality.
+ */
+function quorra() {}
 
-quorra base
-
-@author <bprinty@gmail.com>
-
-*/
-
-function quorra() {
-    /**
-    quorra()
-
-    Base class for all visualization components.
-    */
-}
 
 quorra.debug = false;
 quorra.error = function(text) {
@@ -37,12 +35,13 @@ quorra.log = function(text) {
     }
 };
 
+
+/**
+ * Render plot object.
+ * @param {function} generator Plot generator function.
+ * @return {object} Plot object.
+ */
 quorra.render = function(generator) {
-    /**
-    quorra.render()
-    
-    Render created plot object.
-    */
     quorra.log('rendering element');
     var obj = generator();
     if (typeof generator.parent === 'undefined') {
@@ -50,6 +49,7 @@ quorra.render = function(generator) {
     }
     return obj;
 };
+
 
 quorra.plots = {};
 function QuorraPlot(attributes) {

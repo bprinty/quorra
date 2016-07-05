@@ -1,4 +1,4 @@
-/**
+/*
 
 Event handling within quorra.
 
