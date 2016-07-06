@@ -504,16 +504,24 @@ function QuorraPlot(attributes) {
     };
 
     this.hotdata = function() {
+        quorra.log('optimizing plot data for visible window');
+
         var domain = _this.xscale.domain();
         var range = _this.yscale.domain();
         return _.filter(_this.data, function(d, i) {
-            var xval = _this.xmapper(_this.attr.x(d, i));
-            var yval = _this.ymapper(_this.attr.y(d, i));
-            if (xval >= (domain[0] - _this.xdelta) && xval <= (domain[1] + _this.xdelta) &&
-                yval >= (range[0] - _this.ydelta) && yval <= (range[1] + _this.ydelta)) {
-                return true;
+            if (_this.attr.xwindow) {
+                var xval = _this.xmapper(_this.attr.x(d, i));
+                if (xval < (domain[0] - _this.xdelta) || xval > (domain[1] + _this.xdelta)) {
+                    return false;
+                }
             }
-            return false;
+            if (_this.attr.ywindow) {
+                var yval = _this.ymapper(_this.attr.y(d, i));
+                if (yval < (range[0] - _this.ydelta) || yval > (range[1] + _this.ydelta)) {
+                    return false;
+                }
+            }
+            return true;
         });
     };
 
@@ -1135,6 +1143,8 @@ function QuorraPlot(attributes) {
         ylabel: "",
         xorder: [],
         yorder: [],
+        xwidnow: true,
+        ywindow: false,
         labelposition: "middle",
         labelpadding: {x: 0, y: 0},
         opacity: 1,
