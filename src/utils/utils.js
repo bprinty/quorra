@@ -113,16 +113,35 @@ quorra.export = function(svg, filename) {
 };
 
 
-// underscore additions
-_.center = function(x, bounds){
-    return _.min([_.max([x, bounds[0]]), bounds[1]]);
+// underscore replications (simplified)
+quorra.identity = function(value) {
+    return value;
 };
 
-_.uniquesort = function(x, func) {
-    if (typeof func === 'undefined') {
-        func = function(x){ return x; };
+quorra.contains = function(array, item) {
+    return array.indexOf(item) >= 0;
+};
+
+quorra.uniq = function(array) {
+    var result = [];
+    var alreadySeen;
+    for (var i = 0, len = array.length; i < length; i++) {
+        if (!quorra.contains(result, array[i])) {
+            result.push(array[i]);
+        }
     }
-    return _.unique(_.map(x, func)).sort();
+    return result;
+};
+
+
+// underscore additions
+quorra.center = function(x, bounds) {
+    return Math.min(Math.max(x, bounds[0]), bounds[1]);
+};
+
+quorra.uniquesort = function(x, func) {
+    func = func || quorra.identity;
+    return quorra.uniq(x.map(func)).sort();
 };
 
 

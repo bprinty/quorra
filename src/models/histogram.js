@@ -36,7 +36,7 @@ function Histogram(attributes) {
             .bins(d3.scale.linear().ticks(_this.attr.bins));
 
         // rearranging data
-        var grps = _.uniquesort(data, _this.attr.group);
+        var grps = quorra.uniquesort(data, _this.attr.group);
         var newdata = [];
         for (var grp in grps){
             var subdat = _.filter(data, function(d){ return d.group == grps[grp]; });

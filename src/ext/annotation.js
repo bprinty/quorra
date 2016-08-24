@@ -82,8 +82,8 @@ function Annotation(attributes) {
                     var ycoord = movement.y - _this.plot.attr.margin.top - yoffset;
 
                     // translate annotation object
-                    var xmotion = _.center(xcoord, [0, _this.plot.innerwidth - 2*xoffset]);
-                    var ymotion = _.center(ycoord, [0, _this.plot.innerheight - 2*yoffset]);
+                    var xmotion = quorra.center(xcoord, [0, _this.plot.innerwidth - 2*xoffset]);
+                    var ymotion = quorra.center(ycoord, [0, _this.plot.innerheight - 2*yoffset]);
                     d3.select(this).attr('transform', 'translate(' + (xmotion - x) + ',' + (ymotion - y) + ')');
                     
                     // update annotation attributes with new data

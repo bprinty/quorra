@@ -121,14 +121,14 @@ function QuorraPlot(attributes) {
 
         // configure color pallette
         _this.pallette = (_this.attr.color === "auto") ? d3.scale.category10() : d3.scale.ordinal().range(_this.attr.color);
-        _this.pallette = _this.pallette.domain(_.uniquesort(_this.data, _this.attr.group));
+        _this.pallette = _this.pallette.domain(quorra.uniquesort(_this.data, _this.attr.group));
         
         // get x domain and range
         if (typeof _this.data[0].x === 'string') {
             if (_this.attr.xorder.length > 0) {
                 _this.domain = _this.attr.xorder;
             } else {
-                _this.domain = _.uniquesort(_this.data, _this.attr.x);
+                _this.domain = quorra.uniquesort(_this.data, _this.attr.x);
             }
             _this.xdelta = 1;
         } else {
@@ -145,7 +145,7 @@ function QuorraPlot(attributes) {
             if (_this.attr.yorder.length >  0) {
                 _this.range = _this.attr.yorder;
             } else {
-                _this.range = _.uniquesort(_this.data, _this.attr.y);
+                _this.range = quorra.uniquesort(_this.data, _this.attr.y);
             }
             _this.ydelta = 1;
         } else {
@@ -153,7 +153,7 @@ function QuorraPlot(attributes) {
                 // for some reason, underscore's map function won't 
                 // work for accessing the d.y0 property -- so we have
                 // to do it another way
-                var ux = _.uniquesort(_this.data, _this.attr.x);
+                var ux = quorra.uniquesort(_this.data, _this.attr.x);
                 max = _.max(_.map(ux, function(d){
                     var nd =_.filter(_this.data, function(g){ return _this.attr.x(g) == d; });
                     var tmap = _.map(nd, function(g){ return _this.attr.y(g); });
