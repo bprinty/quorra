@@ -5,6 +5,7 @@
  * @author  <bprinty@gmail.com>
  */
 
+import { quorra } from '../quorra.js';
 
 // set default seed for random number generation
 var seed = Math.round(Math.random()*100000);
@@ -144,7 +145,7 @@ d3.selection.prototype.stagedown = function() {
 
 
 // common generator object utilities
-parameterize = function(attributes, generator) {
+var parameterize = function(attributes, generator) {
     /**
     parameterize()
 
@@ -175,7 +176,7 @@ parameterize = function(attributes, generator) {
     });
 };
 
-extend = function(stock, custom) {
+var extend = function(stock, custom) {
     /**
     extend()
 
@@ -201,7 +202,7 @@ extend = function(stock, custom) {
     return stock;
 };
 
-selectmerge = function(selection, entry, type) {
+var selectmerge = function(selection, entry, type) {
     /**
     selectmerge()
 
@@ -220,3 +221,9 @@ selectmerge = function(selection, entry, type) {
     }
     return selection;
 };
+
+
+window.extend = extend;
+window.parameterize = parameterize;
+window.selectmerge = selectmerge;
+export { parameterize, extend, selectmerge }

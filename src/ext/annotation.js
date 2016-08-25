@@ -1,3 +1,5 @@
+import { quorra } from '../quorra.js';
+
 function Annotation(attributes) {
     /**
     Annotation()
@@ -11,7 +13,7 @@ function Annotation(attributes) {
     quorra.log('instantiating annotation object');
 
     if (typeof attributes === 'undefined') attributes = {};
-    if (typeof plot === 'undefined') plot = 'body';
+    if (typeof window.plot === 'undefined') plot = 'body';
     var _this = this;
 
     // constructor

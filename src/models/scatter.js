@@ -1,3 +1,6 @@
+import { quorra, QuorraPlot } from '../quorra.js';
+
+
 function Scatter(attributes) {
     /**
     Scatter()

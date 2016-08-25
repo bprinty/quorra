@@ -1,3 +1,6 @@
+import { quorra } from '../quorra.js';
+import { Line } from './line.js';
+
 function Density(attributes) {
     /**
     quorra.density()

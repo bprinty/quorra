@@ -6,6 +6,7 @@ Event handling within quorra.
 
 */
 
+import { quorra } from '../quorra.js';
 
 // key map and default event definitions
 var baseKeys = { 16: 'Shift', 17: 'Ctrl', 18: 'Alt', 27: 'Esc'};

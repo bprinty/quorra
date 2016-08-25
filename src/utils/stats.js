@@ -7,6 +7,7 @@ for kernel density estimation.
 
 */
 
+import { quorra } from '../quorra.js';
 
 function kdeEstimator(kernel, x) {
     /**
@@ -36,3 +37,6 @@ function epanechnikovKernel(scale) {
         return Math.abs(u /= scale) <= 1 ? 0.75 * (1 - u * u) / scale : 0;
     };
 }
+
+window.kdeEstimator = kdeEstimator;
+window.epanechnikovKernel = epanechnikovKernel;

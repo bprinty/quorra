@@ -1,3 +1,6 @@
+import { quorra, QuorraPlot } from '../quorra.js';
+
+
 function Bar(attributes) {
     /**
     quorra.bar()
@@ -133,3 +136,4 @@ quorra.bar = function(attributes) {
     return new Bar(attributes);
 };
 
+export { Bar }

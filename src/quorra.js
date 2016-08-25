@@ -1197,3 +1197,4 @@ function QuorraPlot(attributes) {
     return this.go;
 }
 
+export { quorra, QuorraPlot };
