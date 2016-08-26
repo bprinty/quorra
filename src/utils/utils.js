@@ -4,8 +4,7 @@
  * 
  * @author  <bprinty@gmail.com>
  */
-
-import { quorra } from '../quorra.js';
+ 
 
 // set default seed for random number generation
 var seed = Math.round(Math.random()*100000);
@@ -222,8 +221,6 @@ var selectmerge = function(selection, entry, type) {
     return selection;
 };
 
-
-window.extend = extend;
 window.parameterize = parameterize;
-window.selectmerge = selectmerge;
-export { parameterize, extend, selectmerge }
+window.extend = extend;
+window. selectmerge = selectmerge;

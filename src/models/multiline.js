@@ -1,6 +1,3 @@
-import { quorra, QuorraPlot } from '../quorra';
-
-
 function Multiline(attributes) {
     /**
     quorra.multiline()

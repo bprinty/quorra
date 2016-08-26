@@ -1,5 +1,3 @@
-import { quorra, QuorraPlot } from '../quorra.js';
-
 function Line(attributes) {
     /**
     quorra.line()
@@ -218,5 +216,4 @@ Line.prototype.constructor = Line;
 quorra.line = function(attributes) {
     return new Line(attributes);
 };
-
-export { Line }
+window.Line = Line;

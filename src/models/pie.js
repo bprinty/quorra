@@ -1,6 +1,3 @@
-import { quorra, QuorraPlot } from '../quorra.js';
-
-
 function Pie(attributes) {
     /**
     quorra.pie()

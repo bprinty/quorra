@@ -1,5 +1,3 @@
-import { quorra } from '../quorra.js';
-
 function Annotation(attributes) {
     /**
     Annotation()

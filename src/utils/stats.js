@@ -7,7 +7,6 @@ for kernel density estimation.
 
 */
 
-import { quorra } from '../quorra.js';
 
 function kdeEstimator(kernel, x) {
     /**

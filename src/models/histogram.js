@@ -1,6 +1,3 @@
-import { quorra } from '../quorra.js';
-import { Bar } from './bar.js';
-
 function Histogram(attributes) {
     /**
     quorra.histogram()

@@ -1,6 +1,3 @@
-import { quorra, QuorraPlot } from '../quorra.js';
-
-
 function Bar(attributes) {
     /**
     quorra.bar()
@@ -135,5 +132,4 @@ Bar.prototype.constructor = Bar;
 quorra.bar = function(attributes) {
     return new Bar(attributes);
 };
-
-export { Bar }
+window.Bar = Bar;

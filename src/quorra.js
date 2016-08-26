@@ -1197,4 +1197,5 @@ function QuorraPlot(attributes) {
     return this.go;
 }
 
-export { quorra, QuorraPlot };
+window.quorra = quorra;
+window.QuorraPlot = QuorraPlot;

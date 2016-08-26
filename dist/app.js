@@ -48,150 +48,20 @@
 
 	__webpack_require__(1);
 
+	__webpack_require__(2);
+
 	__webpack_require__(6);
 
 	__webpack_require__(8);
 
-	var _quorra = __webpack_require__(3);
-
-	window.quorra = _quorra.quorra;
+	window.plot = null;
 
 /***/ },
 /* 1 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	__webpack_require__(2);
-
-	__webpack_require__(4);
-
-	__webpack_require__(5);
-
-/***/ },
-/* 2 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	var _quorra = __webpack_require__(3);
-
-	// key map and default event definitions
-	var baseKeys = { 16: 'Shift', 17: 'Ctrl', 18: 'Alt', 27: 'Esc' }; /*
-	                                                                  
-	                                                                  Event handling within quorra.
-	                                                                  
-	                                                                  @author <bprinty@gmail.com>
-	                                                                  
-	                                                                  */
-
-	var metaKeys = { 9: 'Tab', 13: 'Enter', 65: 'A', 66: 'B', 67: 'C', 68: 'D', 69: 'E', 70: 'F', 71: 'G', 72: 'H', 73: 'I', 74: 'J', 75: 'K', 76: 'L', 77: 'M', 78: 'N', 79: 'O', 80: 'P', 81: 'Q', 82: 'R', 83: 'S', 84: 'T', 85: 'U', 86: 'V', 87: 'W', 88: 'X', 89: 'Y', 90: 'Z' };
-	var allKeys = _.extend(_.clone(baseKeys), metaKeys);
-
-	// setting statuses for each key combination
-	_quorra.quorra.keys = {};
-	_.each(allKeys, function (key) {
-	    _quorra.quorra.keys[key] = false;
-	});
-
-	// setting default functions for each key combination
-	_quorra.quorra.events = {};
-	_.each(baseKeys, function (base) {
-
-	    _quorra.quorra.events[base] = {
-	        down: function down() {},
-	        up: function up() {}
-	    };
-	    _.each(metaKeys, function (meta) {
-	        _quorra.quorra.events[base + meta] = {
-	            down: function down() {},
-	            up: function up() {}
-	        };
-	    });
-	});
-
-	document.onkeydown = function (e) {
-	    /**
-	    Key down event handlers. Allows for event triggering on
-	    key press if methods for each key combination are specified.
-	     To set a method for a specific key down event, do:
-	     quorra.events.ShiftA.up = function(){
-	        console.log('Shift + A Pressed!');
-	    }
-	     @author <bprinty@gmail.com>
-	    */
-
-	    e = e || window.event;
-	    var k = e.which;
-	    if (_.has(allKeys, k)) {
-	        _quorra.quorra.keys[allKeys[k]] = true;
-	        if (_.has(metaKeys, k)) {
-	            _.each(baseKeys, function (i) {
-	                if (_quorra.quorra.keys[i]) {
-	                    _quorra.quorra.events[i + metaKeys[k]].down();
-	                }
-	            });
-	        } else {
-	            _quorra.quorra.events[allKeys[k]].down();
-	        }
-	    }
-	};
-
-	document.onkeyup = function (e) {
-	    /**
-	    Key up event handlers. Allows for event triggering on
-	    key release if methods for each key combination are specified.
-	    To set a method for a specific key down event, do:
-	    quorra.events.ShiftA.down = function(){
-	       console.log('Shift + A Released!');
-	    }
-	    @author <bprinty@gmail.com>
-	    */
-
-	    e = e || window.event;
-	    var k = e.which;
-	    if (_.has(allKeys, k)) {
-	        _quorra.quorra.keys[allKeys[k]] = false;
-	        if (_.has(metaKeys, k)) {
-	            _.each(baseKeys, function (i) {
-	                if (_quorra.quorra.keys[i]) {
-	                    _quorra.quorra.events[i + metaKeys[k]].up();
-	                }
-	            });
-	        } else {
-	            _quorra.quorra.events[allKeys[k]].up();
-	        }
-	    }
-	};
-
-	// return processed mouse coordinates from selection
-	function mouse(sel) {
-	    var coordinates = d3.mouse(sel.node());
-	    var res = {};
-	    res.x = coordinates[0];
-	    res.y = coordinates[1];
-	    res.scale = d3.event.type == 'zoom' ? d3.event.scale : 1;
-	    return res;
-	}
-
-	// return ratio of domain/range for scaling zoom
-	function zoomscale(scale) {
-	    var d = scale.domain();
-	    var r = scale.range();
-	    var dx = Math.abs(d[1] - d[0]);
-	    var dr = Math.abs(r[1] - r[0]);
-	    return dx / dr;
-	}
-
-/***/ },
-/* 3 */
 /***/ function(module, exports) {
 
 	'use strict';
 
-	Object.defineProperty(exports, "__esModule", {
-	    value: true
-	});
 	/***
 	 *
 	 * Quorra base.
@@ -1239,16 +1109,152 @@
 	    return this.go;
 	}
 
-	exports.quorra = quorra;
-	exports.QuorraPlot = QuorraPlot;
+	window.quorra = quorra;
+	window.QuorraPlot = QuorraPlot;
 
 /***/ },
-/* 4 */
+/* 2 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var _quorra = __webpack_require__(3);
+	__webpack_require__(3);
+
+	__webpack_require__(4);
+
+	__webpack_require__(5);
+
+/***/ },
+/* 3 */
+/***/ function(module, exports) {
+
+	'use strict';
+
+	/*
+
+	Event handling within quorra.
+
+	@author <bprinty@gmail.com>
+
+	*/
+
+	// key map and default event definitions
+	var baseKeys = { 16: 'Shift', 17: 'Ctrl', 18: 'Alt', 27: 'Esc' };
+	var metaKeys = { 9: 'Tab', 13: 'Enter', 65: 'A', 66: 'B', 67: 'C', 68: 'D', 69: 'E', 70: 'F', 71: 'G', 72: 'H', 73: 'I', 74: 'J', 75: 'K', 76: 'L', 77: 'M', 78: 'N', 79: 'O', 80: 'P', 81: 'Q', 82: 'R', 83: 'S', 84: 'T', 85: 'U', 86: 'V', 87: 'W', 88: 'X', 89: 'Y', 90: 'Z' };
+	var allKeys = _.extend(_.clone(baseKeys), metaKeys);
+
+	// setting statuses for each key combination
+	quorra.keys = {};
+	_.each(allKeys, function (key) {
+	    quorra.keys[key] = false;
+	});
+
+	// setting default functions for each key combination
+	quorra.events = {};
+	_.each(baseKeys, function (base) {
+
+	    quorra.events[base] = {
+	        down: function down() {},
+	        up: function up() {}
+	    };
+	    _.each(metaKeys, function (meta) {
+	        quorra.events[base + meta] = {
+	            down: function down() {},
+	            up: function up() {}
+	        };
+	    });
+	});
+
+	document.onkeydown = function (e) {
+	    /**
+	    Key down event handlers. Allows for event triggering on
+	    key press if methods for each key combination are specified.
+	     To set a method for a specific key down event, do:
+	     quorra.events.ShiftA.up = function(){
+	        console.log('Shift + A Pressed!');
+	    }
+	     @author <bprinty@gmail.com>
+	    */
+
+	    e = e || window.event;
+	    var k = e.which;
+	    if (_.has(allKeys, k)) {
+	        quorra.keys[allKeys[k]] = true;
+	        if (_.has(metaKeys, k)) {
+	            _.each(baseKeys, function (i) {
+	                if (quorra.keys[i]) {
+	                    quorra.events[i + metaKeys[k]].down();
+	                }
+	            });
+	        } else {
+	            quorra.events[allKeys[k]].down();
+	        }
+	    }
+	};
+
+	document.onkeyup = function (e) {
+	    /**
+	    Key up event handlers. Allows for event triggering on
+	    key release if methods for each key combination are specified.
+	    To set a method for a specific key down event, do:
+	    quorra.events.ShiftA.down = function(){
+	       console.log('Shift + A Released!');
+	    }
+	    @author <bprinty@gmail.com>
+	    */
+
+	    e = e || window.event;
+	    var k = e.which;
+	    if (_.has(allKeys, k)) {
+	        quorra.keys[allKeys[k]] = false;
+	        if (_.has(metaKeys, k)) {
+	            _.each(baseKeys, function (i) {
+	                if (quorra.keys[i]) {
+	                    quorra.events[i + metaKeys[k]].up();
+	                }
+	            });
+	        } else {
+	            quorra.events[allKeys[k]].up();
+	        }
+	    }
+	};
+
+	// return processed mouse coordinates from selection
+	function mouse(sel) {
+	    var coordinates = d3.mouse(sel.node());
+	    var res = {};
+	    res.x = coordinates[0];
+	    res.y = coordinates[1];
+	    res.scale = d3.event.type == 'zoom' ? d3.event.scale : 1;
+	    return res;
+	}
+
+	// return ratio of domain/range for scaling zoom
+	function zoomscale(scale) {
+	    var d = scale.domain();
+	    var r = scale.range();
+	    var dx = Math.abs(d[1] - d[0]);
+	    var dr = Math.abs(r[1] - r[0]);
+	    return dx / dr;
+	}
+
+	window.mouse = mouse;
+	window.zoomscale = zoomscale;
+
+/***/ },
+/* 4 */
+/***/ function(module, exports) {
+
+	"use strict";
+
+	/*
+
+	Statistical functions used throughout quorra, including methods
+	for kernel density estimation.
+
+	@author <bprinty@gmail.com>
+
+	*/
 
 	function kdeEstimator(kernel, x) {
 	    /**
@@ -1266,14 +1272,7 @@
 	            };
 	        });
 	    };
-	} /*
-	  
-	  Statistical functions used throughout quorra, including methods
-	  for kernel density estimation.
-	  
-	  @author <bprinty@gmail.com>
-	  
-	  */
+	}
 
 	function epanechnikovKernel(scale) {
 	    /**
@@ -1291,23 +1290,18 @@
 
 /***/ },
 /* 5 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ function(module, exports) {
 
 	'use strict';
 
-	Object.defineProperty(exports, "__esModule", {
-	    value: true
-	});
-	exports.selectmerge = exports.extend = exports.parameterize = undefined;
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
 
-	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; }; /***
-	                                                                                                                                                                                                                                                   *
-	                                                                                                                                                                                                                                                   * Common utilities used in plot generation.
-	                                                                                                                                                                                                                                                   * 
-	                                                                                                                                                                                                                                                   * @author  <bprinty@gmail.com>
-	                                                                                                                                                                                                                                                   */
-
-	var _quorra = __webpack_require__(3);
+	/***
+	 *
+	 * Common utilities used in plot generation.
+	 * 
+	 * @author  <bprinty@gmail.com>
+	 */
 
 	// set default seed for random number generation
 	var seed = Math.round(Math.random() * 100000);
@@ -1316,7 +1310,7 @@
 	 * Set seed for reproducable random number generation. 
 	 * @param {number} value - The seed value to set.
 	 */
-	_quorra.quorra.seed = function (value) {
+	quorra.seed = function (value) {
 	    if (!arguments.length) return seed;
 	    seed = value;
 	};
@@ -1324,7 +1318,7 @@
 	/**
 	 * Random number generation using global seed.
 	 */
-	_quorra.quorra.random = function () {
+	quorra.random = function () {
 	    if (typeof seed === 'undefined') seed = 42;
 	    var x = Math.sin(seed++) * 10000;
 	    return x - Math.floor(x);
@@ -1335,7 +1329,7 @@
 	 * @param {number} seed - An explicit seed to use in number
 	 *                        generation
 	 */
-	_quorra.quorra.pseudorandom = function (seed) {
+	quorra.pseudorandom = function (seed) {
 	    var x = Math.sin(seed) * 10000;
 	    return x - Math.floor(x);
 	};
@@ -1344,14 +1338,14 @@
 	 * Generate random uuid with global seed.
 	 * @return {string} Unique UUID identifier
 	 */
-	_quorra.quorra.uuid = function () {
+	quorra.uuid = function () {
 	    function uk() {
-	        return Math.floor((1 + _quorra.quorra.random()) * 0x10000).toString(16).substring(1);
+	        return Math.floor((1 + quorra.random()) * 0x10000).toString(16).substring(1);
 	    }
 	    return 'u' + [uk() + uk(), uk(), uk(), uk(), uk() + uk() + uk()].join('-');
 	};
 
-	_quorra.quorra.export = function (svg, filename) {
+	quorra.export = function (svg, filename) {
 	    /**
 	    quorra.export()
 	    
@@ -1510,12 +1504,9 @@
 	    return selection;
 	};
 
-	window.extend = extend;
 	window.parameterize = parameterize;
+	window.extend = extend;
 	window.selectmerge = selectmerge;
-	exports.parameterize = parameterize;
-	exports.extend = extend;
-	exports.selectmerge = selectmerge;
 
 /***/ },
 /* 6 */
@@ -1527,11 +1518,9 @@
 
 /***/ },
 /* 7 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ function(module, exports) {
 
 	'use strict';
-
-	var _quorra = __webpack_require__(3);
 
 	function Annotation(attributes) {
 	    /**
@@ -1541,7 +1530,7 @@
 	     @author <bprinty@gmail.com>
 	    */
 
-	    _quorra.quorra.log('instantiating annotation object');
+	    quorra.log('instantiating annotation object');
 
 	    if (typeof attributes === 'undefined') attributes = {};
 	    if (typeof window.plot === 'undefined') plot = 'body';
@@ -1549,7 +1538,7 @@
 
 	    // constructor
 	    this.go = function () {
-	        _quorra.quorra.log('running annotation generator function');
+	        quorra.log('running annotation generator function');
 
 	        // set up tooltip
 	        d3.selectAll("div.annotation-tooltip#" + _this.attr.id + "-tooltip").remove();
@@ -1674,7 +1663,7 @@
 	    // setting up attributes
 	    this.attr = extend({
 	        parent: null,
-	        id: _quorra.quorra.uuid(),
+	        id: quorra.uuid(),
 	        type: 'text',
 	        text: '',
 	        // text: function(d){ return d3.format('.2f')(d.x); },
@@ -1698,19 +1687,19 @@
 	        stack: 'top',
 	        events: {
 	            add: function add() {
-	                _quorra.quorra.log('add event');
+	                quorra.log('add event');
 	            },
 	            drag: function drag() {
-	                _quorra.quorra.log('drag event');
+	                quorra.log('drag event');
 	            },
 	            dragstart: function dragstart() {
-	                _quorra.quorra.log('drag start event');
+	                quorra.log('drag start event');
 	            },
 	            dragend: function dragend() {
-	                _quorra.quorra.log('drag end event');
+	                quorra.log('drag end event');
 	            },
 	            click: function click() {
-	                _quorra.quorra.log('click event');
+	                quorra.log('click event');
 	            }
 	        },
 	        style: { opacity: 1 },
@@ -1733,8 +1722,8 @@
 	    return _this.go;
 	}
 
-	_quorra.quorra.annotation = function (attributes) {
-	    _quorra.quorra.log('creating plot annotation');
+	quorra.annotation = function (attributes) {
+	    quorra.log('creating plot annotation');
 	    return new Annotation(attributes);
 	};
 
@@ -1748,9 +1737,9 @@
 
 	__webpack_require__(10);
 
-	__webpack_require__(12);
-
 	__webpack_require__(11);
+
+	__webpack_require__(12);
 
 	__webpack_require__(13);
 
@@ -1760,16 +1749,9 @@
 
 /***/ },
 /* 9 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ function(module, exports) {
 
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	    value: true
-	});
-	exports.Bar = undefined;
-
-	var _quorra = __webpack_require__(3);
+	"use strict";
 
 	function Bar(attributes) {
 	    /**
@@ -1782,7 +1764,7 @@
 	    if (typeof attributes == 'undefined') attributes = {};
 
 	    // plot-specific attributes
-	    _quorra.QuorraPlot.call(this, extend({
+	    QuorraPlot.call(this, extend({
 	        class: "quorra-bar",
 	        layout: "stacked"
 	    }, attributes));
@@ -1895,93 +1877,18 @@
 	    return this.go;
 	}
 
-	Bar.prototype = Object.create(_quorra.QuorraPlot.prototype);
+	Bar.prototype = Object.create(QuorraPlot.prototype);
 	Bar.prototype.constructor = Bar;
-	_quorra.quorra.bar = function (attributes) {
+	quorra.bar = function (attributes) {
 	    return new Bar(attributes);
 	};
-
-	exports.Bar = Bar;
+	window.Bar = Bar;
 
 /***/ },
 /* 10 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ function(module, exports) {
 
-	'use strict';
-
-	var _quorra = __webpack_require__(3);
-
-	var _line = __webpack_require__(11);
-
-	function Density(attributes) {
-	    /**
-	    quorra.density()
-	     Density plot. Code for generating this type of plot was inspired from:
-	    http://bl.ocks.org/mbostock/3883245
-	     @author <bprinty@gmail.com>
-	    */
-	    var _this = this;
-	    if (typeof attributes == 'undefined') attributes = {};
-
-	    // parent class initialization
-	    _line.Line.call(this, extend({
-	        class: "quorra-density",
-	        resolution: 10
-	    }, attributes));
-	    this.type = "density";
-
-	    // data transformation
-	    _this.attr.transform = function (data) {
-
-	        // generate kde scaling function
-	        var format = d3.format(".04f");
-	        var kde = kdeEstimator(epanechnikovKernel(9), d3.scale.linear().ticks(_this.attr.resolution));
-
-	        // rearranging data
-	        var grps = _.uniquesort(data, _this.attr.group);
-	        var newdata = [];
-	        for (var grp in grps) {
-	            var subdat = _.filter(data, function (d) {
-	                return d.group == grps[grp];
-	            });
-	            var newgrp = kde(_.map(subdat, function (d) {
-	                return d.x;
-	            }));
-	            newgrp = _.map(newgrp, function (d) {
-	                return {
-	                    x: d.x,
-	                    y: d.y,
-	                    group: grps[grp],
-	                    label: format(d.y)
-	                };
-	            });
-	            newdata = newdata.concat(newgrp);
-	        }
-
-	        return newdata;
-	    };
-
-	    return this.go;
-	}
-
-	Density.prototype = Object.create(_line.Line.prototype);
-	Density.prototype.constructor = Density;
-	_quorra.quorra.density = function (attributes) {
-	    return new Density(attributes);
-	};
-
-/***/ },
-/* 11 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	    value: true
-	});
-	exports.Line = undefined;
-
-	var _quorra = __webpack_require__(3);
+	"use strict";
 
 	function Line(attributes) {
 	    /**
@@ -1994,7 +1901,7 @@
 	    if (typeof attributes == 'undefined') attributes = {};
 
 	    // plot-specific attributes
-	    _quorra.QuorraPlot.call(this, extend({
+	    QuorraPlot.call(this, extend({
 	        class: "quorra-line",
 	        points: 0,
 	        size: 3,
@@ -2005,7 +1912,7 @@
 
 	    // overwrite render method
 	    this.plot = function () {
-	        _quorra.quorra.log('drawing plot data');
+	        quorra.log('drawing plot data');
 
 	        // configuring path renderer
 	        var path = d3.svg.line().x(function (d, i) {
@@ -2167,23 +2074,81 @@
 	    return this.go;
 	}
 
-	Line.prototype = Object.create(_quorra.QuorraPlot.prototype);
+	Line.prototype = Object.create(QuorraPlot.prototype);
 	Line.prototype.constructor = Line;
-	_quorra.quorra.line = function (attributes) {
+	quorra.line = function (attributes) {
 	    return new Line(attributes);
 	};
+	window.Line = Line;
 
-	exports.Line = Line;
+/***/ },
+/* 11 */
+/***/ function(module, exports) {
+
+	"use strict";
+
+	function Density(attributes) {
+	    /**
+	    quorra.density()
+	     Density plot. Code for generating this type of plot was inspired from:
+	    http://bl.ocks.org/mbostock/3883245
+	     @author <bprinty@gmail.com>
+	    */
+	    var _this = this;
+	    if (typeof attributes == 'undefined') attributes = {};
+
+	    // parent class initialization
+	    Line.call(this, extend({
+	        class: "quorra-density",
+	        resolution: 10
+	    }, attributes));
+	    this.type = "density";
+
+	    // data transformation
+	    _this.attr.transform = function (data) {
+
+	        // generate kde scaling function
+	        var format = d3.format(".04f");
+	        var kde = kdeEstimator(epanechnikovKernel(9), d3.scale.linear().ticks(_this.attr.resolution));
+
+	        // rearranging data
+	        var grps = _.uniquesort(data, _this.attr.group);
+	        var newdata = [];
+	        for (var grp in grps) {
+	            var subdat = _.filter(data, function (d) {
+	                return d.group == grps[grp];
+	            });
+	            var newgrp = kde(_.map(subdat, function (d) {
+	                return d.x;
+	            }));
+	            newgrp = _.map(newgrp, function (d) {
+	                return {
+	                    x: d.x,
+	                    y: d.y,
+	                    group: grps[grp],
+	                    label: format(d.y)
+	                };
+	            });
+	            newdata = newdata.concat(newgrp);
+	        }
+
+	        return newdata;
+	    };
+
+	    return this.go;
+	}
+
+	Density.prototype = Object.create(Line.prototype);
+	Density.prototype.constructor = Density;
+	quorra.density = function (attributes) {
+	    return new Density(attributes);
+	};
 
 /***/ },
 /* 12 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ function(module, exports) {
 
 	'use strict';
-
-	var _quorra = __webpack_require__(3);
-
-	var _bar = __webpack_require__(9);
 
 	function Histogram(attributes) {
 	    /**
@@ -2196,7 +2161,7 @@
 	    if (typeof attributes == 'undefined') attributes = {};
 
 	    // parent class initialization
-	    _bar.Bar.call(this, extend({
+	    Bar.call(this, extend({
 	        class: "quorra-histogram",
 	        bins: 10,
 	        display: 'counts' // fraction, percent, counts
@@ -2250,19 +2215,17 @@
 	    return this.go;
 	}
 
-	Histogram.prototype = Object.create(_bar.Bar.prototype);
+	Histogram.prototype = Object.create(Bar.prototype);
 	Histogram.prototype.constructor = Histogram;
-	_quorra.quorra.histogram = function (attributes) {
+	quorra.histogram = function (attributes) {
 	    return new Histogram(attributes);
 	};
 
 /***/ },
 /* 13 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ function(module, exports) {
 
-	'use strict';
-
-	var _quorra = __webpack_require__(3);
+	"use strict";
 
 	function Multiline(attributes) {
 	    /**
@@ -2274,7 +2237,7 @@
 	    if (typeof attributes == 'undefined') attributes = {};
 
 	    // plot-specific attributes
-	    _quorra.QuorraPlot.call(this, extend({
+	    QuorraPlot.call(this, extend({
 	        class: "quorra-multiline",
 	        points: 0,
 	        size: 3,
@@ -2287,7 +2250,7 @@
 
 	    // overwrite axes method
 	    this.axes = function () {
-	        _quorra.quorra.log('redrawing axes');
+	        quorra.log('redrawing axes');
 
 	        // parameterize axes scaling
 	        var domain = _this.attr.xrange === "auto" ? _this.domain : _this.attr.xrange;
@@ -2361,7 +2324,7 @@
 
 	    // overwrite render method
 	    this.plot = function () {
-	        _quorra.quorra.log('drawing plot data');
+	        quorra.log('drawing plot data');
 
 	        // get current view data
 	        _this.plotdata = _this.data;
@@ -2531,19 +2494,17 @@
 	    return this.go;
 	}
 
-	Multiline.prototype = Object.create(_quorra.QuorraPlot.prototype);
+	Multiline.prototype = Object.create(QuorraPlot.prototype);
 	Multiline.prototype.constructor = Multiline;
-	_quorra.quorra.multiline = function (attributes) {
+	quorra.multiline = function (attributes) {
 	    return new Multiline(attributes);
 	};
 
 /***/ },
 /* 14 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ function(module, exports) {
 
-	'use strict';
-
-	var _quorra = __webpack_require__(3);
+	"use strict";
 
 	function Pie(attributes) {
 	    /**
@@ -2557,7 +2518,7 @@
 	    if (typeof attributes == 'undefined') attributes = {};
 
 	    // plot-specific attributes
-	    _quorra.QuorraPlot.call(this, extend({
+	    QuorraPlot.call(this, extend({
 	        class: "quorra-pie",
 	        aggregate: function aggregate(x) {
 	            return x[0];
@@ -2634,19 +2595,17 @@
 	    return this.go;
 	};
 
-	Pie.prototype = Object.create(_quorra.QuorraPlot.prototype);
+	Pie.prototype = Object.create(QuorraPlot.prototype);
 	Pie.prototype.constructor = Pie;
-	_quorra.quorra.pie = function (attributes) {
+	quorra.pie = function (attributes) {
 	    return new Pie(attributes);
 	};
 
 /***/ },
 /* 15 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ function(module, exports) {
 
-	'use strict';
-
-	var _quorra = __webpack_require__(3);
+	"use strict";
 
 	function Scatter(attributes) {
 	    /**
@@ -2659,7 +2618,7 @@
 	    if (typeof attributes == 'undefined') attributes = {};
 
 	    // plot-specific attributes
-	    _quorra.QuorraPlot.call(this, extend({
+	    QuorraPlot.call(this, extend({
 	        class: "quorra-scatter",
 	        lm: false,
 	        xdensity: false,
@@ -2681,8 +2640,8 @@
 	        var domain = _this.xscale.domain();
 	        _this.plotdata = _.map(_this.hotdata(), function (d, i) {
 	            var c = extend({}, d);
-	            c.x = (_quorra.quorra.pseudorandom(i) - 0.5) * _this.attr.xjitter + _this.xscale(_this.xmapper(_this.attr.x(d, i)));
-	            c.y = (_quorra.quorra.pseudorandom(i) - 0.5) * _this.attr.yjitter + _this.yscale(_this.ymapper(_this.attr.y(d, i)));
+	            c.x = (quorra.pseudorandom(i) - 0.5) * _this.attr.xjitter + _this.xscale(_this.xmapper(_this.attr.x(d, i)));
+	            c.y = (quorra.pseudorandom(i) - 0.5) * _this.attr.yjitter + _this.yscale(_this.ymapper(_this.attr.y(d, i)));
 	            return c;
 	        });
 
@@ -2877,16 +2836,16 @@
 
 	        // generating regression line with smoothing curve (if specified)
 	        if (_this.attr.lm != false) {
-	            _quorra.quorra.error("Not yet implemented!");
+	            quorra.error("Not yet implemented!");
 	        }
 	    };
 
 	    return this.go;
 	}
 
-	Scatter.prototype = Object.create(_quorra.QuorraPlot.prototype);
+	Scatter.prototype = Object.create(QuorraPlot.prototype);
 	Scatter.prototype.constructor = Scatter;
-	_quorra.quorra.scatter = function (attributes) {
+	quorra.scatter = function (attributes) {
 	    return new Scatter(attributes);
 	};
 
