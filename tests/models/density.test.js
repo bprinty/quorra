@@ -54,6 +54,7 @@ describe("density.js", function () {
           .exportable(true)
           .margin({'left': 60})
           .yticks(10).xticks(10)
+          .yformat(d3.format('0.5f'))
           .labelpadding({y: -20})
           .resolution(20)
           .xlabel("X Axis Label")

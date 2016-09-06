@@ -141,6 +141,12 @@ function QuorraPlot(attributes) {
             _this.xdelta = (Math.abs(_this.domain[1] - _this.domain[0]) * _this.pallette.length)/_this.data.length;
         }
 
+        // adjust domain for histogram data (needs to be inclusive on both
+        // ends for proper display)
+        if (_this.type === 'histogram') {
+            _this.domain[1] = _this.domain[1] + (_this.domain[1] - _this.domain[0])/(_this.attr.bins-1);
+        }
+
         // get y domain and range
         var max;
         if (typeof _this.data[0].y === 'string') {
@@ -253,9 +259,6 @@ function QuorraPlot(attributes) {
         // parameterize axes scaling
         var domain = _this.attr.xrange === "auto" ? _this.domain : _this.attr.xrange;
         var range = _this.attr.yrange === "auto" ? _this.range : _this.attr.yrange;
-        if (_this.type === 'histogram') {
-            domain[1] = domain[1] + (domain[1] - domain[0])/(_this.attr.bins-1);
-        }
 
         // set up scaling for axes
         // TODO: allow users to pass in arbitrary scaling function
@@ -297,7 +300,13 @@ function QuorraPlot(attributes) {
                 Math.ceil(domain[0]),
                 Math.floor(domain[domain.length - 1]) + 1
             )).tickFormat(function(d){
-                return _this.attr.xformat(_this.xordrev(d));
+                // don't display axis labels for ticks out of ordinal range
+                var ndom = _.map(_this.domain, _this.xmapper);
+                if ((d >= ndom[0]) && (d <= ndom[ndom.length-1])) {
+                    return _this.attr.xformat(_this.xordrev(d));            
+                } else {
+                    return '';
+                }
             });
         }
 
@@ -335,7 +344,13 @@ function QuorraPlot(attributes) {
                 Math.ceil(range[0]),
                 Math.floor(range[range.length - 1]) + 1
             )).tickFormat(function(d){
-                return _this.attr.yformat(_this.yordrev(d));
+                // don't display axis labels for ticks out of ordinal range
+                var nran = _.map(_this.range, _this.ymapper);
+                if ((d >= nran[0]) && (d <= nran[nran.length-1])) {
+                    return _this.attr.yformat(_this.yordrev(d));            
+                } else {
+                    return '';
+                }
             });
         }
 
@@ -888,83 +903,20 @@ function QuorraPlot(attributes) {
                     ].join(''));
                 } else if(_this.enabled.pan && withinBounds(movement)) {
                     viewbox.attr('d', '');
+                    var l = _this.xstack.length;
                     var xmap = d3.scale.linear().domain(_this.xscale.range()).range(_this.xscale.domain());
                     var ymap = d3.scale.linear().domain(_this.yscale.range()).range(_this.yscale.domain());
                     var xval = _.map(_this.xscale.range(), function(x){ return xmap(x - d3.event.dx); });
                     var yval = _.map(_this.yscale.range(), function(x){ return ymap(x - d3.event.dy); });
-                    _this.redraw(xval, yval, false);
-                    var l = _this.xstack.length;
                     _this.xscale = d3.scale.linear().domain(xval).range(_this.xstack[l-1].range());
                     _this.yscale = d3.scale.linear().domain(yval).range(_this.ystack[l-1].range());
+                    _this.redraw(xval, yval, false);
                     _this.attr.events.pan(_this.attr);
                 }
+                if (_this.attr.tooltip) {
+                    _this.attr.tooltip.style("visibility", "hidden");
+                }
             });
-
-        // // set up zoom behavior
-        // THIS WAS TEMPORARILY REMOVED BECAUSE IT SCROLLJACKS, BUT SOME EFFORT SHOULD
-        // BE PUT INTO MAKING THIS AN OPTION AND MAKING IT COMPATIBLE WITH THE CURRENT CODE
-        // var zoom = d3.behavior.zoom()
-        //     .on("zoom", function(){
-        //         var movement = mouse(_this.attr.svg);
-        //         movement.x = movement.x - _this.attr.margin.left;
-        //         movement.y = movement.y - _this.attr.margin.top;
-        //         var time = Date.now();
-
-        //         // correcting for touchpad/mousewheel discrepencies
-        //         // and for things that fire as zoom events
-        //         if (
-        //             (!quorra.controller[id].zoom) ||
-        //             (time - quorra.controller[id].time) < 25 ||
-        //             (movement.x > quorra.controller[id].width) ||
-        //             (movement.y < 0) ||
-        //             (Math.abs(quorra.controller[id].scale - movement.scale) < 0.00001) ||
-        //             (!movement.x)
-        //         ){
-        //             if (!quorra.keys.Shift){
-        //                 // quorra.controller[id].svg.on(".zoom", null);
-        //                 var fakescroll = (quorra.controller[id].scale - movement.scale) < 0 ? -10 : 10;
-        //                 quorra.controller[id].svg.node().parentNode.scrollY += fakescroll;
-        //                 // window.scroll(window.scrollX, window.scrollY + fakescroll);
-        //             }
-        //             quorra.controller[id].scale = movement.scale;
-        //             return;
-        //         }
-        //         quorra.controller[id].time = time;
-
-        //         // get zoom ratios for x and y axes
-        //         var xzoom = 50*zoomscale(quorra.controller[id].xdrag);
-        //         var yzoom = 50*zoomscale(quorra.controller[id].ydrag);
-        //         if (quorra.controller[id].scale > movement.scale){
-        //             xzoom = -xzoom;
-        //             yzoom = -yzoom;
-        //         }
-                
-        //         // zoom only on relevant axis
-        //         var mx = movement.x/quorra.controller[id].width;
-        //         var my = (quorra.controller[id].height -  movement.y)/quorra.controller[id].height;
-        //         var xlzoom = (mx > 0) ? -(xzoom*mx) : 0;
-        //         var xrzoom = (mx > 0) ? (xzoom*(1-mx)) : 0;
-        //         var ydzoom = (my > 0) ? -(yzoom*my) : 0;
-        //         var yuzoom = (my > 0) ? (yzoom*(1-my)): 0;
-
-        //         // do the zooming
-        //         var l = quorra.controller[id].xstack.length;
-        //         var xdomain = quorra.controller[id].xdrag.domain();
-        //         var ydomain = quorra.controller[id].ydrag.domain();
-        //         var xval = [
-        //             xdomain[0] + xlzoom,
-        //             xdomain[1] + xrzoom
-        //         ].sort(function(a, b){ return a - b; });
-        //         var yval = [
-        //             ydomain[0] + ydzoom,
-        //             ydomain[1] + yuzoom
-        //         ].sort(function(a, b){ return a - b; });
-        //         quorra.controller[id].render(xval, yval);
-        //         quorra.controller[id].xdrag = d3.scale.linear().domain(xval).range(quorra.controller[id].xstack[l-1].range());
-        //         quorra.controller[id].ydrag = d3.scale.linear().domain(yval).range(quorra.controller[id].ystack[l-1].range());
-        //         quorra.controller[id].scale = movement.scale;
-        //         return;
-        //     });
 
         // enable double click for jumping up on the stack
         _this.attr.svg.on('dblclick', function() {
@@ -976,7 +928,7 @@ function QuorraPlot(attributes) {
             }
             _this.redraw(_this.xstack[l-1].domain(), _this.ystack[l-1].domain(), false);
             _this.attr.events.zoom();
-        }).call(drag) // .call(zoom)
+        }).call(drag)
         .on("dblclick.zoom", null)
         .on("mousedown.zoom", null)
         .on("touchstart.zoom", null)
@@ -997,7 +949,7 @@ function QuorraPlot(attributes) {
         quorra.events.Shift.up = function() {
             d3.selectAll('.glyphbox#pan')
                 .selectAll('.glyph')
-                .style('stroke', '#ddd')
+                .style('stroke', '#555')
                 .style('stroke-width', 1);
             _.each(Object.keys(quorra.plots), function(key) {
                 quorra.plots[key].enabled.pan = false;
@@ -1949,9 +1901,6 @@ function Bar(attributes) {
                 }
             }).on("click", function(d, i) {
                 _this.attr.events.click(d, i);
-                if (_this.attr.tooltip){
-                    _this.attr.tooltip.style("visibility", "hidden");
-                }
             });
     }
 
@@ -2230,9 +2179,6 @@ function Line(attributes) {
                         _this.attr.slider.__parent__.attr.selected = _this.attr.selected;
                         _this.attr.slider.__parent__.redraw();
                     }
-                    if (_this.attr.tooltip){
-                        _this.attr.tooltip.style("visibility", "hidden");
-                    }
                     _this.attr.events.click(d, i);
                 });
         }
@@ -2291,9 +2237,6 @@ function Line(attributes) {
                     if (_this.attr.slider) {
                         _this.attr.slider.__parent__.attr.selected = _this.attr.selected;
                         _this.attr.slider.__parent__.redraw();
-                    }
-                    if (_this.attr.tooltip){
-                        _this.attr.tooltip.style("visibility", "hidden");
                     }
                     _this.attr.events.click(d, i);
                 });
@@ -2369,7 +2312,13 @@ function Multiline(attributes) {
             Math.ceil(domain[0]),
             Math.floor(domain[domain.length - 1]) + 1
         )).tickFormat(function(d){
-            return _this.attr.xformat(_this.xordrev(d));
+            // don't display axis labels for ticks out of ordinal range
+            var ndom = _.map(_this.domain, _this.xmapper);
+            if ((d >= ndom[0]) && (d <= ndom[ndom.length-1])) {
+                return _this.attr.xformat(_this.xordrev(d));            
+            } else {
+                return '';
+            }
         }).tickSize(0).tickPadding(15);
 
         // x axis
@@ -2490,6 +2439,12 @@ function Multiline(attributes) {
                     return _.contains(_this.attr.toggled, _this.attr.group(d[0], i)) ? 'hidden' : 'visible';
                 })
                 .on("mouseover", function(d, i) {
+                    if (_this.attr.tooltip){
+                        _this.attr.tooltip.html(d[0].group)
+                            .style("visibility", "visible")
+                            .style("left", (d3.event.clientX + 5) + "px")
+                            .style("top", (d3.event.clientY - 20) + "px");
+                    }
                     if (_.contains(_this.attr.selected, _this.attr.group(d[0], i))) {
                         return;
                     }
@@ -2499,12 +2454,6 @@ function Multiline(attributes) {
                     } else {
                         _this.plotarea.selectAll('.g_' + d[0].group).style("opacity", 0.25);
                     }
-                    if (_this.attr.tooltip){
-                        _this.attr.tooltip.html(d[0].group)
-                            .style("visibility", "visible")
-                            .style("left", (d3.event.clientX + 5) + "px")
-                            .style("top", (d3.event.clientY - 20) + "px");
-                    }
                 }).on("mousemove", function(d) {
                     if (_this.attr.tooltip) {
                         _this.attr.tooltip
@@ -2512,6 +2461,9 @@ function Multiline(attributes) {
                             .style("top", (d3.event.clientY - 20) + "px");
                     }
                 }).on("mouseout", function(d, i) {
+                    if (_this.attr.tooltip) {
+                        _this.attr.tooltip.style("visibility", "hidden");
+                    }
                     if (_.contains(_this.attr.selected, _this.attr.group(d[0], i))) {
                         return;
                     }
@@ -2521,9 +2473,6 @@ function Multiline(attributes) {
                     } else {
                         _this.plotarea.selectAll('.g_' + d[0].group).style("opacity", _this.attr.opacity);
                     }
-                    if (_this.attr.tooltip) {
-                        _this.attr.tooltip.style("visibility", "hidden");
-                    }
                 }).on("click", function(d, i){
                     if (_this.attr.selectable !== false) {
                         _this.attr.selected = selectmerge(_this.attr.selected, d[0].group, _this.attr.selectable);
@@ -2532,9 +2481,6 @@ function Multiline(attributes) {
                     if (_this.attr.slider) {
                         _this.attr.slider.__parent__.attr.selected = _this.attr.selected;
                         _this.attr.slider.__parent__.redraw();
-                    }
-                    if (_this.attr.tooltip){
-                        _this.attr.tooltip.style("visibility", "hidden");
                     }
                     _this.attr.events.click(d, i);
                 });
@@ -2569,6 +2515,12 @@ function Multiline(attributes) {
                     return _.contains(_this.attr.toggled, _this.attr.group(d, i)) ? 'hidden' : 'visible';
                 })
                 .on("mouseover", function(d, i){
+                    if (_this.attr.tooltip){
+                        _this.attr.tooltip.html(_this.attr.label(d, i))
+                            .style("visibility", "visible")
+                            .style("left", (d3.event.clientX + 5) + "px")
+                            .style("top", (d3.event.clientY - 20) + "px");
+                    }
                     if (_.contains(_this.attr.selected, _this.attr.group(d, i))) {
                         return;
                     }
@@ -2578,12 +2530,6 @@ function Multiline(attributes) {
                     } else {
                         _this.plotarea.selectAll('.g_' + d.group).style("opacity", 0.25);
                     }
-                    if (_this.attr.tooltip){
-                        _this.attr.tooltip.html(_this.attr.label(d, i))
-                            .style("visibility", "visible")
-                            .style("left", (d3.event.clientX + 5) + "px")
-                            .style("top", (d3.event.clientY - 20) + "px");
-                    }
                 }).on("mousemove", function(d){
                     if (_this.attr.tooltip){
                         _this.attr.tooltip
@@ -2591,6 +2537,9 @@ function Multiline(attributes) {
                             .style("top", (d3.event.clientY - 20) + "px");
                     }
                 }).on("mouseout", function(d, i){
+                    if (_this.attr.tooltip){
+                        _this.attr.tooltip.style("visibility", "hidden");
+                    }
                     if (_.contains(_this.attr.selected, _this.attr.group(d, i))) {
                         return;
                     }
@@ -2600,9 +2549,6 @@ function Multiline(attributes) {
                     } else {
                         _this.plotarea.selectAll('.g_' + d.group).style("opacity", _this.attr.opacity);
                     }
-                    if (_this.attr.tooltip){
-                        _this.attr.tooltip.style("visibility", "hidden");
-                    }
                 }).on("click", function(d, i){
                     if (_this.attr.selectable !== false) {
                         _this.attr.selected = selectmerge(_this.attr.selected, d.group, _this.attr.selectable);
@@ -2611,9 +2557,6 @@ function Multiline(attributes) {
                     if (_this.attr.slider) {
                         _this.attr.slider.__parent__.attr.selected = _this.attr.selected;
                         _this.attr.slider.__parent__.redraw();
-                    }
-                    if (_this.attr.tooltip){
-                        _this.attr.tooltip.style("visibility", "hidden");
                     }
                     _this.attr.events.click(d, i);
                 });
@@ -2843,9 +2786,6 @@ function Scatter(attributes) {
                             _this.attr.slider.__parent__.attr.selected = _this.attr.selected;
                             _this.attr.slider.__parent__.redraw();
                         }
-                        if (_this.attr.tooltip){
-                            _this.attr.tooltip.style("visibility", "hidden");
-                        }
                         _this.attr.events.click(d, i);
                     });
             }
@@ -2878,6 +2818,12 @@ function Scatter(attributes) {
             })
             .attr("clip-path", "url(#clip)")
             .on("mouseover", function(d, i){
+                if (_this.attr.tooltip){
+                    _this.attr.tooltip.html(_this.attr.label(d, i))
+                        .style("visibility", "visible")
+                        .style("left", (d3.event.clientX + 5) + "px")
+                        .style("top", (d3.event.clientY - 20) + "px");
+                }
                 if (_.contains(_this.attr.selected, _this.attr.group(d, i))) {
                     return;
                 }
@@ -2897,12 +2843,6 @@ function Scatter(attributes) {
                         _this.attr.slider.__parent__.plotarea.selectAll('.g_' + d.group).style("opacity", 0.25);
                     }
                 }
-                if (_this.attr.tooltip){
-                    _this.attr.tooltip.html(_this.attr.label(d, i))
-                        .style("visibility", "visible")
-                        .style("left", (d3.event.clientX + 5) + "px")
-                        .style("top", (d3.event.clientY - 20) + "px");
-                }
             }).on("mousemove", function(d){
                 if (_this.attr.tooltip){
                     _this.attr.tooltip
@@ -2910,6 +2850,9 @@ function Scatter(attributes) {
                         .style("top", (d3.event.clientY - 20) + "px");
                 }
             }).on("mouseout", function(d, i){
+                if (_this.attr.tooltip){
+                    _this.attr.tooltip.style("visibility", "hidden");
+                }
                 if (_.contains(_this.attr.selected, _this.attr.group(d, i))) {
                     return;
                 }
@@ -2929,21 +2872,14 @@ function Scatter(attributes) {
                         _this.attr.slider.__parent__.plotarea.selectAll('.g_' + d.group).style("opacity", _this.attr.opacity);
                     }
                 }
-                d3.select(this).style("opacity", _this.attr.opacity);
-                if (_this.attr.tooltip){
-                    _this.attr.tooltip.style("visibility", "hidden");
-                }
             }).on("click", function(d, i){
                 if (_this.attr.selectable !== false) {
                     _this.attr.selected = selectmerge(_this.attr.selected, d.group, _this.attr.selectable);
                     _this.redraw(_this.xscale.domain(), _this.yscale.domain(), false);
-                }
-                if (_this.attr.slider) {
-                    _this.attr.slider.__parent__.attr.selected = _this.attr.selected;
-                    _this.attr.slider.__parent__.redraw();
-                }
-                if (_this.attr.tooltip){
-                    _this.attr.tooltip.style("visibility", "hidden");
+                    if (_this.attr.slider) {
+                        _this.attr.slider.__parent__.attr.selected = _this.attr.selected;
+                        _this.attr.slider.__parent__.redraw();
+                    }
                 }
                 _this.attr.events.click(d, i);
             });

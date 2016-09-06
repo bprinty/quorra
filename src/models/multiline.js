@@ -59,7 +59,13 @@ function Multiline(attributes) {
             Math.ceil(domain[0]),
             Math.floor(domain[domain.length - 1]) + 1
         )).tickFormat(function(d){
-            return _this.attr.xformat(_this.xordrev(d));
+            // don't display axis labels for ticks out of ordinal range
+            var ndom = _.map(_this.domain, _this.xmapper);
+            if ((d >= ndom[0]) && (d <= ndom[ndom.length-1])) {
+                return _this.attr.xformat(_this.xordrev(d));            
+            } else {
+                return '';
+            }
         }).tickSize(0).tickPadding(15);
 
         // x axis
@@ -180,6 +186,12 @@ function Multiline(attributes) {
                     return _.contains(_this.attr.toggled, _this.attr.group(d[0], i)) ? 'hidden' : 'visible';
                 })
                 .on("mouseover", function(d, i) {
+                    if (_this.attr.tooltip){
+                        _this.attr.tooltip.html(d[0].group)
+                            .style("visibility", "visible")
+                            .style("left", (d3.event.clientX + 5) + "px")
+                            .style("top", (d3.event.clientY - 20) + "px");
+                    }
                     if (_.contains(_this.attr.selected, _this.attr.group(d[0], i))) {
                         return;
                     }
@@ -189,12 +201,6 @@ function Multiline(attributes) {
                     } else {
                         _this.plotarea.selectAll('.g_' + d[0].group).style("opacity", 0.25);
                     }
-                    if (_this.attr.tooltip){
-                        _this.attr.tooltip.html(d[0].group)
-                            .style("visibility", "visible")
-                            .style("left", (d3.event.clientX + 5) + "px")
-                            .style("top", (d3.event.clientY - 20) + "px");
-                    }
                 }).on("mousemove", function(d) {
                     if (_this.attr.tooltip) {
                         _this.attr.tooltip
@@ -202,6 +208,9 @@ function Multiline(attributes) {
                             .style("top", (d3.event.clientY - 20) + "px");
                     }
                 }).on("mouseout", function(d, i) {
+                    if (_this.attr.tooltip) {
+                        _this.attr.tooltip.style("visibility", "hidden");
+                    }
                     if (_.contains(_this.attr.selected, _this.attr.group(d[0], i))) {
                         return;
                     }
@@ -211,9 +220,6 @@ function Multiline(attributes) {
                     } else {
                         _this.plotarea.selectAll('.g_' + d[0].group).style("opacity", _this.attr.opacity);
                     }
-                    if (_this.attr.tooltip) {
-                        _this.attr.tooltip.style("visibility", "hidden");
-                    }
                 }).on("click", function(d, i){
                     if (_this.attr.selectable !== false) {
                         _this.attr.selected = selectmerge(_this.attr.selected, d[0].group, _this.attr.selectable);
@@ -222,9 +228,6 @@ function Multiline(attributes) {
                     if (_this.attr.slider) {
                         _this.attr.slider.__parent__.attr.selected = _this.attr.selected;
                         _this.attr.slider.__parent__.redraw();
-                    }
-                    if (_this.attr.tooltip){
-                        _this.attr.tooltip.style("visibility", "hidden");
                     }
                     _this.attr.events.click(d, i);
                 });
@@ -259,6 +262,12 @@ function Multiline(attributes) {
                     return _.contains(_this.attr.toggled, _this.attr.group(d, i)) ? 'hidden' : 'visible';
                 })
                 .on("mouseover", function(d, i){
+                    if (_this.attr.tooltip){
+                        _this.attr.tooltip.html(_this.attr.label(d, i))
+                            .style("visibility", "visible")
+                            .style("left", (d3.event.clientX + 5) + "px")
+                            .style("top", (d3.event.clientY - 20) + "px");
+                    }
                     if (_.contains(_this.attr.selected, _this.attr.group(d, i))) {
                         return;
                     }
@@ -268,12 +277,6 @@ function Multiline(attributes) {
                     } else {
                         _this.plotarea.selectAll('.g_' + d.group).style("opacity", 0.25);
                     }
-                    if (_this.attr.tooltip){
-                        _this.attr.tooltip.html(_this.attr.label(d, i))
-                            .style("visibility", "visible")
-                            .style("left", (d3.event.clientX + 5) + "px")
-                            .style("top", (d3.event.clientY - 20) + "px");
-                    }
                 }).on("mousemove", function(d){
                     if (_this.attr.tooltip){
                         _this.attr.tooltip
@@ -281,6 +284,9 @@ function Multiline(attributes) {
                             .style("top", (d3.event.clientY - 20) + "px");
                     }
                 }).on("mouseout", function(d, i){
+                    if (_this.attr.tooltip){
+                        _this.attr.tooltip.style("visibility", "hidden");
+                    }
                     if (_.contains(_this.attr.selected, _this.attr.group(d, i))) {
                         return;
                     }
@@ -290,9 +296,6 @@ function Multiline(attributes) {
                     } else {
                         _this.plotarea.selectAll('.g_' + d.group).style("opacity", _this.attr.opacity);
                     }
-                    if (_this.attr.tooltip){
-                        _this.attr.tooltip.style("visibility", "hidden");
-                    }
                 }).on("click", function(d, i){
                     if (_this.attr.selectable !== false) {
                         _this.attr.selected = selectmerge(_this.attr.selected, d.group, _this.attr.selectable);
@@ -301,9 +304,6 @@ function Multiline(attributes) {
                     if (_this.attr.slider) {
                         _this.attr.slider.__parent__.attr.selected = _this.attr.selected;
                         _this.attr.slider.__parent__.redraw();
-                    }
-                    if (_this.attr.tooltip){
-                        _this.attr.tooltip.style("visibility", "hidden");
                     }
                     _this.attr.events.click(d, i);
                 });

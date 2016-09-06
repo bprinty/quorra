@@ -108,9 +108,6 @@ function Scatter(attributes) {
                             _this.attr.slider.__parent__.attr.selected = _this.attr.selected;
                             _this.attr.slider.__parent__.redraw();
                         }
-                        if (_this.attr.tooltip){
-                            _this.attr.tooltip.style("visibility", "hidden");
-                        }
                         _this.attr.events.click(d, i);
                     });
             }
@@ -143,6 +140,12 @@ function Scatter(attributes) {
             })
             .attr("clip-path", "url(#clip)")
             .on("mouseover", function(d, i){
+                if (_this.attr.tooltip){
+                    _this.attr.tooltip.html(_this.attr.label(d, i))
+                        .style("visibility", "visible")
+                        .style("left", (d3.event.clientX + 5) + "px")
+                        .style("top", (d3.event.clientY - 20) + "px");
+                }
                 if (_.contains(_this.attr.selected, _this.attr.group(d, i))) {
                     return;
                 }
@@ -162,12 +165,6 @@ function Scatter(attributes) {
                         _this.attr.slider.__parent__.plotarea.selectAll('.g_' + d.group).style("opacity", 0.25);
                     }
                 }
-                if (_this.attr.tooltip){
-                    _this.attr.tooltip.html(_this.attr.label(d, i))
-                        .style("visibility", "visible")
-                        .style("left", (d3.event.clientX + 5) + "px")
-                        .style("top", (d3.event.clientY - 20) + "px");
-                }
             }).on("mousemove", function(d){
                 if (_this.attr.tooltip){
                     _this.attr.tooltip
@@ -175,6 +172,9 @@ function Scatter(attributes) {
                         .style("top", (d3.event.clientY - 20) + "px");
                 }
             }).on("mouseout", function(d, i){
+                if (_this.attr.tooltip){
+                    _this.attr.tooltip.style("visibility", "hidden");
+                }
                 if (_.contains(_this.attr.selected, _this.attr.group(d, i))) {
                     return;
                 }
@@ -194,21 +194,14 @@ function Scatter(attributes) {
                         _this.attr.slider.__parent__.plotarea.selectAll('.g_' + d.group).style("opacity", _this.attr.opacity);
                     }
                 }
-                d3.select(this).style("opacity", _this.attr.opacity);
-                if (_this.attr.tooltip){
-                    _this.attr.tooltip.style("visibility", "hidden");
-                }
             }).on("click", function(d, i){
                 if (_this.attr.selectable !== false) {
                     _this.attr.selected = selectmerge(_this.attr.selected, d.group, _this.attr.selectable);
                     _this.redraw(_this.xscale.domain(), _this.yscale.domain(), false);
-                }
-                if (_this.attr.slider) {
-                    _this.attr.slider.__parent__.attr.selected = _this.attr.selected;
-                    _this.attr.slider.__parent__.redraw();
-                }
-                if (_this.attr.tooltip){
-                    _this.attr.tooltip.style("visibility", "hidden");
+                    if (_this.attr.slider) {
+                        _this.attr.slider.__parent__.attr.selected = _this.attr.selected;
+                        _this.attr.slider.__parent__.redraw();
+                    }
                 }
                 _this.attr.events.click(d, i);
             });

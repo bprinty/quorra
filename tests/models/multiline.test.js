@@ -53,6 +53,7 @@ describe("multiline.js", function () {
         .exportable(true)
         .hovercolor('firebrick')
         .opacity(0.75)
+        .selectable("single")
         .color(['steelblue']);
 
       quorra.render(multiline);
