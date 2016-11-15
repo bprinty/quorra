@@ -10,6 +10,7 @@
 DIST_PATH = dist
 TESTS     = 
 VERSION   = `python -c 'import json; print json.load(open("bower.json", "r"))["version"]'`
+REMOTE    = origin
 
 
 # targets
@@ -45,9 +46,9 @@ clean: clean-docs
 	rm -rf build node_modules lib
 
 
-release: test build
+release:
 	TAG=$(VERSION) && git commit -m "quorra, release $$TAG" || echo "distribution already added"
 	TAG=$(VERSION) && git tag -d $$TAG || echo "local tag available"
-	TAG=$(VERSION) && git push origin :$$TAG || echo "remote tag available"
-	TAG=$(VERSION) && git tag $$TAG && git push origin $$TAG
+	TAG=$(VERSION) && git push $(REMOTE) :$$TAG || echo "remote tag available"
+	TAG=$(VERSION) && git tag $$TAG && git push $(REMOTE) $$TAG
 
