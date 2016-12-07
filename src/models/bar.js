@@ -119,7 +119,7 @@ function Bar(attributes) {
             }).on("click", function(d, i) {
                 _this.attr.events.click(d, i);
             });
-    }
+    };
 
     return this.go;
 }

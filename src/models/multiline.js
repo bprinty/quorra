@@ -309,7 +309,11 @@ function Multiline(attributes) {
                 });
         }
 
-    }
+    };
+
+    this.enablecrosshairs = function() {
+        quorra.log('crosshairs not supported on multiline plot');
+    };
 
     return this.go;
 }

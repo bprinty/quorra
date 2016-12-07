@@ -192,6 +192,8 @@ function QuorraPlot(attributes) {
         }
 
         // enable interaction (if specified)
+        // TODO: THIS SHOULD BE ABSTRACTED SO THAT INTERACTION IS A LAYER
+        //       THAT CAN MORE MODULARLY BE DEFINED
         if (_this.attr.zoomable) {
             _this.enablezoom();
         }
@@ -211,6 +213,11 @@ function QuorraPlot(attributes) {
         if (_this.attr.slider) {
             _this.slider();
         }
+
+        // add crosshairs
+        // if (_this.attr.crosshairs) {
+            _this.enablecrosshairs();
+        // }
 
         return _this;
     };
@@ -281,6 +288,7 @@ function QuorraPlot(attributes) {
         _this.xscale = d3.scale.linear()
             .domain([domain[0], domain[domain.length-1]])
             .range([0, _this.innerwidth]);
+        _this.xmap = d3.scale.linear().domain(_this.xscale.range()).range(_this.xscale.domain());
 
         // x axis formatting
         _this.xaxis = d3.svg.axis().scale(_this.xscale).orient(_this.attr.xorient);
@@ -327,6 +335,7 @@ function QuorraPlot(attributes) {
         _this.yscale = d3.scale.linear()
             .domain([range[0], range[range.length-1]])
             .range([ _this.innerheight, 0]);
+        _this.ymap = d3.scale.linear().domain(_this.yscale.range()).range(_this.yscale.domain());
 
         // y axis formatting
         _this.yaxis = d3.svg.axis().scale(_this.yscale).orient(_this.attr.yorient);
@@ -521,6 +530,9 @@ function QuorraPlot(attributes) {
 
         var domain = _this.xscale.domain();
         var range = _this.yscale.domain();
+        // TODO: THE LOGIC HERE MIGHT NOT BE OPTIMAL -- INVESTIGATE LATER
+        //       I SUSPECT THE XDELTA PARAMETER ISN'T PROPERLY CAPTURING THE OUTER
+        //       BOUNDS FOR SELECTION
         return _.filter(_this.data, function(d, i) {
             if (_this.attr.xwindow) {
                 var xval = _this.xmapper(_this.attr.x(d, i));
@@ -902,10 +914,8 @@ function QuorraPlot(attributes) {
                 } else if(_this.enabled.pan && withinBounds(movement)) {
                     viewbox.attr('d', '');
                     var l = _this.xstack.length;
-                    var xmap = d3.scale.linear().domain(_this.xscale.range()).range(_this.xscale.domain());
-                    var ymap = d3.scale.linear().domain(_this.yscale.range()).range(_this.yscale.domain());
-                    var xval = _.map(_this.xscale.range(), function(x){ return xmap(x - d3.event.dx); });
-                    var yval = _.map(_this.yscale.range(), function(x){ return ymap(x - d3.event.dy); });
+                    var xval = _.map(_this.xscale.range(), function(x){ return _this.xmap(x - d3.event.dx); });
+                    var yval = _.map(_this.yscale.range(), function(x){ return _this.ymap(x - d3.event.dy); });
                     _this.xscale = d3.scale.linear().domain(xval).range(_this.xstack[l-1].range());
                     _this.yscale = d3.scale.linear().domain(yval).range(_this.ystack[l-1].range());
                     _this.redraw(xval, yval, false);
@@ -971,11 +981,9 @@ function QuorraPlot(attributes) {
                     return;
                 }
 
-                var xmap = d3.scale.linear().domain(_this.xscale.range()).range(_this.xscale.domain());
-                var ymap = d3.scale.linear().domain(_this.yscale.range()).range(_this.yscale.domain());
                 var d = {
-                    x: xmap(coordinates.x - _this.attr.margin.left),
-                    y: ymap(coordinates.y - _this.attr.margin.top),
+                    x: _this.xmap(coordinates.x - _this.attr.margin.left),
+                    y: _this.ymap(coordinates.y - _this.attr.margin.top),
                 };
                 for (var i in _this.attr.annotation){
                     var annot = _this.attr.annotation[i];
@@ -1027,6 +1035,157 @@ function QuorraPlot(attributes) {
     };
 
 
+    this.enablecrosshairs = function() {
+        quorra.log('enabling crosshairs events');
+
+        // check if movement is within plot boundaries
+        function withinBounds(motion){
+            if (
+                (motion.x > _this.innerwidth) ||
+                (motion.x < 0) ||
+                (motion.y > _this.innerheight) ||
+                (motion.y < 0)
+            ){
+                return false;
+            }
+            return true;
+        }
+        // _this.attr.crosshairs = 'mouse';
+
+        var xord = typeof _this.data[0].x === 'string';
+        if (_this.type === 'bar' || _this.type === 'histogram') {
+            xord = true;
+        }
+        var yord = typeof _this.data[0].y === 'string';
+        _this.crossregion = _this.attr.svg.append('g')
+            .attr('class', 'crosshair');
+        if (!xord) {
+            _this.attr.crosshairx = _this.crossregion.append('line')
+                .attr('x1', 50).attr('y1', _this.attr.margin.top)
+                .attr('x2', 50).attr('y2', _this.attr.margin.top + _this.innerheight)
+                .attr("stroke", "#bbb")
+                .style("opacity", 0)
+                .style('pointer-events', 'none');
+            _this.attr.crosshairxtext = _this.crossregion.append('text')
+                .attr('x', 100).attr('y', _this.attr.margin.top + 10)
+                .attr('text-anchor', 'start')
+                .style('opacity', 0)
+                .text('');
+        }
+        if (!yord) {
+            _this.attr.crosshairy = {};
+            _this.attr.crosshairytext = {};
+            if (_this.attr.crosshairs == 'mouse'){
+                _this.attr.crosshairy.mouse = _this.crossregion.append('line')
+                    .attr('x1', _this.attr.margin.left).attr('y1', 50)
+                    .attr('x2', _this.attr.margin.left + _this.innerwidth).attr('y2', 50)
+                    .attr("stroke", "#bbb")
+                    .style('opacity', 0)
+                    .style('pointer-events', 'none');
+                _this.attr.crosshairytext.mouse = _this.crossregion.append('text')
+                    .attr('x', _this.attr.margin.left + _this.innerwidth).attr('y', 100)
+                    .attr('text-anchor', 'end')
+                    .style("opacity", 0)
+                    .text('');
+            } else{
+                if (_this.type === 'bar' || _this.type === 'histogram' || _this.type === 'scatter') {
+                    xord = true;
+                    yord = true;
+                }
+                _.map(_this.pallette.domain(), function(grp) {
+                    _this.attr.crosshairy[grp] = _this.crossregion.append('line')
+                        .attr('class', 'g_' + grp)
+                        .attr('x1', _this.attr.margin.left).attr('y1', 50)
+                        .attr('x2', _this.attr.margin.left + _this.innerwidth).attr('y2', 50)
+                        .attr("stroke", _this.pallette(grp))
+                        .style("opacity", 0)
+                        .style('pointer-events', 'none');
+                    _this.attr.crosshairytext[grp] = _this.crossregion.append('text')
+                        .attr('class', 'g_' + grp)
+                        .attr('x', _this.attr.margin.left + _this.innerwidth).attr('y', 100)
+                        .attr("stroke", _this.pallette(grp))
+                        .attr('text-anchor', 'end')
+                        .style("opacity", 0)
+                        .text(''); 
+                });
+            }
+        }
+        _this.attr.svg.on('mousemove', function(d){
+                var movement = mouse(_this.attr.svg);
+                movement.x = movement.x - _this.attr.margin.left;
+                movement.y = movement.y - _this.attr.margin.top;
+                if (withinBounds(movement)) {
+                    var xpos = movement.x + _this.attr.margin.left;
+                    var ypos = movement.y + _this.attr.margin.top;
+                    if (!xord) {
+                        _this.attr.crosshairx
+                            .style('opacity', 0.75)
+                            .attr('x1', xpos).attr('x2', xpos);
+                        _this.attr.crosshairxtext
+                            .style('opacity', 0.75)
+                            .attr('x', xpos + 3).text(_this.attr.xcrossformat(_this.xmap(movement.x)));
+                    }
+                    if (!yord) {
+                        if (_this.attr.crosshairs == 'mouse') {
+                            _this.attr.crosshairy.mouse.style('opacity', 0.75)
+                                .attr('y1', ypos).attr('y2', ypos);
+                            _this.attr.crosshairytext.mouse.style('opacity', 0.75)
+                                .attr('y', ypos - 5).text(_this.attr.ycrossformat(_this.ymap(movement.y)));
+                        } else {
+                            _.map(_this.pallette.domain(), function(grp){
+                                // TODO
+                                if (_this.type !== 'scatter') {
+                                    var dc = null;
+                                    var closeness = Math.abs(_this.domain[1] - _this.domain[0]);
+                                    _.map(_this.plotdata, function(d) {
+                                        if (d.group == grp) {
+                                            cl = Math.abs(d.x - _this.xmap(movement.x));
+                                            if (cl < closeness) {
+                                                closeness = cl;
+                                                dc = d;
+                                            }
+                                        }
+                                    });
+                                } else {
+                                    dc = {x: movement.x, y: ypos};                                    
+                                }
+                                if (dc !== null) {
+                                    var ypos = _this.yscale(dc.y) + _this.attr.margin.top;
+                                    _this.attr.crosshairy[grp].style('opacity', 0.75)
+                                        .attr('y1', ypos).attr('y2', ypos);
+                                    _this.attr.crosshairytext[grp].style('opacity', 0.75)
+                                        .attr('y', ypos).text(dc.x);
+                                }
+                            });                        
+                        }
+                    }
+                } else {
+                    if (!xord) {
+                        _this.attr.crosshairx.style("opacity", 0);
+                        _this.attr.crosshairxtext.style('opacity', 0);
+                    }
+                    if (!yord) {
+                        _.map(Object.keys(_this.attr.crosshairy), function(grp){
+                            _this.attr.crosshairy[grp].style('opacity', 0);
+                            _this.attr.crosshairytext[grp].style('opacity', 0);
+                        });
+                    }
+                }
+            }).on('mouseout', function(d){
+                if (!xord) {
+                    _this.attr.crosshairx.style('opacity', 0);
+                    _this.attr.crosshairxtext.style('opacity', 0)
+                }
+                if (!yord) {
+                    _.map(Object.keys(_this.attr.crosshairy), function(grp){
+                        _this.attr.crosshairy[grp].style('opacity', 0);
+                        _this.attr.crosshairytext[grp].style('opacity', 0);
+                    });
+                }
+            });
+    };
+
+
     // tuneable plot attributes
     this.attr = extend({
         // sizing
@@ -1050,11 +1209,12 @@ function QuorraPlot(attributes) {
         xrange: "auto",
         yrange: "auto",
 
-        // triggers
+        // layers
         zoomable: false,
         annotatable: false,
         exportable: false,
         selectable: false,
+        crosshairs: false,
         events: {
             zoom: function() {
                 quorra.log('zoom event');
@@ -1086,7 +1246,9 @@ function QuorraPlot(attributes) {
         xaxis: "outside",
         yaxis: "outside",
         xformat: function(d){ return d; },
+        xcrossformat: d3.format(".2f"),
         yformat: function(d){ return d; },
+        ycrossformat: d3.format(".2f"),
         xorient: "bottom",
         yorient: "left",
         xlabel: "",

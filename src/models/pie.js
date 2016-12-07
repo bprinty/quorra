@@ -94,6 +94,10 @@ function Pie(attributes) {
             }).on("click", _this.attr.events.click);
     }
 
+    this.enablecrosshairs = function() {
+        quorra.log('crosshairs not supported on multiline plot');
+    };
+
     return this.go;
 };
 
