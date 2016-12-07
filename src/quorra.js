@@ -749,7 +749,7 @@ function QuorraPlot(attributes) {
 
                         case 'export':
                             _this.attr.events.preexport(_this.attr);
-                            quorra.export(_this.attr.svg, _this.attr.plotname);
+                            quorra.export(_this.go, _this.attr.plotname);
                             _this.attr.events.postexport(_this.attr);
                             break;
                     }

@@ -751,7 +751,7 @@ function QuorraPlot(attributes) {
 
                         case 'export':
                             _this.attr.events.preexport(_this.attr);
-                            quorra.export(_this.attr.svg, _this.attr.plotname);
+                            quorra.export(_this.go, _this.attr.plotname);
                             _this.attr.events.postexport(_this.attr);
                             break;
                     }
@@ -1371,12 +1371,54 @@ quorra.uuid = function() {
 };
 
 
-quorra.export = function(svg, filename) {
-    /**
-    quorra.export()
-    
-    Export contents of svg to .png, with styling.
-    */
+/**
+ * quorra.export()
+ *
+ * Export contents of svg to .png, with styling.
+ */
+quorra.export = function(plot, filename) {
+
+    // get plot dimensions
+    var svg = plot.__parent__.attr.svg;
+    var sel = svg.node();
+    var cln = sel.cloneNode(true);
+    document.body.appendChild(cln);
+    var svgSize = cln.getBoundingClientRect();
+    document.body.removeChild(cln);
+
+    // generate plot png information
+    var pngdata = quorra.plot2png(plot);
+    var img = document.createElement("img");
+    img.setAttribute("src", "data:image/svg+xml;base64," + pngdata);
+
+    // draw with canvas and export
+    img.onload = function() {
+        // set up html5 canvas for image
+        var canvas = document.createElement("canvas");
+        canvas.width = svgSize.width;
+        canvas.height = svgSize.height;
+        var ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0);
+        var data = canvas.toDataURL("image/png");
+        var a = document.createElement("a");
+        a.download = filename + ".png";
+        a.href = data;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        canvas.remove();
+        img.remove();
+    };
+};
+
+
+/**
+ * quorra.svg2png()
+ *
+ * Export contents of svg to .png, with styling.
+ */
+quorra.plot2png = function(plot) {
+    var svg = plot.__parent__.attr.svg;
     var sel = svg.attr({
         'xmlns': 'http://www.w3.org/2000/svg',
         version: '1.1'
@@ -1398,31 +1440,11 @@ quorra.export = function(svg, filename) {
     d3.select(cln).selectAll('.xtick').style('stroke-width', '1.5px');
     d3.select(cln).selectAll('.ytick').style('stroke-width', '1.5px');
 
-    // set up html5 canvas for image
-    var canvas = document.createElement("canvas");
-    var ctx = canvas.getContext("2d");
-
     // encode image in src tag
-    var svgSize = cln.getBoundingClientRect();
     var svgData = new XMLSerializer().serializeToString(cln);
-    canvas.width = svgSize.width;
-    canvas.height = svgSize.height;
-    var img = document.createElement("img");
-    img.setAttribute("src", "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData))));
-
-    // draw with canvas and export
-    img.onload = function() {
-        ctx.drawImage(img, 0, 0);
-        var data = canvas.toDataURL("image/png");
-        var a = document.createElement("a");
-        a.download = filename + ".png";
-        a.href = data;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        canvas.remove();
-        document.body.removeChild(cln);
-    };
+    var ret = btoa(unescape(encodeURIComponent(svgData)));
+    document.body.removeChild(cln);
+    return ret;
 };
 
 
