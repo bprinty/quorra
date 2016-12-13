@@ -20,7 +20,6 @@ Contents:
    models
    events
    layers
-   extensions
    analysis
 
 

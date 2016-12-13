@@ -1,4 +1,4 @@
-/* quorra version 0.0.4 (http://github.com/bprinty/quorra) */
+/* quorra version 0.0.5 (http://github.com/bprinty/quorra) */
 (function(){
 /***
  *
@@ -3216,7 +3216,7 @@ quorra.scatter = function(attributes) {
 };
 
 
-quorra.version = "0.0.4";
+quorra.version = "0.0.5";
 
 window.quorra = quorra;
 

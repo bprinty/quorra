@@ -1,7 +1,5 @@
 @import url("css/theme.css");
 
-@import url('https://fonts.googleapis.com/css?family=Raleway:300');
-
 .wy-nav-content,
 .wy-nav-content-wrap {
     color: #222;
@@ -13,7 +11,7 @@ body,
 .wy-nav-side,
 .wy-side-nav-search,
 .wy-side-nav-search img {
-    font-family: "Raleway", "HelveticaNeue", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-family: "Lato","proxima-nova", "Helvetica Neue", Arial, sans-serif;
     background: #fcfcfc;
 }
 
@@ -49,11 +47,11 @@ body,
 }
 
 div.section {
-    font-family: "Raleway", "HelveticaNeue", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-family: "Lato","proxima-nova", "Helvetica Neue", Arial, sans-serif;
 }
 
 h1,h2,h3,h4,h5,h6 {
-    font-family: "Raleway", "HelveticaNeue", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-family: "Lato","proxima-nova", "Helvetica Neue", Arial, sans-serif;;
 }
 
 code {
