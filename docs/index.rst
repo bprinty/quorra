@@ -19,6 +19,7 @@ Contents:
    quickstart
    models
    events
+   layers
    extensions
    analysis
 
