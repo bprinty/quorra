@@ -37,6 +37,9 @@ describe("multiline.js", function () {
 
   after(function() {
       reorder(base);
+      if (this.currentTest.state == 'failed') {
+          takeScreenshot();
+      }
   });
 
   it("multiline", function () {

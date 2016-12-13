@@ -58,6 +58,9 @@ describe("line.js", function () {
 
   after(function() {
       reorder(base);
+      if (this.currentTest.state == 'failed') {
+          takeScreenshot();
+      }
   });
 
   it("pointline", function () {
@@ -82,6 +85,10 @@ describe("line.js", function () {
         .points(5)
         .xlabel("X Axis Label")
         .ylabel("Y Axis Label")
+        .crosshairs(true)
+        .crossposition('middle')
+        .xcrossformat(d3.format('.1f'))
+        .ycrossformat(d3.format('.2f'))
         .color(['firebrick','steelblue']);
 
       quorra.render(line);
@@ -113,6 +120,7 @@ describe("line.js", function () {
         .xaxis("outside")
         .zoomable(true)
         .exportable(true)
+        .crosshairs(true)
         .xlabel("X Axis Label")
         .ylabel("Y Axis Label")
         .color(['firebrick','steelblue']);
@@ -142,6 +150,7 @@ describe("line.js", function () {
         .exportable(true)
         .zoomable(true)
         .exportable(true)
+        .crosshairs(true)
         .points(5)
         .xlabel("X Axis Label")
         .ylabel("Y Axis Label")

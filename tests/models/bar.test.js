@@ -72,6 +72,9 @@ describe("bar.js", function () {
 
   after(function() {
       reorder(base);
+      if (this.currentTest.state == 'failed') {
+          takeScreenshot();
+      }
   });
 
   it("grouped", function () {
@@ -86,6 +89,7 @@ describe("bar.js", function () {
         .grid(true)
         .zoomable(true)
         .exportable(true)
+        .crosshairs(true)
         .opacity(0.75)
         .labelposition("end")
         .layout('grouped')
@@ -114,6 +118,7 @@ describe("bar.js", function () {
         .lshape("circle")
         .zoomable(true)
         .exportable(true)
+        .crosshairs(true)
         .layout('stacked')
         .xlabel("X Axis Label")
         .ylabel("Y Axis Label")
@@ -142,6 +147,7 @@ describe("bar.js", function () {
         .lshape("circle")
         .zoomable(true)
         .exportable(true)
+        .crosshairs(true)
         .layout('grouped')
         .xlabel("X Axis Label")
         .ylabel("Y Axis Label")
@@ -169,6 +175,7 @@ describe("bar.js", function () {
         .lshape("circle")
         .zoomable(true)
         .exportable(true)
+        .crosshairs(true)
         .layout('stacked')
         .xlabel("X Axis Label")
         .ylabel("Y Axis Label")

@@ -1,4 +1,4 @@
-/* quorra version 0.0.3 (http://github.com/bprinty/quorra) */
+/* quorra version 0.0.4 (http://github.com/bprinty/quorra) */
 /*
  * Quorra stylesheet.
  *
@@ -50,6 +50,7 @@
 .axis text,
 .legend text,
 .annotation text,
+.crosshair text,
 .glyph text,
 .quorra-tooltip,
 .quorra-annotation-tooltip {

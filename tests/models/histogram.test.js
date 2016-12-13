@@ -33,6 +33,9 @@ describe("histogram.js", function () {
 
   after(function() {
       reorder(base);
+      if (this.currentTest.state == 'failed') {
+          takeScreenshot();
+      }
   });
 
   it("grouped", function () {
@@ -48,6 +51,7 @@ describe("histogram.js", function () {
           .grid(true)
           .zoomable(true)
           .exportable(true)
+          .crosshairs(true)
           .bins(5)
           .layout("grouped")
           .display("counts")
@@ -75,6 +79,7 @@ describe("histogram.js", function () {
           .opacity(0.75)
           .zoomable(true)
           .exportable(true)
+          .crosshairs(true)
           .margin({'left': 50})
           .lposition("outside")
           .lshape("circle")

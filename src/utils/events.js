@@ -13,26 +13,23 @@ var metaKeys = { 9: 'Tab', 13: 'Enter', 65: 'A', 66: 'B', 67: 'C', 68: 'D', 69: 
 var allKeys = _.extend(_.clone(baseKeys), metaKeys);
 
 
-// setting statuses for each key combination
+// setting functions for default state and events
 quorra.keys = {};
-_.each(allKeys, function(key){
-    quorra.keys[key] = false;
-});
-
-
-// setting default functions for each key combination
 quorra.events = {};
-_.each(baseKeys, function(base){
+_.each(baseKeys, function(base) {
 
     quorra.events[base] = {
         down: function(){},
         up: function(){}
-    }
+    };
+    quorra.keys[base] = false;
     _.each(metaKeys, function(meta){
         quorra.events[base + meta] = {
             down: function(){},
             up: function(){}
-        }
+        };
+        quorra.keys[meta] = false;
+        quorra.keys[base + meta] = false;
     });
 });
 
@@ -53,17 +50,28 @@ document.onkeydown = function (e) {
 
     e = e || window.event;
     var k = e.which;
-    if (_.has(allKeys, k)){
-        quorra.keys[allKeys[k]] = true;
-        if (_.has(metaKeys, k)){
-            _.each(baseKeys, function(i){
-                if (quorra.keys[i]){
-                    quorra.events[i+metaKeys[k]].down();
+    if (_.has(allKeys, k)) {
+        var key = allKeys[k];
+
+        // handle single events
+        if (_.has(baseKeys, k)) {
+            if (!quorra.keys[key]) {
+                quorra.events[key].down();
+            }
+        }
+        quorra.keys[key] = true;
+
+        // handle combo events
+        _.each(baseKeys, function(b) {
+            _.each(metaKeys, function(m) {
+                if (quorra.keys[b] && quorra.keys[m]) {
+                    if (!quorra.keys[b + m]) {
+                        quorra.events[b + m].down();
+                        quorra.keys[b + m] = true;
+                    }
                 }
             });
-        }else{
-            quorra.events[allKeys[k]].down();
-        }
+        });
     }
 };
 
@@ -85,16 +93,27 @@ document.onkeyup = function (e) {
     e = e || window.event;
     var k = e.which;
     if (_.has(allKeys, k)){
-        quorra.keys[allKeys[k]] = false;
-        if (_.has(metaKeys, k)){
-            _.each(baseKeys, function(i){
-                if (quorra.keys[i]){
-                    quorra.events[i+metaKeys[k]].up();
+        var key = allKeys[k];
+        
+        // handle single events
+        if (_.has(baseKeys, k)) {
+            if (quorra.keys[key]) {
+                quorra.events[key].up();
+            }
+        }
+        quorra.keys[key] = false;
+
+        // handle combo events
+        _.each(baseKeys, function(b) {
+            _.each(metaKeys, function(m) {
+                if (!quorra.keys[b] || !quorra.keys[m]) {
+                    if (quorra.keys[b + m]) {
+                        quorra.events[b + m].up();
+                        quorra.keys[b + m] = false;
+                    }
                 }
             });
-        }else{
-            quorra.events[allKeys[k]].up();
-        }
+        });
     }
 };
 

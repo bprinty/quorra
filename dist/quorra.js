@@ -1,4 +1,4 @@
-/* quorra version 0.0.3 (http://github.com/bprinty/quorra) */
+/* quorra version 0.0.4 (http://github.com/bprinty/quorra) */
 (function(){
 /***
  *
@@ -181,7 +181,8 @@ function QuorraPlot(attributes) {
         _this.enabled = {
             zoom: false,
             pan: false,
-            annotate: false
+            annotate: false,
+            crosshairs: false
         };
 
         // initialize interaction data
@@ -194,6 +195,8 @@ function QuorraPlot(attributes) {
         }
 
         // enable interaction (if specified)
+        // TODO: THIS SHOULD BE ABSTRACTED SO THAT INTERACTION IS A LAYER
+        //       THAT CAN MORE MODULARLY BE DEFINED
         if (_this.attr.zoomable) {
             _this.enablezoom();
         }
@@ -212,6 +215,11 @@ function QuorraPlot(attributes) {
         // create slider
         if (_this.attr.slider) {
             _this.slider();
+        }
+
+        // add crosshairs
+        if (_this.attr.crosshairs) {
+            _this.enablecrosshairs();
         }
 
         return _this;
@@ -283,6 +291,7 @@ function QuorraPlot(attributes) {
         _this.xscale = d3.scale.linear()
             .domain([domain[0], domain[domain.length-1]])
             .range([0, _this.innerwidth]);
+        _this.xmap = d3.scale.linear().domain(_this.xscale.range()).range(_this.xscale.domain());
 
         // x axis formatting
         _this.xaxis = d3.svg.axis().scale(_this.xscale).orient(_this.attr.xorient);
@@ -329,6 +338,7 @@ function QuorraPlot(attributes) {
         _this.yscale = d3.scale.linear()
             .domain([range[0], range[range.length-1]])
             .range([ _this.innerheight, 0]);
+        _this.ymap = d3.scale.linear().domain(_this.yscale.range()).range(_this.yscale.domain());
 
         // y axis formatting
         _this.yaxis = d3.svg.axis().scale(_this.yscale).orient(_this.attr.yorient);
@@ -374,7 +384,7 @@ function QuorraPlot(attributes) {
                             return _this.innerwidth;
                         }else if (_this.attr.labelposition === "middle"){
                             return _this.innerwidth / 2;
-                        }else if (_this.attr.labelposition === "beginning"){
+                        }else if (_this.attr.labelposition === "start"){
                             return 0;
                         }
                     })
@@ -403,7 +413,7 @@ function QuorraPlot(attributes) {
                             return 0;
                         }else if (_this.attr.labelposition === "middle"){
                             return -_this.innerheight / 2;
-                        }else if (_this.attr.labelposition === "beginning"){
+                        }else if (_this.attr.labelposition === "start"){
                             return -_this.innerheight;
                         }
                     }).attr("y", function(){
@@ -523,6 +533,9 @@ function QuorraPlot(attributes) {
 
         var domain = _this.xscale.domain();
         var range = _this.yscale.domain();
+        // TODO: THE LOGIC HERE MIGHT NOT BE OPTIMAL -- INVESTIGATE LATER
+        //       I SUSPECT THE XDELTA PARAMETER ISN'T PROPERLY CAPTURING THE OUTER
+        //       BOUNDS FOR SELECTION
         return _.filter(_this.data, function(d, i) {
             if (_this.attr.xwindow) {
                 var xval = _this.xmapper(_this.attr.x(d, i));
@@ -627,7 +640,7 @@ function QuorraPlot(attributes) {
                 if (_this.attr.lposition === "inside") {
                     return "end";
                 }else if (_this.attr.lposition === "outside") {
-                    return "beginning";
+                    return "start";
                 }
             }).text(function(d) { return d; });
     };
@@ -647,14 +660,14 @@ function QuorraPlot(attributes) {
 
         // zoom glyph
         _this.defs.append('symbol')
-            .attr('id', 'glyph-search')
+            .attr('id', 'glyph-zoom')
             .attr('viewBox', '0 0 1024 1024')
             .append('path')
             .attr('d', 'M992.262 871.396l-242.552-206.294c-25.074-22.566-51.89-32.926-73.552-31.926 57.256-67.068 91.842-154.078 91.842-249.176 0-212.078-171.922-384-384-384-212.076 0-384 171.922-384 384s171.922 384 384 384c95.098 0 182.108-34.586 249.176-91.844-1 21.662 9.36 48.478 31.926 73.552l206.294 242.552c35.322 39.246 93.022 42.554 128.22 7.356s31.892-92.898-7.354-128.22zM384 640c-141.384 0-256-114.616-256-256s114.616-256 256-256 256 114.616 256 256-114.614 256-256 256z');
 
         // image glyph
         _this.defs.append('symbol')
-            .attr('id', 'glyph-image')
+            .attr('id', 'glyph-export')
             .attr('viewBox', '0 0 1024 1024')
             .html([
                 '<path d="M959.884 128c0.040 0.034 0.082 0.076 0.116 0.116v767.77c-0.034 0.040-0.076 0.082-0.116 0.116h-895.77c-0.040-0.034-0.082-0.076-0.114-0.116v-767.772c0.034-0.040 0.076-0.082 0.114-0.114h895.77zM960 64h-896c-35.2 0-64 28.8-64 64v768c0 35.2 28.8 64 64 64h896c35.2 0 64-28.8 64-64v-768c0-35.2-28.8-64-64-64v0z"></path>',
@@ -676,6 +689,14 @@ function QuorraPlot(attributes) {
             .append('path')
             .attr('d', 'M864 0c88.364 0 160 71.634 160 160 0 36.020-11.91 69.258-32 96l-64 64-224-224 64-64c26.742-20.090 59.978-32 96-32zM64 736l-64 288 288-64 592-592-224-224-592 592zM715.578 363.578l-448 448-55.156-55.156 448-448 55.156 55.156z');
  
+        // refresh glyph
+        _this.defs.append('symbol')
+            .attr('id', 'glyph-crosshairs')
+            .attr('viewBox', '0 0 1029 1200')
+            .append('path')
+            .attr('d', 'M801.563 685.714h-72.991c-23.438 0-42.857-19.419-42.857-42.857v-85.714c0-23.438 19.419-42.857 42.857-42.857h72.991c-28.794-96.429-105.134-172.768-201.563-201.563v72.991c0 23.438-19.419 42.857-42.857 42.857h-85.714c-23.438 0-42.857-19.419-42.857-42.857v-72.991c-96.429 28.794-172.768 105.134-201.562 201.563h72.991c23.438 0 42.857 19.419 42.857 42.857v85.714c0 23.438-19.419 42.857-42.857 42.857h-72.991c28.794 96.429 105.134 172.768 201.563 201.563v-72.991c0-23.438 19.419-42.857 42.857-42.857h85.714c23.438 0 42.857 19.419 42.857 42.857v72.991c96.429-28.794 172.768-105.134 201.563-201.563zM1028.571 557.143v85.714c0 23.438-19.419 42.857-42.857 42.857h-95.759c-32.813 143.973-145.982 257.143-289.956 289.956v95.759c0 23.438-19.419 42.857-42.857 42.857h-85.714c-23.438 0-42.857-19.419-42.857-42.857v-95.759c-143.973-32.813-257.143-145.982-289.956-289.956h-95.759c-23.438 0-42.857-19.419-42.857-42.857v-85.714c0-23.438 19.419-42.857 42.857-42.857h95.759c32.813-143.973 145.982-257.143 289.956-289.956v-95.759c0-23.437 19.419-42.857 42.857-42.857h85.714c23.438 0 42.857 19.419 42.857 42.857v95.759c143.973 32.812 257.143 145.982 289.956 289.956h95.759c23.438 0 42.857 19.419 42.857 42.857z');
+
+
         // adding glyphs to buffer
         var gdata = [];
         if (_this.attr.annotatable) {
@@ -683,6 +704,9 @@ function QuorraPlot(attributes) {
         }
         if (_this.attr.zoomable) {
             gdata.push('pan', 'refresh');
+        }
+        if (_this.attr.crosshairs != false) {
+            gdata.push('crosshairs');
         }
         if (_this.attr.exportable) {
             gdata.push('export');
@@ -724,7 +748,7 @@ function QuorraPlot(attributes) {
                             this.enabled.pan = !_this.enabled.pan;
                             d3.select(this).selectAll('.glyph')
                                 .style('stroke-width', (_this.enabled.zoom) ? 2 : 1)
-                                .style('stroke', (_this.enabled.zoom) ? 'black' : '#ddd');
+                                .style('stroke', (_this.enabled.zoom) ? 'black' : '#555');
                             break;
 
                         case 'pan':
@@ -732,7 +756,14 @@ function QuorraPlot(attributes) {
                             _this.enabled.zoom = !_this.enabled.zoom;
                             d3.select(this).selectAll('.glyph')
                                 .style('stroke-width', (_this.enabled.pan) ? 2 : 1)
-                                .style('stroke', (_this.enabled.pan) ? 'black' : '#ddd');
+                                .style('stroke', (_this.enabled.pan) ? 'black' : '#555');
+                            break;
+
+                        case 'crosshairs':
+                            _this.enabled.crosshairs = !_this.enabled.crosshairs;
+                            d3.select(this).selectAll('.glyph')
+                                .style('stroke-width', (_this.enabled.crosshairs) ? 2 : 1)
+                                .style('stroke', (_this.enabled.crosshairs) ? 'black' : '#555');
                             break;
 
                         case 'refresh':
@@ -746,7 +777,7 @@ function QuorraPlot(attributes) {
                             _this.enabled.annotate = !_this.enabled.annotate;
                             d3.select(this).selectAll('.glyph')
                                 .style('stroke-width', (_this.enabled.annotate) ? 2 : 1)
-                                .style('stroke', (_this.enabled.annotate) ? 'black' : '#ddd');
+                                .style('stroke', (_this.enabled.annotate) ? 'black' : '#555');
                             break;
 
                         case 'export':
@@ -783,15 +814,7 @@ function QuorraPlot(attributes) {
             .attr('x', _this.attr.gshape === 'square' ? 4 : 4)
             .attr('y', _this.attr.gshape === 'square' ? 4 : 0)
             .attr('height', 14).attr('width', 14)
-            .attr("xlink:href", function(d){
-                switch(d){
-                    case 'zoom': return '#glyph-search';
-                    case 'pan': return '#glyph-pan';
-                    case 'refresh': return '#glyph-refresh';
-                    case 'export': return '#glyph-image';
-                    case 'annotate': return '#glyph-annotate';
-                }
-            });
+            .attr("xlink:href", function(d){ return '#glyph-' + d; });
     };
 
     this.enablezoom = function() {
@@ -904,10 +927,8 @@ function QuorraPlot(attributes) {
                 } else if(_this.enabled.pan && withinBounds(movement)) {
                     viewbox.attr('d', '');
                     var l = _this.xstack.length;
-                    var xmap = d3.scale.linear().domain(_this.xscale.range()).range(_this.xscale.domain());
-                    var ymap = d3.scale.linear().domain(_this.yscale.range()).range(_this.yscale.domain());
-                    var xval = _.map(_this.xscale.range(), function(x){ return xmap(x - d3.event.dx); });
-                    var yval = _.map(_this.yscale.range(), function(x){ return ymap(x - d3.event.dy); });
+                    var xval = _.map(_this.xscale.range(), function(x){ return _this.xmap(x - d3.event.dx); });
+                    var yval = _.map(_this.yscale.range(), function(x){ return _this.ymap(x - d3.event.dy); });
                     _this.xscale = d3.scale.linear().domain(xval).range(_this.xstack[l-1].range());
                     _this.yscale = d3.scale.linear().domain(yval).range(_this.ystack[l-1].range());
                     _this.redraw(xval, yval, false);
@@ -973,11 +994,9 @@ function QuorraPlot(attributes) {
                     return;
                 }
 
-                var xmap = d3.scale.linear().domain(_this.xscale.range()).range(_this.xscale.domain());
-                var ymap = d3.scale.linear().domain(_this.yscale.range()).range(_this.yscale.domain());
                 var d = {
-                    x: xmap(coordinates.x - _this.attr.margin.left),
-                    y: ymap(coordinates.y - _this.attr.margin.top),
+                    x: _this.xmap(coordinates.x - _this.attr.margin.left),
+                    y: _this.ymap(coordinates.y - _this.attr.margin.top),
                 };
                 for (var i in _this.attr.annotation){
                     var annot = _this.attr.annotation[i];
@@ -1029,6 +1048,211 @@ function QuorraPlot(attributes) {
     };
 
 
+    this.enablecrosshairs = function() {
+        quorra.log('enabling crosshairs events');
+
+        // check if movement is within plot boundaries
+        function withinBounds(motion){
+            if (
+                (motion.x > _this.innerwidth) ||
+                (motion.x < 0) ||
+                (motion.y > _this.innerheight) ||
+                (motion.y < 0)
+            ){
+                return false;
+            }
+            return true;
+        }
+        // the 'mouse' option is currently the only supported crosshair.
+        if (_this.attr.crosshairs !== false) {
+            _this.attr.crosshairs = 'mouse';
+        }
+        _this.enabled.crosshairs = false;
+
+        var xord = typeof _this.data[0].x === 'string';
+        if (_this.type === 'bar' || _this.type === 'histogram') {
+            xord = true;
+        }
+        var yord = typeof _this.data[0].y === 'string';
+        _this.crossregion = _this.attr.svg.append('g')
+            .attr('class', 'crosshair');
+        if (!xord) {
+            _this.attr.crosshairx = _this.crossregion.append('line')
+                .attr('x1', 50).attr('y1', _this.attr.margin.top)
+                .attr('x2', 50).attr('y2', _this.attr.margin.top + _this.innerheight)
+                .attr("stroke", "#bbb")
+                .style("opacity", 0)
+                .style('pointer-events', 'none');
+            if (_this.attr.crossposition == 'start') {
+                var xpos = _this.innerheight + _this.attr.margin.top - 5;
+                var xanchor = 'start';
+            } else if (_this.attr.crossposition == 'end') {
+                var xpos = _this.attr.margin.top + 10;
+                var xanchor = 'start';
+            } else if (_this.attr.crossposition == 'middle') {
+                var xpos = _this.attr.margin.top + 10;
+                var xanchor = 'end';
+            }
+            _this.attr.crosshairxtext = _this.crossregion.append('text')
+                .attr('x', 100).attr('y', xpos)
+                .attr('text-anchor', xanchor)
+                .style('opacity', 0)
+                .text('');
+        }
+        if (!yord) {
+            _this.attr.crosshairy = {};
+            _this.attr.crosshairytext = {};
+            if (_this.attr.crosshairs == 'mouse') {
+                _this.attr.crosshairy.mouse = _this.crossregion.append('line')
+                    .attr('x1', _this.attr.margin.left).attr('y1', 50)
+                    .attr('x2', _this.attr.margin.left + _this.innerwidth).attr('y2', 50)
+                    .attr("stroke", "#bbb")
+                    .style('opacity', 0)
+                    .style('pointer-events', 'none');
+                
+                if (_this.attr.crossposition == 'start') {
+                    var ypos = _this.attr.margin.left + 5;
+                    var yanchor = 'start'
+                } else if (_this.attr.crossposition == 'end') {
+                    var ypos = _this.attr.margin.left + _this.innerwidth;
+                    var yanchor = 'end';
+                } else if (_this.attr.crossposition == 'middle') {
+                    var ypos = _this.attr.margin.left + _this.innerwidth;
+                    var yanchor = 'start';
+                }
+                _this.attr.crosshairytext.mouse = _this.crossregion.append('text')
+                    .attr('x', ypos).attr('y', 100)
+                    .attr('text-anchor', yanchor)
+                    .style("opacity", 0)
+                    .text('');
+            } else{
+                if (_this.type === 'bar' || _this.type === 'histogram' || _this.type === 'scatter') {
+                    xord = true;
+                    yord = true;
+                }
+                // _.map(_this.pallette.domain(), function(grp) {
+                //     _this.attr.crosshairy[grp] = _this.crossregion.append('line')
+                //         .attr('class', 'g_' + grp)
+                //         .attr('x1', _this.attr.margin.left).attr('y1', 50)
+                //         .attr('x2', _this.attr.margin.left + _this.innerwidth).attr('y2', 50)
+                //         .attr("stroke", _this.pallette(grp))
+                //         .style("opacity", 0)
+                //         .style('pointer-events', 'none');
+                //     _this.attr.crosshairytext[grp] = _this.crossregion.append('text')
+                //         .attr('class', 'g_' + grp)
+                //         .attr('x', _this.attr.margin.left + _this.innerwidth).attr('y', 100)
+                //         .attr("stroke", _this.pallette(grp))
+                //         .attr('text-anchor', 'end')
+                //         .style("opacity", 0)
+                //         .text(''); 
+                // });
+            }
+        }
+
+        function hideCrosshairs() {
+            if (!xord) {
+                _this.attr.crosshairx.style('opacity', 0);
+                _this.attr.crosshairxtext.style('opacity', 0)
+            }
+            if (!yord) {
+                _.map(Object.keys(_this.attr.crosshairy), function(grp){
+                    _this.attr.crosshairy[grp].style('opacity', 0);
+                    _this.attr.crosshairytext[grp].style('opacity', 0);
+                });
+            }
+        }
+
+        _this.attr.svg.on('mousemove', function(d){
+                var movement = mouse(_this.attr.svg);
+                movement.x = movement.x - _this.attr.margin.left;
+                movement.y = movement.y - _this.attr.margin.top;
+                if (withinBounds(movement) && _this.enabled.crosshairs) {
+                    var xpos = movement.x + _this.attr.margin.left;
+                    var ypos = movement.y + _this.attr.margin.top;
+                    if (!xord) {
+                        var xtext = _this.attr.xcrossformat(_this.xmap(movement.x));
+                        _this.attr.crosshairx
+                            .style('opacity', 0.75)
+                            .attr('x1', xpos).attr('x2', xpos);
+                        _this.attr.crosshairxtext
+                            .style('opacity', 0.75)
+                            .attr('x', xpos + 3).text(xtext);
+                        if (_this.attr.crossposition == 'middle') {
+                            _this.attr.crosshairxtext
+                                .attr('x', xpos - 5).attr('y', ypos - 5)
+                                .text('X: ' + xtext);
+                        }
+                    }
+                    if (!yord) {
+                        if (_this.attr.crosshairs == 'mouse') {
+                            var ytext = _this.attr.ycrossformat(_this.ymap(movement.y));
+                            _this.attr.crosshairy.mouse.style('opacity', 0.75)
+                                .attr('y1', ypos).attr('y2', ypos);
+                            _this.attr.crosshairytext.mouse.style('opacity', 0.75)
+                                .attr('y', ypos - 5).text(ytext);
+                            if (_this.attr.crossposition === 'middle') {
+                                _this.attr.crosshairytext.mouse
+                                    .attr('x', xpos + 5).attr('y', ypos - 5)
+                                    .text('Y: ' + ytext);
+                            }
+                        } else {
+                            // _.map(_this.pallette.domain(), function(grp){
+                            //     // TODO
+                            //     if (_this.type !== 'scatter') {
+                            //         var dc = null;
+                            //         var closeness = Math.abs(_this.domain[1] - _this.domain[0]);
+                            //         _.map(_this.plotdata, function(d) {
+                            //             if (d.group == grp) {
+                            //                 cl = Math.abs(d.x - _this.xmap(movement.x));
+                            //                 if (cl < closeness) {
+                            //                     closeness = cl;
+                            //                     dc = d;
+                            //                 }
+                            //             }
+                            //         });
+                            //     } else {
+                            //         dc = {x: movement.x, y: ypos};                                    
+                            //     }
+                            //     if (dc !== null) {
+                            //         var ypos = _this.yscale(dc.y) + _this.attr.margin.top;
+                            //         _this.attr.crosshairy[grp].style('opacity', 0.75)
+                            //             .attr('y1', ypos).attr('y2', ypos);
+                            //         _this.attr.crosshairytext[grp].style('opacity', 0.75)
+                            //             .attr('y', ypos).text(dc.x);
+                            //     }
+                            // });                        
+                        }
+                    }
+                } else {
+                    hideCrosshairs();
+                }
+            }).on('mouseout', function(d) {
+                hideCrosshairs();
+            });
+
+
+        // set up events for toggling enabled flags
+        quorra.events.ShiftX.down = function() {
+            d3.selectAll('.glyphbox#crosshairs')
+                .selectAll('.glyph')
+                .style('stroke', 'black')
+                .style('stroke-width', 2);
+            _.each(Object.keys(quorra.plots), function(key){
+                quorra.plots[key].enabled.crosshairs = true;
+            });
+        };
+        quorra.events.ShiftX.up = function() {
+            d3.selectAll('.glyphbox#crosshairs')
+                .selectAll('.glyph')
+                .style('stroke', '#555')
+                .style('stroke-width', 1);
+            _.each(Object.keys(quorra.plots), function(key) {
+                quorra.plots[key].enabled.crosshairs = false;
+            });
+        };
+    };
+
+
     // tuneable plot attributes
     this.attr = extend({
         // sizing
@@ -1052,11 +1276,12 @@ function QuorraPlot(attributes) {
         xrange: "auto",
         yrange: "auto",
 
-        // triggers
+        // layers
         zoomable: false,
         annotatable: false,
         exportable: false,
         selectable: false,
+        crosshairs: false,
         events: {
             zoom: function() {
                 quorra.log('zoom event');
@@ -1088,7 +1313,10 @@ function QuorraPlot(attributes) {
         xaxis: "outside",
         yaxis: "outside",
         xformat: function(d){ return d; },
+        xcrossformat: d3.format(".2f"),
         yformat: function(d){ return d; },
+        ycrossformat: d3.format(".2f"),
+        crossposition: "end",
         xorient: "bottom",
         yorient: "left",
         xlabel: "",
@@ -1166,26 +1394,23 @@ var metaKeys = { 9: 'Tab', 13: 'Enter', 65: 'A', 66: 'B', 67: 'C', 68: 'D', 69: 
 var allKeys = _.extend(_.clone(baseKeys), metaKeys);
 
 
-// setting statuses for each key combination
+// setting functions for default state and events
 quorra.keys = {};
-_.each(allKeys, function(key){
-    quorra.keys[key] = false;
-});
-
-
-// setting default functions for each key combination
 quorra.events = {};
-_.each(baseKeys, function(base){
+_.each(baseKeys, function(base) {
 
     quorra.events[base] = {
         down: function(){},
         up: function(){}
-    }
+    };
+    quorra.keys[base] = false;
     _.each(metaKeys, function(meta){
         quorra.events[base + meta] = {
             down: function(){},
             up: function(){}
-        }
+        };
+        quorra.keys[meta] = false;
+        quorra.keys[base + meta] = false;
     });
 });
 
@@ -1206,17 +1431,28 @@ document.onkeydown = function (e) {
 
     e = e || window.event;
     var k = e.which;
-    if (_.has(allKeys, k)){
-        quorra.keys[allKeys[k]] = true;
-        if (_.has(metaKeys, k)){
-            _.each(baseKeys, function(i){
-                if (quorra.keys[i]){
-                    quorra.events[i+metaKeys[k]].down();
+    if (_.has(allKeys, k)) {
+        var key = allKeys[k];
+
+        // handle single events
+        if (_.has(baseKeys, k)) {
+            if (!quorra.keys[key]) {
+                quorra.events[key].down();
+            }
+        }
+        quorra.keys[key] = true;
+
+        // handle combo events
+        _.each(baseKeys, function(b) {
+            _.each(metaKeys, function(m) {
+                if (quorra.keys[b] && quorra.keys[m]) {
+                    if (!quorra.keys[b + m]) {
+                        quorra.events[b + m].down();
+                        quorra.keys[b + m] = true;
+                    }
                 }
             });
-        }else{
-            quorra.events[allKeys[k]].down();
-        }
+        });
     }
 };
 
@@ -1238,16 +1474,27 @@ document.onkeyup = function (e) {
     e = e || window.event;
     var k = e.which;
     if (_.has(allKeys, k)){
-        quorra.keys[allKeys[k]] = false;
-        if (_.has(metaKeys, k)){
-            _.each(baseKeys, function(i){
-                if (quorra.keys[i]){
-                    quorra.events[i+metaKeys[k]].up();
+        var key = allKeys[k];
+        
+        // handle single events
+        if (_.has(baseKeys, k)) {
+            if (quorra.keys[key]) {
+                quorra.events[key].up();
+            }
+        }
+        quorra.keys[key] = false;
+
+        // handle combo events
+        _.each(baseKeys, function(b) {
+            _.each(metaKeys, function(m) {
+                if (!quorra.keys[b] || !quorra.keys[m]) {
+                    if (quorra.keys[b + m]) {
+                        quorra.events[b + m].up();
+                        quorra.keys[b + m] = false;
+                    }
                 }
             });
-        }else{
-            quorra.events[allKeys[k]].up();
-        }
+        });
     }
 };
 
@@ -1924,7 +2171,7 @@ function Bar(attributes) {
             }).on("click", function(d, i) {
                 _this.attr.events.click(d, i);
             });
-    }
+    };
 
     return this.go;
 }
@@ -2584,7 +2831,11 @@ function Multiline(attributes) {
                 });
         }
 
-    }
+    };
+
+    this.enablecrosshairs = function() {
+        quorra.log('crosshairs not supported on multiline plot');
+    };
 
     return this.go;
 }
@@ -2689,6 +2940,10 @@ function Pie(attributes) {
                 }
             }).on("click", _this.attr.events.click);
     }
+
+    this.enablecrosshairs = function() {
+        quorra.log('crosshairs not supported on multiline plot');
+    };
 
     return this.go;
 };
@@ -2961,7 +3216,7 @@ quorra.scatter = function(attributes) {
 };
 
 
-quorra.version = "0.0.3";
+quorra.version = "0.0.4";
 
 window.quorra = quorra;
 

@@ -179,7 +179,8 @@ function QuorraPlot(attributes) {
         _this.enabled = {
             zoom: false,
             pan: false,
-            annotate: false
+            annotate: false,
+            crosshairs: false
         };
 
         // initialize interaction data
@@ -215,9 +216,9 @@ function QuorraPlot(attributes) {
         }
 
         // add crosshairs
-        // if (_this.attr.crosshairs) {
+        if (_this.attr.crosshairs) {
             _this.enablecrosshairs();
-        // }
+        }
 
         return _this;
     };
@@ -381,7 +382,7 @@ function QuorraPlot(attributes) {
                             return _this.innerwidth;
                         }else if (_this.attr.labelposition === "middle"){
                             return _this.innerwidth / 2;
-                        }else if (_this.attr.labelposition === "beginning"){
+                        }else if (_this.attr.labelposition === "start"){
                             return 0;
                         }
                     })
@@ -410,7 +411,7 @@ function QuorraPlot(attributes) {
                             return 0;
                         }else if (_this.attr.labelposition === "middle"){
                             return -_this.innerheight / 2;
-                        }else if (_this.attr.labelposition === "beginning"){
+                        }else if (_this.attr.labelposition === "start"){
                             return -_this.innerheight;
                         }
                     }).attr("y", function(){
@@ -637,7 +638,7 @@ function QuorraPlot(attributes) {
                 if (_this.attr.lposition === "inside") {
                     return "end";
                 }else if (_this.attr.lposition === "outside") {
-                    return "beginning";
+                    return "start";
                 }
             }).text(function(d) { return d; });
     };
@@ -657,14 +658,14 @@ function QuorraPlot(attributes) {
 
         // zoom glyph
         _this.defs.append('symbol')
-            .attr('id', 'glyph-search')
+            .attr('id', 'glyph-zoom')
             .attr('viewBox', '0 0 1024 1024')
             .append('path')
             .attr('d', 'M992.262 871.396l-242.552-206.294c-25.074-22.566-51.89-32.926-73.552-31.926 57.256-67.068 91.842-154.078 91.842-249.176 0-212.078-171.922-384-384-384-212.076 0-384 171.922-384 384s171.922 384 384 384c95.098 0 182.108-34.586 249.176-91.844-1 21.662 9.36 48.478 31.926 73.552l206.294 242.552c35.322 39.246 93.022 42.554 128.22 7.356s31.892-92.898-7.354-128.22zM384 640c-141.384 0-256-114.616-256-256s114.616-256 256-256 256 114.616 256 256-114.614 256-256 256z');
 
         // image glyph
         _this.defs.append('symbol')
-            .attr('id', 'glyph-image')
+            .attr('id', 'glyph-export')
             .attr('viewBox', '0 0 1024 1024')
             .html([
                 '<path d="M959.884 128c0.040 0.034 0.082 0.076 0.116 0.116v767.77c-0.034 0.040-0.076 0.082-0.116 0.116h-895.77c-0.040-0.034-0.082-0.076-0.114-0.116v-767.772c0.034-0.040 0.076-0.082 0.114-0.114h895.77zM960 64h-896c-35.2 0-64 28.8-64 64v768c0 35.2 28.8 64 64 64h896c35.2 0 64-28.8 64-64v-768c0-35.2-28.8-64-64-64v0z"></path>',
@@ -686,6 +687,14 @@ function QuorraPlot(attributes) {
             .append('path')
             .attr('d', 'M864 0c88.364 0 160 71.634 160 160 0 36.020-11.91 69.258-32 96l-64 64-224-224 64-64c26.742-20.090 59.978-32 96-32zM64 736l-64 288 288-64 592-592-224-224-592 592zM715.578 363.578l-448 448-55.156-55.156 448-448 55.156 55.156z');
  
+        // refresh glyph
+        _this.defs.append('symbol')
+            .attr('id', 'glyph-crosshairs')
+            .attr('viewBox', '0 0 1029 1200')
+            .append('path')
+            .attr('d', 'M801.563 685.714h-72.991c-23.438 0-42.857-19.419-42.857-42.857v-85.714c0-23.438 19.419-42.857 42.857-42.857h72.991c-28.794-96.429-105.134-172.768-201.563-201.563v72.991c0 23.438-19.419 42.857-42.857 42.857h-85.714c-23.438 0-42.857-19.419-42.857-42.857v-72.991c-96.429 28.794-172.768 105.134-201.562 201.563h72.991c23.438 0 42.857 19.419 42.857 42.857v85.714c0 23.438-19.419 42.857-42.857 42.857h-72.991c28.794 96.429 105.134 172.768 201.563 201.563v-72.991c0-23.438 19.419-42.857 42.857-42.857h85.714c23.438 0 42.857 19.419 42.857 42.857v72.991c96.429-28.794 172.768-105.134 201.563-201.563zM1028.571 557.143v85.714c0 23.438-19.419 42.857-42.857 42.857h-95.759c-32.813 143.973-145.982 257.143-289.956 289.956v95.759c0 23.438-19.419 42.857-42.857 42.857h-85.714c-23.438 0-42.857-19.419-42.857-42.857v-95.759c-143.973-32.813-257.143-145.982-289.956-289.956h-95.759c-23.438 0-42.857-19.419-42.857-42.857v-85.714c0-23.438 19.419-42.857 42.857-42.857h95.759c32.813-143.973 145.982-257.143 289.956-289.956v-95.759c0-23.437 19.419-42.857 42.857-42.857h85.714c23.438 0 42.857 19.419 42.857 42.857v95.759c143.973 32.812 257.143 145.982 289.956 289.956h95.759c23.438 0 42.857 19.419 42.857 42.857z');
+
+
         // adding glyphs to buffer
         var gdata = [];
         if (_this.attr.annotatable) {
@@ -693,6 +702,9 @@ function QuorraPlot(attributes) {
         }
         if (_this.attr.zoomable) {
             gdata.push('pan', 'refresh');
+        }
+        if (_this.attr.crosshairs != false) {
+            gdata.push('crosshairs');
         }
         if (_this.attr.exportable) {
             gdata.push('export');
@@ -734,7 +746,7 @@ function QuorraPlot(attributes) {
                             this.enabled.pan = !_this.enabled.pan;
                             d3.select(this).selectAll('.glyph')
                                 .style('stroke-width', (_this.enabled.zoom) ? 2 : 1)
-                                .style('stroke', (_this.enabled.zoom) ? 'black' : '#ddd');
+                                .style('stroke', (_this.enabled.zoom) ? 'black' : '#555');
                             break;
 
                         case 'pan':
@@ -742,7 +754,14 @@ function QuorraPlot(attributes) {
                             _this.enabled.zoom = !_this.enabled.zoom;
                             d3.select(this).selectAll('.glyph')
                                 .style('stroke-width', (_this.enabled.pan) ? 2 : 1)
-                                .style('stroke', (_this.enabled.pan) ? 'black' : '#ddd');
+                                .style('stroke', (_this.enabled.pan) ? 'black' : '#555');
+                            break;
+
+                        case 'crosshairs':
+                            _this.enabled.crosshairs = !_this.enabled.crosshairs;
+                            d3.select(this).selectAll('.glyph')
+                                .style('stroke-width', (_this.enabled.crosshairs) ? 2 : 1)
+                                .style('stroke', (_this.enabled.crosshairs) ? 'black' : '#555');
                             break;
 
                         case 'refresh':
@@ -756,7 +775,7 @@ function QuorraPlot(attributes) {
                             _this.enabled.annotate = !_this.enabled.annotate;
                             d3.select(this).selectAll('.glyph')
                                 .style('stroke-width', (_this.enabled.annotate) ? 2 : 1)
-                                .style('stroke', (_this.enabled.annotate) ? 'black' : '#ddd');
+                                .style('stroke', (_this.enabled.annotate) ? 'black' : '#555');
                             break;
 
                         case 'export':
@@ -793,15 +812,7 @@ function QuorraPlot(attributes) {
             .attr('x', _this.attr.gshape === 'square' ? 4 : 4)
             .attr('y', _this.attr.gshape === 'square' ? 4 : 0)
             .attr('height', 14).attr('width', 14)
-            .attr("xlink:href", function(d){
-                switch(d){
-                    case 'zoom': return '#glyph-search';
-                    case 'pan': return '#glyph-pan';
-                    case 'refresh': return '#glyph-refresh';
-                    case 'export': return '#glyph-image';
-                    case 'annotate': return '#glyph-annotate';
-                }
-            });
+            .attr("xlink:href", function(d){ return '#glyph-' + d; });
     };
 
     this.enablezoom = function() {
@@ -1050,7 +1061,11 @@ function QuorraPlot(attributes) {
             }
             return true;
         }
-        // _this.attr.crosshairs = 'mouse';
+        // the 'mouse' option is currently the only supported crosshair.
+        if (_this.attr.crosshairs !== false) {
+            _this.attr.crosshairs = 'mouse';
+        }
+        _this.enabled.crosshairs = false;
 
         var xord = typeof _this.data[0].x === 'string';
         if (_this.type === 'bar' || _this.type === 'histogram') {
@@ -1066,25 +1081,46 @@ function QuorraPlot(attributes) {
                 .attr("stroke", "#bbb")
                 .style("opacity", 0)
                 .style('pointer-events', 'none');
+            if (_this.attr.crossposition == 'start') {
+                var xpos = _this.innerheight + _this.attr.margin.top - 5;
+                var xanchor = 'start';
+            } else if (_this.attr.crossposition == 'end') {
+                var xpos = _this.attr.margin.top + 10;
+                var xanchor = 'start';
+            } else if (_this.attr.crossposition == 'middle') {
+                var xpos = _this.attr.margin.top + 10;
+                var xanchor = 'end';
+            }
             _this.attr.crosshairxtext = _this.crossregion.append('text')
-                .attr('x', 100).attr('y', _this.attr.margin.top + 10)
-                .attr('text-anchor', 'start')
+                .attr('x', 100).attr('y', xpos)
+                .attr('text-anchor', xanchor)
                 .style('opacity', 0)
                 .text('');
         }
         if (!yord) {
             _this.attr.crosshairy = {};
             _this.attr.crosshairytext = {};
-            if (_this.attr.crosshairs == 'mouse'){
+            if (_this.attr.crosshairs == 'mouse') {
                 _this.attr.crosshairy.mouse = _this.crossregion.append('line')
                     .attr('x1', _this.attr.margin.left).attr('y1', 50)
                     .attr('x2', _this.attr.margin.left + _this.innerwidth).attr('y2', 50)
                     .attr("stroke", "#bbb")
                     .style('opacity', 0)
                     .style('pointer-events', 'none');
+                
+                if (_this.attr.crossposition == 'start') {
+                    var ypos = _this.attr.margin.left + 5;
+                    var yanchor = 'start'
+                } else if (_this.attr.crossposition == 'end') {
+                    var ypos = _this.attr.margin.left + _this.innerwidth;
+                    var yanchor = 'end';
+                } else if (_this.attr.crossposition == 'middle') {
+                    var ypos = _this.attr.margin.left + _this.innerwidth;
+                    var yanchor = 'start';
+                }
                 _this.attr.crosshairytext.mouse = _this.crossregion.append('text')
-                    .attr('x', _this.attr.margin.left + _this.innerwidth).attr('y', 100)
-                    .attr('text-anchor', 'end')
+                    .attr('x', ypos).attr('y', 100)
+                    .attr('text-anchor', yanchor)
                     .style("opacity", 0)
                     .text('');
             } else{
@@ -1092,97 +1128,126 @@ function QuorraPlot(attributes) {
                     xord = true;
                     yord = true;
                 }
-                _.map(_this.pallette.domain(), function(grp) {
-                    _this.attr.crosshairy[grp] = _this.crossregion.append('line')
-                        .attr('class', 'g_' + grp)
-                        .attr('x1', _this.attr.margin.left).attr('y1', 50)
-                        .attr('x2', _this.attr.margin.left + _this.innerwidth).attr('y2', 50)
-                        .attr("stroke", _this.pallette(grp))
-                        .style("opacity", 0)
-                        .style('pointer-events', 'none');
-                    _this.attr.crosshairytext[grp] = _this.crossregion.append('text')
-                        .attr('class', 'g_' + grp)
-                        .attr('x', _this.attr.margin.left + _this.innerwidth).attr('y', 100)
-                        .attr("stroke", _this.pallette(grp))
-                        .attr('text-anchor', 'end')
-                        .style("opacity", 0)
-                        .text(''); 
+                // _.map(_this.pallette.domain(), function(grp) {
+                //     _this.attr.crosshairy[grp] = _this.crossregion.append('line')
+                //         .attr('class', 'g_' + grp)
+                //         .attr('x1', _this.attr.margin.left).attr('y1', 50)
+                //         .attr('x2', _this.attr.margin.left + _this.innerwidth).attr('y2', 50)
+                //         .attr("stroke", _this.pallette(grp))
+                //         .style("opacity", 0)
+                //         .style('pointer-events', 'none');
+                //     _this.attr.crosshairytext[grp] = _this.crossregion.append('text')
+                //         .attr('class', 'g_' + grp)
+                //         .attr('x', _this.attr.margin.left + _this.innerwidth).attr('y', 100)
+                //         .attr("stroke", _this.pallette(grp))
+                //         .attr('text-anchor', 'end')
+                //         .style("opacity", 0)
+                //         .text(''); 
+                // });
+            }
+        }
+
+        function hideCrosshairs() {
+            if (!xord) {
+                _this.attr.crosshairx.style('opacity', 0);
+                _this.attr.crosshairxtext.style('opacity', 0)
+            }
+            if (!yord) {
+                _.map(Object.keys(_this.attr.crosshairy), function(grp){
+                    _this.attr.crosshairy[grp].style('opacity', 0);
+                    _this.attr.crosshairytext[grp].style('opacity', 0);
                 });
             }
         }
+
         _this.attr.svg.on('mousemove', function(d){
                 var movement = mouse(_this.attr.svg);
                 movement.x = movement.x - _this.attr.margin.left;
                 movement.y = movement.y - _this.attr.margin.top;
-                if (withinBounds(movement)) {
+                if (withinBounds(movement) && _this.enabled.crosshairs) {
                     var xpos = movement.x + _this.attr.margin.left;
                     var ypos = movement.y + _this.attr.margin.top;
                     if (!xord) {
+                        var xtext = _this.attr.xcrossformat(_this.xmap(movement.x));
                         _this.attr.crosshairx
                             .style('opacity', 0.75)
                             .attr('x1', xpos).attr('x2', xpos);
                         _this.attr.crosshairxtext
                             .style('opacity', 0.75)
-                            .attr('x', xpos + 3).text(_this.attr.xcrossformat(_this.xmap(movement.x)));
+                            .attr('x', xpos + 3).text(xtext);
+                        if (_this.attr.crossposition == 'middle') {
+                            _this.attr.crosshairxtext
+                                .attr('x', xpos - 5).attr('y', ypos - 5)
+                                .text('X: ' + xtext);
+                        }
                     }
                     if (!yord) {
                         if (_this.attr.crosshairs == 'mouse') {
+                            var ytext = _this.attr.ycrossformat(_this.ymap(movement.y));
                             _this.attr.crosshairy.mouse.style('opacity', 0.75)
                                 .attr('y1', ypos).attr('y2', ypos);
                             _this.attr.crosshairytext.mouse.style('opacity', 0.75)
-                                .attr('y', ypos - 5).text(_this.attr.ycrossformat(_this.ymap(movement.y)));
+                                .attr('y', ypos - 5).text(ytext);
+                            if (_this.attr.crossposition === 'middle') {
+                                _this.attr.crosshairytext.mouse
+                                    .attr('x', xpos + 5).attr('y', ypos - 5)
+                                    .text('Y: ' + ytext);
+                            }
                         } else {
-                            _.map(_this.pallette.domain(), function(grp){
-                                // TODO
-                                if (_this.type !== 'scatter') {
-                                    var dc = null;
-                                    var closeness = Math.abs(_this.domain[1] - _this.domain[0]);
-                                    _.map(_this.plotdata, function(d) {
-                                        if (d.group == grp) {
-                                            cl = Math.abs(d.x - _this.xmap(movement.x));
-                                            if (cl < closeness) {
-                                                closeness = cl;
-                                                dc = d;
-                                            }
-                                        }
-                                    });
-                                } else {
-                                    dc = {x: movement.x, y: ypos};                                    
-                                }
-                                if (dc !== null) {
-                                    var ypos = _this.yscale(dc.y) + _this.attr.margin.top;
-                                    _this.attr.crosshairy[grp].style('opacity', 0.75)
-                                        .attr('y1', ypos).attr('y2', ypos);
-                                    _this.attr.crosshairytext[grp].style('opacity', 0.75)
-                                        .attr('y', ypos).text(dc.x);
-                                }
-                            });                        
+                            // _.map(_this.pallette.domain(), function(grp){
+                            //     // TODO
+                            //     if (_this.type !== 'scatter') {
+                            //         var dc = null;
+                            //         var closeness = Math.abs(_this.domain[1] - _this.domain[0]);
+                            //         _.map(_this.plotdata, function(d) {
+                            //             if (d.group == grp) {
+                            //                 cl = Math.abs(d.x - _this.xmap(movement.x));
+                            //                 if (cl < closeness) {
+                            //                     closeness = cl;
+                            //                     dc = d;
+                            //                 }
+                            //             }
+                            //         });
+                            //     } else {
+                            //         dc = {x: movement.x, y: ypos};                                    
+                            //     }
+                            //     if (dc !== null) {
+                            //         var ypos = _this.yscale(dc.y) + _this.attr.margin.top;
+                            //         _this.attr.crosshairy[grp].style('opacity', 0.75)
+                            //             .attr('y1', ypos).attr('y2', ypos);
+                            //         _this.attr.crosshairytext[grp].style('opacity', 0.75)
+                            //             .attr('y', ypos).text(dc.x);
+                            //     }
+                            // });                        
                         }
                     }
                 } else {
-                    if (!xord) {
-                        _this.attr.crosshairx.style("opacity", 0);
-                        _this.attr.crosshairxtext.style('opacity', 0);
-                    }
-                    if (!yord) {
-                        _.map(Object.keys(_this.attr.crosshairy), function(grp){
-                            _this.attr.crosshairy[grp].style('opacity', 0);
-                            _this.attr.crosshairytext[grp].style('opacity', 0);
-                        });
-                    }
+                    hideCrosshairs();
                 }
-            }).on('mouseout', function(d){
-                if (!xord) {
-                    _this.attr.crosshairx.style('opacity', 0);
-                    _this.attr.crosshairxtext.style('opacity', 0)
-                }
-                if (!yord) {
-                    _.map(Object.keys(_this.attr.crosshairy), function(grp){
-                        _this.attr.crosshairy[grp].style('opacity', 0);
-                        _this.attr.crosshairytext[grp].style('opacity', 0);
-                    });
-                }
+            }).on('mouseout', function(d) {
+                hideCrosshairs();
             });
+
+
+        // set up events for toggling enabled flags
+        quorra.events.ShiftX.down = function() {
+            d3.selectAll('.glyphbox#crosshairs')
+                .selectAll('.glyph')
+                .style('stroke', 'black')
+                .style('stroke-width', 2);
+            _.each(Object.keys(quorra.plots), function(key){
+                quorra.plots[key].enabled.crosshairs = true;
+            });
+        };
+        quorra.events.ShiftX.up = function() {
+            d3.selectAll('.glyphbox#crosshairs')
+                .selectAll('.glyph')
+                .style('stroke', '#555')
+                .style('stroke-width', 1);
+            _.each(Object.keys(quorra.plots), function(key) {
+                quorra.plots[key].enabled.crosshairs = false;
+            });
+        };
     };
 
 
@@ -1249,6 +1314,7 @@ function QuorraPlot(attributes) {
         xcrossformat: d3.format(".2f"),
         yformat: function(d){ return d; },
         ycrossformat: d3.format(".2f"),
+        crossposition: "end",
         xorient: "bottom",
         yorient: "left",
         xlabel: "",

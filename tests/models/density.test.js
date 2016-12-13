@@ -37,6 +37,9 @@ describe("density.js", function () {
 
   after(function() {
       reorder(base);
+      if (this.currentTest.state == 'failed') {
+          takeScreenshot();
+      }
   });
 
   it("density", function () {
@@ -52,6 +55,7 @@ describe("density.js", function () {
           .opacity(0.75)
           .zoomable(true)
           .exportable(true)
+          .crosshairs(true)
           .margin({'left': 60})
           .yticks(10).xticks(10)
           .yformat(d3.format('0.5f'))
@@ -82,6 +86,7 @@ describe("density.js", function () {
           .lshape("circle")
           .zoomable(true)
           .exportable(true)
+          .crosshairs(true)
           .yformat(d3.format('0.5f'))
           .margin({'left': 70})
           .labelpadding({y: -30})

@@ -37,6 +37,9 @@ describe("pie.js", function () {
 
   after(function() {
       reorder(base);
+      if (this.currentTest.state == 'failed') {
+          takeScreenshot();
+      }
   });
 
   it("pie", function () {

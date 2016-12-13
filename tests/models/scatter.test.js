@@ -63,6 +63,9 @@ describe("scatter.js", function () {
 
   after(function() {
       reorder(base);
+      if (this.currentTest.state == 'failed') {
+          takeScreenshot();
+      }
   });
 
   it("scatter", function () {
@@ -79,6 +82,7 @@ describe("scatter.js", function () {
           .lshape("circle")
           .zoomable(true)
           .exportable(true)
+          .crosshairs(true)
           .yticks(10)
           .xticks(10)
           .xlabel("X Axis Label")
@@ -107,6 +111,7 @@ describe("scatter.js", function () {
           .lshape("circle")
           .zoomable(true)
           .exportable(true)
+          .crosshairs(true)
           .ydensity(true)
           .xlabel("Group")
           .ylabel("Y Axis Label")
@@ -134,6 +139,7 @@ describe("scatter.js", function () {
           .legend(false)
           .zoomable(true)
           .exportable(true)
+          .crosshairs(true)
           .line("hover")
           .yrange([0, 10])
           .hovercolor('firebrick')
