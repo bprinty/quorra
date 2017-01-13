@@ -16,7 +16,7 @@ describe("density.js", function () {
 
       // simulate data
       var entries = 200;
-      x = _.range(entries).map(function(d) { return quorra.random(); });
+      x = _.range(entries).map(function(d) { return quorra.random() * 5; });
       group = _.range(entries).map(function(d) {
           return quorra.random() > 0.5 ? 'Good' : 'Evil';
       });

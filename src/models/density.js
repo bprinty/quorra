@@ -22,7 +22,10 @@ function Density(attributes) {
 
         // generate kde scaling function
         var format = d3.format(".04f");
-        var kde = kdeEstimator(epanechnikovKernel(9), d3.scale.linear().ticks(_this.attr.resolution));
+        var values = _.map(data, function(d){ return d.x; });
+        var min = _.min(values);
+        var max = _.max(values);
+        var kde = kdeEstimator(epanechnikovKernel(9), d3.scale.linear().domain([min, max]).ticks(_this.attr.resolution));
 
         // rearranging data
         var grps = _.uniquesort(data, _this.attr.group);
