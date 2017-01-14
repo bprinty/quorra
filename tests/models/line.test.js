@@ -89,7 +89,19 @@ describe("line.js", function () {
         .crossposition('middle')
         .xcrossformat(d3.format('.1f'))
         .ycrossformat(d3.format('.2f'))
-        .color(['firebrick','steelblue']);
+        .color(['firebrick','steelblue'])
+        .events({
+          preexport: function(data) {
+            data.svg.append('text')
+                .attr('class', 'pre-export-test')
+                .attr('x', 75).attr('y', 150)
+                .style('font-size', '12px')
+                .text('testing pre-export');
+          },
+          postexport: function(data) {
+            data.svg.select('.pre-export-test').remove();
+          },
+        });
 
       quorra.render(line);
 
