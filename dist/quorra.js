@@ -80,7 +80,6 @@ function QuorraPlot(attributes) {
         }
         _this.attr.svg = (_this.attr.svg === null) ? _this.selection.append("svg") : _this.attr.svg;
 
-
         // calculate basic dimensions
         var width = (_this.attr.width === "auto") ? parseInt(_this.selection.style("width")) : _this.attr.width;
         var height = (_this.attr.height === "auto") ? parseInt(_this.selection.style("height")) : _this.attr.height;
@@ -121,60 +120,66 @@ function QuorraPlot(attributes) {
         // perform provided data transformations
         _this.data = _this.attr.transform(_this.attr.data);
 
-        // configure color pallette
-        _this.pallette = (_this.attr.color === "auto") ? d3.scale.category10() : d3.scale.ordinal().range(_this.attr.color);
-        _this.pallette = _this.pallette.domain(_.uniquesort(_this.data, _this.attr.group));
-        
-        // get x domain and range
-        if (typeof _this.data[0].x === 'string') {
-            if (_this.attr.xorder.length > 0) {
-                _this.domain = _this.attr.xorder;
-            } else {
-                _this.domain = _.uniquesort(_this.data, _this.attr.x);
-            }
-            _this.xdelta = 1;
-        } else {
-            _this.domain = [
-                _.min(_.map(_this.data, _this.attr.x)),
-                _.max(_.map(_this.data, _this.attr.x))
-            ];
-            _this.xdelta = (Math.abs(_this.domain[1] - _this.domain[0]) * _this.pallette.length)/_this.data.length;
-        }
+        // TODO: THESE METHODS SHOULD BE MOVED TO A DIFFERENT AREA
+        //       -- LIKE A PARENT CLASS FOR ALL AXES PLOTS. GO SHOULD
+        //       STRICTLY INITIALIZE THE CANVAS
+        if (_this.data[0] !== undefined) {
 
-        // adjust domain for histogram data (needs to be inclusive on both
-        // ends for proper display)
-        if (_this.type === 'histogram') {
-            _this.domain[1] = _this.domain[1] + (_this.domain[1] - _this.domain[0])/(_this.attr.bins-1);
-        }
+            // configure color pallette
+            _this.pallette = (_this.attr.color === "auto") ? d3.scale.category10() : d3.scale.ordinal().range(_this.attr.color);
+            _this.pallette = _this.pallette.domain(_.uniquesort(_this.data, _this.attr.group));
 
-        // get y domain and range
-        var max;
-        if (typeof _this.data[0].y === 'string') {
-            if (_this.attr.yorder.length >  0) {
-                _this.range = _this.attr.yorder;
+            // get x domain and range
+            if (typeof _this.data[0].x === 'string') {
+                if (_this.attr.xorder.length > 0) {
+                    _this.domain = _this.attr.xorder;
+                } else {
+                    _this.domain = _.uniquesort(_this.data, _this.attr.x);
+                }
+                _this.xdelta = 1;
             } else {
-                _this.range = _.uniquesort(_this.data, _this.attr.y);
+                _this.domain = [
+                    _.min(_.map(_this.data, _this.attr.x)),
+                    _.max(_.map(_this.data, _this.attr.x))
+                ];
+                _this.xdelta = (Math.abs(_this.domain[1] - _this.domain[0]) * _this.pallette.length)/_this.data.length;
             }
-            _this.ydelta = 1;
-        } else {
-            if (_this.attr.layout === 'stacked'){
-                // for some reason, underscore's map function won't 
-                // work for accessing the d.y0 property -- so we have
-                // to do it another way
-                var ux = _.uniquesort(_this.data, _this.attr.x);
-                max = _.max(_.map(ux, function(d){
-                    var nd =_.filter(_this.data, function(g){ return _this.attr.x(g) == d; });
-                    var tmap = _.map(nd, function(g){ return _this.attr.y(g); });
-                    return _.reduce(tmap, function(a, b){ return a + b; }, 0);
-                }));
+
+            // adjust domain for histogram data (needs to be inclusive on both
+            // ends for proper display)
+            if (_this.type === 'histogram') {
+                _this.domain[1] = _this.domain[1] + (_this.domain[1] - _this.domain[0])/(_this.attr.bins-1);
+            }
+
+            // get y domain and range
+            var max;
+            if (typeof _this.data[0].y === 'string') {
+                if (_this.attr.yorder.length >  0) {
+                    _this.range = _this.attr.yorder;
+                } else {
+                    _this.range = _.uniquesort(_this.data, _this.attr.y);
+                }
+                _this.ydelta = 1;
             } else {
-                max = _.max(_.map(_this.data, _this.attr.y));
+                if (_this.attr.layout === 'stacked'){
+                    // for some reason, underscore's map function won't 
+                    // work for accessing the d.y0 property -- so we have
+                    // to do it another way
+                    var ux = _.uniquesort(_this.data, _this.attr.x);
+                    max = _.max(_.map(ux, function(d){
+                        var nd =_.filter(_this.data, function(g){ return _this.attr.x(g) == d; });
+                        var tmap = _.map(nd, function(g){ return _this.attr.y(g); });
+                        return _.reduce(tmap, function(a, b){ return a + b; }, 0);
+                    }));
+                } else {
+                    max = _.max(_.map(_this.data, _this.attr.y));
+                }
+                _this.range = [
+                    _.min(_.map(_this.data, _this.attr.y)),
+                    max
+                ];
+                _this.ydelta = (Math.abs(_this.range[1] - _this.range[0]) * _this.pallette.length)/_this.data.length;
             }
-            _this.range = [
-                _.min(_.map(_this.data, _this.attr.y)),
-                max
-            ];
-            _this.ydelta = (Math.abs(_this.range[1] - _this.range[0]) * _this.pallette.length)/_this.data.length;
         }
 
         // set default behavior
@@ -2206,7 +2211,10 @@ function Density(attributes) {
 
         // generate kde scaling function
         var format = d3.format(".04f");
-        var kde = kdeEstimator(epanechnikovKernel(9), d3.scale.linear().ticks(_this.attr.resolution));
+        var values = _.map(data, function(d){ return d.x; });
+        var min = _.min(values);
+        var max = _.max(values);
+        var kde = kdeEstimator(epanechnikovKernel(9), d3.scale.linear().domain([min, max]).ticks(_this.attr.resolution));
 
         // rearranging data
         var grps = _.uniquesort(data, _this.attr.group);
@@ -2235,6 +2243,198 @@ Density.prototype = Object.create(Line.prototype);
 Density.prototype.constructor = Density;
 quorra.density = function(attributes) {
     return new Density(attributes);
+};
+function Graph(attributes) {
+    /**
+    quorra.graph()
+
+    Undirected force grpah. Code for generating this type of plot was inspired from:
+    http://bl.ocks.org/mbostock/3887235
+    
+    @author <bprinty@gmail.com>
+    */
+    var _this = this;
+    if (typeof attributes == 'undefined') attributes = {};
+
+    // plot-specific attributes
+    QuorraPlot.call(this, extend({
+        class: "quorra-graph",
+        nodes: [],
+        links: [],
+        charge: -100,
+        distance: 60,
+        nwformat: function(d){ return d.size + 5; },
+        ewformat: function(d){ return d.size + 1; },
+        edgecolor: "auto"
+    }, attributes));
+    this.type = "graph";
+
+    this.axes = function() {
+        // no axes for graph
+    }
+
+    this.drawlegend = function() {
+        // no legend for plot yet
+    }
+
+    this.plot = function() {
+
+        // if height/width are auto, determine them from selection
+        var width = (_this.attr.width == "auto") ? parseInt(_this.selection.style("width")) : _this.attr.width;
+        var height = (_this.attr.height == "auto") ? parseInt(_this.selection.style("height")) : _this.attr.height;
+        width = width - _this.attr.margin.left - _this.attr.margin.right;
+        height = height - _this.attr.margin.top - _this.attr.margin.bottom;
+
+        // consolidate data
+        _this.plotdata = {nodes: [], links: []};
+        if (_this.attr.nodes.length == 0) {
+            var nodes = {};
+            _this.attr.links.forEach(function(link) {
+              nodes[link.source] = {id: link.source};
+              nodes[link.target] = {id: link.target};
+            });
+            _this.plotdata.nodes = d3.values(nodes);
+        } else {
+            _this.plotdata.nodes = _.map(_this.attr.nodes, function(d) {
+                var nd = _.clone(d);
+                nd.size = nd.weight;
+                return nd;
+            });
+        }
+        var groups = [];
+        var edgegroups = [];
+        var idxmap = {};
+        _this.plotdata.nodes = _.map(_this.plotdata.nodes, function(d, i){
+            idxmap[d.id] = i;
+            if (d.group === undefined) {
+                d.group = "node";
+            }
+            if (d.size === undefined) {
+                d.size = 1;
+            }
+            if (groups.indexOf(d.group) === -1) {
+                groups.push(d.group);
+            }
+            return d;
+        });
+        _this.plotdata.links = _.map(_this.attr.links, function(d){
+            var nd = _.clone(d);
+            nd.source = idxmap[d.source];
+            nd.target = idxmap[d.target];
+            if (nd.group === undefined) {
+                nd.group = "edge";
+            }
+            if (nd.weight === undefined) {
+                nd.weight = 1;
+            }
+            if (edgegroups.indexOf(nd.edgegroups) === -1) {
+                edgegroups.push(nd.edgegroups);
+            }
+            return nd;
+        });
+
+        // configure pallete
+        _this.pallette = (_this.attr.color === "auto") ? d3.scale.category10() : d3.scale.ordinal().range(_this.attr.color);
+        _this.pallette = _this.pallette.domain(groups);
+        _this.edgepallette = (_this.attr.edgecolor === "auto") ? d3.scale.category10() : d3.scale.ordinal().range(_this.attr.edgecolor);
+        _this.edgepallette = _this.edgepallette.domain(edgegroups);
+
+        // generate force layout
+        var force = d3.layout.force()
+            .nodes(_this.plotdata.nodes)
+            .links(_this.plotdata.links)
+            .size([width, height])
+            .linkDistance(_this.attr.distance)
+            .charge(_this.attr.charge)
+            .on("tick", function() {
+              link
+                  .attr("x1", function(d) { return d.source.x; })
+                  .attr("y1", function(d) { return d.source.y; })
+                  .attr("x2", function(d) { return d.target.x; })
+                  .attr("y2", function(d) { return d.target.y; });
+
+              node
+                  .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+            }).start();
+
+        force.drag().on("dragstart", function(d) {
+            d3.event.sourceEvent.stopPropagation();
+        });
+
+        // add links
+        var link = _this.plotregion
+            .selectAll(".link")
+            .data(force.links())
+            .enter().append("line")
+                .attr("stroke", function(d){
+                    if (d.group === "edge") {
+                        return '#ddd';
+                    } else {
+                        return _this.edgepallette(d.group);
+                    }
+                })
+                .attr("stroke-width", _this.attr.ewformat)
+                .attr("class", "link");
+
+        // add nodes
+        console.log(_.map(force.nodes(), function(d){ return d.weight; }));
+        var node = _this.plotregion.selectAll(".node")
+            .data(force.nodes())
+            .enter().append("g")
+                .attr("class", "node")
+                .attr("fill", function(d) { return _this.pallette(d.group); })
+                .on("mouseover", function(d){
+                    d3.select(this).select("circle").transition()
+                            .duration(250)
+                            .attr("r", _this.attr.nwformat(d) + 5);
+                    if (_this.attr.tooltip){
+                        _this.attr.tooltip.html(d.id)
+                            .style("visibility", "visible")
+                            .style("left", (d3.event.clientX + 5) + "px")
+                            .style("top", (d3.event.clientY - 20) + "px");
+                    }
+                })
+                .on("mousemove", function(d){
+                    if (_this.attr.tooltip) {
+                        _this.attr.tooltip
+                            .style("left", (d3.event.clientX + 5) + "px")
+                            .style("top", (d3.event.clientY - 20) + "px");
+                    }
+                })
+                .on("mouseout", function(d){
+                    d3.select(this).select("circle").transition()
+                            .duration(250)
+                            .attr("r", _this.attr.nwformat(d));
+                    if (_this.attr.tooltip) {
+                        _this.attr.tooltip.style("visibility", "hidden");
+                    }
+                }).call(force.drag);
+
+        node.append("circle")
+            .attr("r", _this.attr.nwformat);
+    }
+
+    this.enablezoom = function() {
+        _this.attr.svg.call(d3.behavior.zoom().on("zoom", function(){        
+            _this.plotregion.attr("transform", "translate(" + d3.event.translate + ")" + " scale(" + d3.event.scale + ")");
+        }));
+    };
+
+    this.drawglyphs = function() {
+
+    };
+
+    this.enablecrosshairs = function() {
+        quorra.log('crosshairs not supported on pie chart');
+    };
+
+    return this.go;
+};
+
+Graph.prototype = Object.create(QuorraPlot.prototype);
+Graph.prototype.constructor = Graph;
+quorra.graph = function(attributes) {
+    return new Graph(attributes);
 };
 function Histogram(attributes) {
     /**

@@ -78,7 +78,6 @@ function QuorraPlot(attributes) {
         }
         _this.attr.svg = (_this.attr.svg === null) ? _this.selection.append("svg") : _this.attr.svg;
 
-
         // calculate basic dimensions
         var width = (_this.attr.width === "auto") ? parseInt(_this.selection.style("width")) : _this.attr.width;
         var height = (_this.attr.height === "auto") ? parseInt(_this.selection.style("height")) : _this.attr.height;
@@ -119,60 +118,66 @@ function QuorraPlot(attributes) {
         // perform provided data transformations
         _this.data = _this.attr.transform(_this.attr.data);
 
-        // configure color pallette
-        _this.pallette = (_this.attr.color === "auto") ? d3.scale.category10() : d3.scale.ordinal().range(_this.attr.color);
-        _this.pallette = _this.pallette.domain(_.uniquesort(_this.data, _this.attr.group));
-        
-        // get x domain and range
-        if (typeof _this.data[0].x === 'string') {
-            if (_this.attr.xorder.length > 0) {
-                _this.domain = _this.attr.xorder;
-            } else {
-                _this.domain = _.uniquesort(_this.data, _this.attr.x);
-            }
-            _this.xdelta = 1;
-        } else {
-            _this.domain = [
-                _.min(_.map(_this.data, _this.attr.x)),
-                _.max(_.map(_this.data, _this.attr.x))
-            ];
-            _this.xdelta = (Math.abs(_this.domain[1] - _this.domain[0]) * _this.pallette.length)/_this.data.length;
-        }
+        // TODO: THESE METHODS SHOULD BE MOVED TO A DIFFERENT AREA
+        //       -- LIKE A PARENT CLASS FOR ALL AXES PLOTS. GO SHOULD
+        //       STRICTLY INITIALIZE THE CANVAS
+        if (_this.data[0] !== undefined) {
 
-        // adjust domain for histogram data (needs to be inclusive on both
-        // ends for proper display)
-        if (_this.type === 'histogram') {
-            _this.domain[1] = _this.domain[1] + (_this.domain[1] - _this.domain[0])/(_this.attr.bins-1);
-        }
+            // configure color pallette
+            _this.pallette = (_this.attr.color === "auto") ? d3.scale.category10() : d3.scale.ordinal().range(_this.attr.color);
+            _this.pallette = _this.pallette.domain(_.uniquesort(_this.data, _this.attr.group));
 
-        // get y domain and range
-        var max;
-        if (typeof _this.data[0].y === 'string') {
-            if (_this.attr.yorder.length >  0) {
-                _this.range = _this.attr.yorder;
+            // get x domain and range
+            if (typeof _this.data[0].x === 'string') {
+                if (_this.attr.xorder.length > 0) {
+                    _this.domain = _this.attr.xorder;
+                } else {
+                    _this.domain = _.uniquesort(_this.data, _this.attr.x);
+                }
+                _this.xdelta = 1;
             } else {
-                _this.range = _.uniquesort(_this.data, _this.attr.y);
+                _this.domain = [
+                    _.min(_.map(_this.data, _this.attr.x)),
+                    _.max(_.map(_this.data, _this.attr.x))
+                ];
+                _this.xdelta = (Math.abs(_this.domain[1] - _this.domain[0]) * _this.pallette.length)/_this.data.length;
             }
-            _this.ydelta = 1;
-        } else {
-            if (_this.attr.layout === 'stacked'){
-                // for some reason, underscore's map function won't 
-                // work for accessing the d.y0 property -- so we have
-                // to do it another way
-                var ux = _.uniquesort(_this.data, _this.attr.x);
-                max = _.max(_.map(ux, function(d){
-                    var nd =_.filter(_this.data, function(g){ return _this.attr.x(g) == d; });
-                    var tmap = _.map(nd, function(g){ return _this.attr.y(g); });
-                    return _.reduce(tmap, function(a, b){ return a + b; }, 0);
-                }));
+
+            // adjust domain for histogram data (needs to be inclusive on both
+            // ends for proper display)
+            if (_this.type === 'histogram') {
+                _this.domain[1] = _this.domain[1] + (_this.domain[1] - _this.domain[0])/(_this.attr.bins-1);
+            }
+
+            // get y domain and range
+            var max;
+            if (typeof _this.data[0].y === 'string') {
+                if (_this.attr.yorder.length >  0) {
+                    _this.range = _this.attr.yorder;
+                } else {
+                    _this.range = _.uniquesort(_this.data, _this.attr.y);
+                }
+                _this.ydelta = 1;
             } else {
-                max = _.max(_.map(_this.data, _this.attr.y));
+                if (_this.attr.layout === 'stacked'){
+                    // for some reason, underscore's map function won't 
+                    // work for accessing the d.y0 property -- so we have
+                    // to do it another way
+                    var ux = _.uniquesort(_this.data, _this.attr.x);
+                    max = _.max(_.map(ux, function(d){
+                        var nd =_.filter(_this.data, function(g){ return _this.attr.x(g) == d; });
+                        var tmap = _.map(nd, function(g){ return _this.attr.y(g); });
+                        return _.reduce(tmap, function(a, b){ return a + b; }, 0);
+                    }));
+                } else {
+                    max = _.max(_.map(_this.data, _this.attr.y));
+                }
+                _this.range = [
+                    _.min(_.map(_this.data, _this.attr.y)),
+                    max
+                ];
+                _this.ydelta = (Math.abs(_this.range[1] - _this.range[0]) * _this.pallette.length)/_this.data.length;
             }
-            _this.range = [
-                _.min(_.map(_this.data, _this.attr.y)),
-                max
-            ];
-            _this.ydelta = (Math.abs(_this.range[1] - _this.range[0]) * _this.pallette.length)/_this.data.length;
         }
 
         // set default behavior
