@@ -2377,7 +2377,6 @@ function Graph(attributes) {
                 .attr("class", "link");
 
         // add nodes
-        console.log(_.map(force.nodes(), function(d){ return d.weight; }));
         var node = _this.plotregion.selectAll(".node")
             .data(force.nodes())
             .enter().append("g")
