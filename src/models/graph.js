@@ -18,7 +18,7 @@ function Graph(attributes) {
         charge: -100,
         distance: 60,
         nwformat: function(d){ return d.size + 5; },
-        ewformat: function(d){ return d.size + 1; },
+        ewformat: function(d){ return d.weight + 1; },
         edgecolor: "auto"
     }, attributes));
     this.type = "graph";
