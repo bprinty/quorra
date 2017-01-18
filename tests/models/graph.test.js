@@ -21,10 +21,12 @@ describe("graph.js", function () {
         links: []
       };
       data.nodes = _.range(20).map(function(d){
+        var w = parseInt(quorra.random() * 10);
         return {
           id: 'N_' + d,
-          weight: quorra.random() * 10,
-          group: _.sample(groups)
+          weight: w,
+          group: _.sample(groups),
+          label: 'N_' + d + ': ' + w
         };
       });
       data.links = _.range(20).map(function(d){

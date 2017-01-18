@@ -2387,7 +2387,8 @@ function Graph(attributes) {
                             .duration(250)
                             .attr("r", _this.attr.nwformat(d) + 5);
                     if (_this.attr.tooltip){
-                        _this.attr.tooltip.html(d.id)
+                        var text = (d.label) ? d.label : d.id;
+                        _this.attr.tooltip.html(text)
                             .style("visibility", "visible")
                             .style("left", (d3.event.clientX + 5) + "px")
                             .style("top", (d3.event.clientY - 20) + "px");
