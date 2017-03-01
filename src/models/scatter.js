@@ -48,14 +48,14 @@ function Scatter(attributes) {
     
             var ugrps = _this.pallette.domain();
             for (var grp in ugrps) {
-                var subdat = _.filter(_this.plotdata, function(d){ return d.group == ugrps[grp]; });
+                var subdat = _.filter(_this.plotdata, function(d, i){ return _this.attr.group(d) == ugrps[grp]; });
                 if (subdat.length == 0) {
                     continue;
                 }
                 _this.plotarea.append("path")
                     .datum(subdat)
                     .attr("class", function(d, i){
-                        return "line " + "g_" + d[0].group;
+                        return "line " + "g_" + _this.attr.group(d[0]);
                     })
                     .attr("d", function(d){
                         var p = path(d);
@@ -74,34 +74,34 @@ function Scatter(attributes) {
                         if (_this.attr.linelayout === "line") {
                             return "none";
                         } else if (_this.attr.linelayout === "area") {
-                            return _this.pallette(d[0].group);
+                            return _this.pallette(_this.attr.group(d[0]));
                         }
                     })
                     .style("stroke", function(d, i) {
-                        if (_.contains(_this.attr.selected, _this.attr.group(d[0], i))) {
+                        if (_.contains(_this.attr.selected, _this.attr.group(d[0]))) {
                             if (_this.attr.hovercolor !== false) {
                                 return _this.attr.hovercolor;
                             } else {
                                 return 'firebrick';
                             }
                         } else {
-                            return _this.pallette(_this.attr.group(d[0], i));
+                            return _this.pallette(_this.attr.group(d[0]));
                         }
                     })
                     .style("stroke-width", _this.attr.linesize)
                     .style("opacity", _this.attr.opacity)
                     .style("visibility", function(d, i) {
-                        if (_.contains(_this.attr.selected, _this.attr.group(d[0], i))) {
+                        if (_.contains(_this.attr.selected, _this.attr.group(d[0]))) {
                             return 'visible';
                         }
                         if (_this.attr.line === 'hover') {
                             return 'hidden';
                         } else if (_this.attr.line) {
-                            return _.contains(_this.attr.toggled, _this.attr.group(d[0], i)) ? 'hidden' : 'visible';
+                            return _.contains(_this.attr.toggled, _this.attr.group(d[0])) ? 'hidden' : 'visible';
                         }
                     }).on("click", function(d, i){
                         if (_this.attr.selectable !== false) {
-                            _this.attr.selected = selectmerge(_this.attr.selected, d[0].group, _this.attr.selectable);
+                            _this.attr.selected = selectmerge(_this.attr.selected, _this.attr.group(d[0]), _this.attr.selectable);
                             _this.redraw(_this.xscale.domain(), _this.yscale.domain(), false);
                         }
                         if (_this.attr.slider) {
@@ -118,7 +118,7 @@ function Scatter(attributes) {
             .remove().data(_this.plotdata)
             .enter().append("circle")
             .attr("class", function(d, i){
-                return "dot " + "g_" + d.group;
+                return "dot " + "g_" + _this.attr.group(d, i);
             })
             .attr("r", _this.attr.size)
             .attr("cx", function(d, i) { return d.x; })
@@ -135,8 +135,8 @@ function Scatter(attributes) {
                 }
             })
             .style("opacity", _this.attr.opacity)
-            .style("visibility", function(d){
-                return _.contains(_this.attr.toggled, _this.attr.group(d)) ? 'hidden' : 'visible';
+            .style("visibility", function(d, i){
+                return _.contains(_this.attr.toggled, _this.attr.group(d, i)) ? 'hidden' : 'visible';
             })
             .attr("clip-path", "url(#clip)")
             .on("mouseover", function(d, i){
@@ -150,22 +150,22 @@ function Scatter(attributes) {
                     return;
                 }
                 if (_this.attr.line === 'hover') {
-                    _this.plotarea.selectAll('.line.g_' + d.group).style('visibility', 'visible');
+                    _this.plotarea.selectAll('.line.g_' + _this.attr.group(d, i)).style('visibility', 'visible');
                 }
                 if (_this.attr.hovercolor !== false) {
-                    _this.plotarea.selectAll('.dot.g_' + d.group).style("fill", _this.attr.hovercolor);
-                    _this.plotarea.selectAll('.line.g_' + d.group).style("stroke", _this.attr.hovercolor);
+                    _this.plotarea.selectAll('.dot.g_' + _this.attr.group(d, i)).style("fill", _this.attr.hovercolor);
+                    _this.plotarea.selectAll('.line.g_' + _this.attr.group(d, i)).style("stroke", _this.attr.hovercolor);
                     if (_this.attr.slider !== null) {
-                        _this.attr.slider.__parent__.plotarea.selectAll('.dot.g_' + d.group).style("fill", _this.attr.hovercolor);
-                        _this.attr.slider.__parent__.plotarea.selectAll('.line.g_' + d.group).style("stroke", _this.attr.hovercolor);
+                        _this.attr.slider.__parent__.plotarea.selectAll('.dot.g_' + _this.attr.group(d, i)).style("fill", _this.attr.hovercolor);
+                        _this.attr.slider.__parent__.plotarea.selectAll('.line.g_' + _this.attr.group(d, i)).style("stroke", _this.attr.hovercolor);
                     }
                 } else {
                     d3.select(this).style("opacity", 0.25);
                     if (_this.attr.slider !== null) {
-                        _this.attr.slider.__parent__.plotarea.selectAll('.g_' + d.group).style("opacity", 0.25);
+                        _this.attr.slider.__parent__.plotarea.selectAll('.g_' + _this.attr.group(d, i)).style("opacity", 0.25);
                     }
                 }
-            }).on("mousemove", function(d){
+            }).on("mousemove", function(d, i){
                 if (_this.attr.tooltip){
                     _this.attr.tooltip
                         .style("left", (d3.event.clientX + 5) + "px")
@@ -179,24 +179,24 @@ function Scatter(attributes) {
                     return;
                 }
                 if (_this.attr.line === 'hover') {
-                    _this.plotarea.selectAll('.line.g_' + d.group).style('visibility', 'hidden');
+                    _this.plotarea.selectAll('.line.g_' + _this.attr.group(d, i)).style('visibility', 'hidden');
                 }
                 if (_this.attr.hovercolor !== false) {
-                    _this.plotarea.selectAll('.dot.g_' + d.group).style("fill", _this.pallette(_this.attr.group(d, i)));
-                    _this.plotarea.selectAll('.line.g_' + d.group).style("stroke", _this.pallette(_this.attr.group(d, i)));
+                    _this.plotarea.selectAll('.dot.g_' + _this.attr.group(d, i)).style("fill", _this.pallette(_this.attr.group(d, i)));
+                    _this.plotarea.selectAll('.line.g_' + _this.attr.group(d, i)).style("stroke", _this.pallette(_this.attr.group(d, i)));
                     if (_this.attr.slider !== null) {
-                        _this.attr.slider.__parent__.plotarea.selectAll('.dot.g_' + d.group).style("fill", _this.pallette(_this.attr.group(d, i)));
-                        _this.attr.slider.__parent__.plotarea.selectAll('.line.g_' + d.group).style("stroke", _this.pallette(_this.attr.group(d, i)));
+                        _this.attr.slider.__parent__.plotarea.selectAll('.dot.g_' + _this.attr.group(d, i)).style("fill", _this.pallette(_this.attr.group(d, i)));
+                        _this.attr.slider.__parent__.plotarea.selectAll('.line.g_' + _this.attr.group(d, i)).style("stroke", _this.pallette(_this.attr.group(d, i)));
                     }
                 } else {
                     d3.select(this).style("opacity", _this.attr.opacity);
                     if (_this.attr.slider !== null) {
-                        _this.attr.slider.__parent__.plotarea.selectAll('.g_' + d.group).style("opacity", _this.attr.opacity);
+                        _this.attr.slider.__parent__.plotarea.selectAll('.g_' + _this.attr.group(d, i)).style("opacity", _this.attr.opacity);
                     }
                 }
             }).on("click", function(d, i){
                 if (_this.attr.selectable !== false) {
-                    _this.attr.selected = selectmerge(_this.attr.selected, d.group, _this.attr.selectable);
+                    _this.attr.selected = selectmerge(_this.attr.selected, _this.attr.group(d, i), _this.attr.selectable);
                     _this.redraw(_this.xscale.domain(), _this.yscale.domain(), false);
                     if (_this.attr.slider) {
                         _this.attr.slider.__parent__.attr.selected = _this.attr.selected;
@@ -213,7 +213,7 @@ function Scatter(attributes) {
                 .enter().append("line")
                 .attr("clip-path", "url(#clip)")
                 .attr("class", function(d, i){
-                    return "xtick " + "g_" + d.group;
+                    return "xtick " + "g_" + _this.attr.group(d, i);
                 })
                 .attr("x1", function(d, i) { return _this.xscale(_this.xmapper(_this.attr.x(d, i))); })
                 .attr("x2", function(d, i) { return _this.xscale(_this.xmapper(_this.attr.x(d, i))); })
@@ -232,7 +232,7 @@ function Scatter(attributes) {
                 .enter().append("line")
                 .attr("clip-path", "url(#clip)")
                 .attr("class", function(d, i){
-                    return "ytick " + "g_" + d.group;
+                    return "ytick " + "g_" + _this.attr.group(d, i);
                 })
                 .attr("x1", function(d, i) { return 0; })
                 .attr("x2", function(d, i) { return 10; })

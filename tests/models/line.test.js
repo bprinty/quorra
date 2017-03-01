@@ -103,7 +103,7 @@ describe("line.js", function () {
           },
         });
 
-      quorra.render(line);
+      quorra.render(line); 
 
       checkplot(id);
       checkaxis(id);
@@ -173,6 +173,27 @@ describe("line.js", function () {
       checkplot(id);
       checkaxis(id);
       checkglyphs(id);
+  });
+
+  it("simple", function () {
+
+      var id = quorra.uuid();
+      base.append('div').attr('id', id).attr('class', 'plotarea');
+
+      var simple = quorra.line()
+        .bind('#' + id)
+        .id(id)
+        .data([
+          {x: 1, y: 5},
+          {x: 2, y: 10},
+          {x: 3, y: 15},
+          {x: 4, y: 5},
+        ]);
+
+      quorra.render(simple); 
+
+      checkplot(id);
+      checkaxis(id);
   });
 
 });

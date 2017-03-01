@@ -39,7 +39,7 @@ function Pie(attributes) {
         var newdata = [];
         var gps = _this.pallette.domain();
         for (var i in gps){
-            var subdat = _.filter(_this.data, function(d){ return d.group == gps[i]; });
+            var subdat = _.filter(_this.data, function(d){ return _this.attr.group(d) == gps[i]; });
             newdata.push({
                 x: _this.attr.aggregate(_.map(subdat, function(d){ return d.x; })),
                 group: gps[i],

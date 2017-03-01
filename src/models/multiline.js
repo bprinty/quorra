@@ -137,7 +137,7 @@ function Multiline(attributes) {
                 .interpolate(_this.attr.interpolate);
 
             // lines
-            var subdat = _.filter(_this.plotdata, function(d){ return d.group === ugrps[grp]; });
+            var subdat = _.filter(_this.plotdata, function(d){ return _this.attr.group(d) === ugrps[grp]; });
             if (subdat.length == 0) {
                 continue;
             }
@@ -147,7 +147,7 @@ function Multiline(attributes) {
             _this.plotarea.append("path")
                 .datum(subdat)
                 .attr("class", function(d, i){
-                    return "line " + "g_" + d[0].group;
+                    return "line " + "g_" + _this.attr.group(d[0]);
                 })
                 .attr("d", function(d){
                     var p = path(d);
@@ -166,40 +166,40 @@ function Multiline(attributes) {
                     if (_this.attr.layout === "line") {
                         return "none";
                     } else if (_this.attr.layout === "area") {
-                        return _this.pallette(d[0].group);
+                        return _this.pallette(_this.attr.group(d[0]));
                     }
                 })
                 .style("stroke", function(d, i){
-                    if (_.contains(_this.attr.selected, _this.attr.group(d[0], i))) {
+                    if (_.contains(_this.attr.selected, _this.attr.group(d[0]))) {
                         if (_this.attr.hovercolor !== false) {
                             return _this.attr.hovercolor;
                         } else {
                             return 'firebrick';
                         }
                     } else {
-                        return _this.pallette(_this.attr.group(d[0], i));
+                        return _this.pallette(_this.attr.group(d[0]));
                     }
                 })
                 .style("stroke-width", _this.attr.size)
                 .style("opacity", _this.attr.opacity)
                 .style("visibility", function(d, i) {
-                    return _.contains(_this.attr.toggled, _this.attr.group(d[0], i)) ? 'hidden' : 'visible';
+                    return _.contains(_this.attr.toggled, _this.attr.group(d[0])) ? 'hidden' : 'visible';
                 })
                 .on("mouseover", function(d, i) {
                     if (_this.attr.tooltip){
-                        _this.attr.tooltip.html(d[0].group)
+                        _this.attr.tooltip.html(_this.attr.group(d[0]))
                             .style("visibility", "visible")
                             .style("left", (d3.event.clientX + 5) + "px")
                             .style("top", (d3.event.clientY - 20) + "px");
                     }
-                    if (_.contains(_this.attr.selected, _this.attr.group(d[0], i))) {
+                    if (_.contains(_this.attr.selected, _this.attr.group(d[0]))) {
                         return;
                     }
                     if (_this.attr.hovercolor !== false) {
-                        _this.plotarea.selectAll('.dot.g_' + d[0].group).style("fill", _this.attr.hovercolor);
-                        _this.plotarea.selectAll('.line.g_' + d[0].group).style("stroke", _this.attr.hovercolor);
+                        _this.plotarea.selectAll('.dot.g_' + _this.attr.group(d[0])).style("fill", _this.attr.hovercolor);
+                        _this.plotarea.selectAll('.line.g_' + _this.attr.group(d[0])).style("stroke", _this.attr.hovercolor);
                     } else {
-                        _this.plotarea.selectAll('.g_' + d[0].group).style("opacity", 0.25);
+                        _this.plotarea.selectAll('.g_' + _this.attr.group(d[0])).style("opacity", 0.25);
                     }
                 }).on("mousemove", function(d) {
                     if (_this.attr.tooltip) {
@@ -215,14 +215,14 @@ function Multiline(attributes) {
                         return;
                     }
                     if (_this.attr.hovercolor !== false) {
-                        _this.plotarea.selectAll('.dot.g_' + d[0].group).style("fill", _this.pallette(d[0].group));
-                        _this.plotarea.selectAll('.line.g_' + d[0].group).style("stroke", _this.pallette(d[0].group));
+                        _this.plotarea.selectAll('.dot.g_' + _this.attr.group(d[0])).style("fill", _this.pallette(_this.attr.group(d[0])));
+                        _this.plotarea.selectAll('.line.g_' + _this.attr.group(d[0])).style("stroke", _this.pallette(_this.attr.group(d[0])));
                     } else {
-                        _this.plotarea.selectAll('.g_' + d[0].group).style("opacity", _this.attr.opacity);
+                        _this.plotarea.selectAll('.g_' + _this.attr.group(d[0])).style("opacity", _this.attr.opacity);
                     }
                 }).on("click", function(d, i){
                     if (_this.attr.selectable !== false) {
-                        _this.attr.selected = selectmerge(_this.attr.selected, d[0].group, _this.attr.selectable);
+                        _this.attr.selected = selectmerge(_this.attr.selected, _this.attr.group(d[0]), _this.attr.selectable);
                         _this.redraw(_this.xscale.domain(), _this.yscale.domain(), false);
                     }
                     if (_this.attr.slider) {
@@ -241,7 +241,7 @@ function Multiline(attributes) {
                 .remove().data(_this.plotdata)
                 .enter().append("circle")
                 .attr("class", function(d, i){
-                    return "dot " + "g_" + d.group;
+                    return "dot " + "g_" + _this.attr.group(d);
                 })
                 .attr("r", _this.attr.points)
                 .attr("cx", function(d, i) { return _this.xscale(_this.xmapper(_this.attr.x(d, i))); })
@@ -272,10 +272,10 @@ function Multiline(attributes) {
                         return;
                     }
                     if (_this.attr.hovercolor !== false) {
-                        _this.plotarea.selectAll('.dot.g_' + d.group).style("fill", _this.attr.hovercolor);
-                        _this.plotarea.selectAll('.line.g_' + d.group).style("stroke", _this.attr.hovercolor);
+                        _this.plotarea.selectAll('.dot.g_' + _this.attr.group(d)).style("fill", _this.attr.hovercolor);
+                        _this.plotarea.selectAll('.line.g_' + _this.attr.group(d)).style("stroke", _this.attr.hovercolor);
                     } else {
-                        _this.plotarea.selectAll('.g_' + d.group).style("opacity", 0.25);
+                        _this.plotarea.selectAll('.g_' + _this.attr.group(d)).style("opacity", 0.25);
                     }
                 }).on("mousemove", function(d){
                     if (_this.attr.tooltip){
@@ -291,14 +291,14 @@ function Multiline(attributes) {
                         return;
                     }
                     if (_this.attr.hovercolor !== false) {
-                        _this.plotarea.selectAll('.dot.g_' + d.group).style("fill", _this.pallette(_this.attr.group(d, i)));
-                        _this.plotarea.selectAll('.line.g_' + d.group).style("stroke", _this.pallette(_this.attr.group(d, i)));
+                        _this.plotarea.selectAll('.dot.g_' + _this.attr.group(d)).style("fill", _this.pallette(_this.attr.group(d, i)));
+                        _this.plotarea.selectAll('.line.g_' + _this.attr.group(d)).style("stroke", _this.pallette(_this.attr.group(d, i)));
                     } else {
-                        _this.plotarea.selectAll('.g_' + d.group).style("opacity", _this.attr.opacity);
+                        _this.plotarea.selectAll('.g_' + _this.attr.group(d)).style("opacity", _this.attr.opacity);
                     }
                 }).on("click", function(d, i){
                     if (_this.attr.selectable !== false) {
-                        _this.attr.selected = selectmerge(_this.attr.selected, d.group, _this.attr.selectable);
+                        _this.attr.selected = selectmerge(_this.attr.selected, _this.attr.group(d), _this.attr.selectable);
                         _this.redraw(_this.xscale.domain(), _this.yscale.domain(), false);
                     }
                     if (_this.attr.slider) {

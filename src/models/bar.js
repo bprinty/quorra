@@ -32,12 +32,12 @@ function Bar(attributes) {
             _this.plotdata = _this.plotdata.sort(function(a, b) { return a.x > b.x; });
         }
         for (var grp in ugrps) {
-            var flt = _.filter(_this.plotdata, function(d){ return d.group == ugrps[grp]; });
+            var flt = _.filter(_this.plotdata, function(d){ return _this.attr.group(d) == ugrps[grp]; });
             flt = _.map(flt, function(d) {
                 d.layer = grp;
                 return d;
             });
-            layers.push(_.filter(flt, function(d){ return d.group == ugrps[grp]; }));
+            layers.push(_.filter(flt, function(d){ return _this.attr.group(d) == ugrps[grp]; }));
         }
         var y0 = _.map(layers[0], function(d){ return 0; });
         for (var lay=0; lay<layers.length; lay++){
@@ -58,7 +58,7 @@ function Bar(attributes) {
             .remove().data(function(d){ return d; })
             .enter().append("rect")
             .attr("class", function(d, i) {
-                return "bar " + "g_" + d.group;
+                return "bar " + "g_" + _this.attr.group(d);
             })
             .attr("x", function(d, i) {
                 if (layers[0].length > 1){
@@ -67,7 +67,7 @@ function Bar(attributes) {
                         return _this.xscale(_this.xmapper(_this.attr.x(d, i)) - offset);
                     }else{
                         var diff = Math.abs(_this.xscale(_this.xmapper(_this.attr.x(layers[0][1]))) - _this.xscale(_this.xmapper(_this.attr.x(layers[0][0]))));
-                        return _this.xscale(_this.xmapper(_this.attr.x(d, i)) - offset) + _this.pallette.range().indexOf(_this.pallette(d.group))*(diff / _this.pallette.domain().length);
+                        return _this.xscale(_this.xmapper(_this.attr.x(d, i)) - offset) + _this.pallette.range().indexOf(_this.pallette(_this.attr.group(d)))*(diff / _this.pallette.domain().length);
                     }
                 }else{
                     var range = _this.xscale.range();
@@ -92,10 +92,10 @@ function Bar(attributes) {
                     var range = _this.xscale.range();
                     return range[1] - range[0] - 2;
                 }
-            }).attr("fill", function(d, i){ return _this.pallette(d.group); })
+            }).attr("fill", function(d, i){ return _this.pallette(_this.attr.group(d)); })
             .style("opacity", _this.attr.opacity)
             .style("visibility", function(d){
-                return _.contains(_this.attr.toggled, d.group) ? 'hidden' : 'visible';
+                return _.contains(_this.attr.toggled, _this.attr.group(d)) ? 'hidden' : 'visible';
             })
             .on("mouseover", function(d, i){
                 d3.select(this).style("opacity", 0.25);

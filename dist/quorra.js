@@ -1274,7 +1274,7 @@ function QuorraPlot(attributes) {
         data: [],
         x: function(d, i) { return d.x; },
         y: function(d, i) { return d.y; },
-        group: function(d, i){ return (typeof d.group === 'undefined') ? 0 : d.group; },
+        group: function(d, i){ return (typeof d.group === 'undefined') ? 'data' : d.group; },
         label: function(d, i){ return (typeof d.label === 'undefined') ? i : d.label; },
         transform: function(d){ return d; },
         color: "auto",
@@ -1341,7 +1341,7 @@ function QuorraPlot(attributes) {
         lposition: "outside",
         lshape: "square",
         lorder: [],
-        toggle: true,
+        toggle: false,
         toggled: [],
         selected: [],
         tooltip: true,
@@ -1384,185 +1384,626 @@ function QuorraPlot(attributes) {
     return this.go;
 }
 
-/*
-
-Event handling within quorra.
-
-@author <bprinty@gmail.com>
-
-*/
-
-
-// key map and default event definitions
-var baseKeys = { 16: 'Shift', 17: 'Ctrl', 18: 'Alt', 27: 'Esc'};
-var metaKeys = { 9: 'Tab', 13: 'Enter', 65: 'A', 66: 'B', 67: 'C', 68: 'D', 69: 'E', 70: 'F', 71: 'G', 72: 'H', 73: 'I', 74: 'J', 75: 'K', 76: 'L', 77: 'M', 78: 'N', 79: 'O', 80: 'P', 81: 'Q', 82: 'R', 83: 'S', 84: 'T', 85: 'U', 86: 'V', 87: 'W', 88: 'X', 89: 'Y', 90: 'Z'};
-var allKeys = _.extend(_.clone(baseKeys), metaKeys);
+/***
+ *
+ * Lodash functional utilities.
+ * 
+ * @author  <bprinty@gmail.com>
+ */
 
 
-// setting functions for default state and events
-quorra.keys = {};
-quorra.events = {};
-_.each(baseKeys, function(base) {
+// base
+// ----
+var _ = function(obj) {
+    if (obj instanceof _) return obj;
+    if (!(this instanceof _)) return new _(obj);
+    this._wrapped = obj;
+};
 
-    quorra.events[base] = {
-        down: function(){},
-        up: function(){}
+
+// helpers
+// -------
+var optimizeCb = function(func, context, argCount) {
+    if (context === void 0) return func;
+    switch (argCount) {
+      case 1: return function(value) {
+        return func.call(context, value);
+      };
+      case null:
+      case 3: return function(value, index, collection) {
+        return func.call(context, value, index, collection);
+      };
+      case 4: return function(accumulator, value, index, collection) {
+        return func.call(context, accumulator, value, index, collection);
+      };
+    }
+    return function() {
+      return func.apply(context, arguments);
     };
-    quorra.keys[base] = false;
-    _.each(metaKeys, function(meta){
-        quorra.events[base + meta] = {
-            down: function(){},
-            up: function(){}
-        };
-        quorra.keys[meta] = false;
-        quorra.keys[base + meta] = false;
+};
+
+var builtinIteratee;
+
+var cb = function(value, context, argCount) {
+    if (_.iteratee !== builtinIteratee) return _.iteratee(value, context);
+    if (value == null) return _.identity;
+    if (_.isFunction(value)) return optimizeCb(value, context, argCount);
+    if (_.isObject(value) && !_.isArray(value)) return _.matcher(value);
+    return _.property(value);
+};
+
+_.iteratee = builtinIteratee = function(value, context) {
+    return cb(value, context, Infinity);
+};
+
+var restArgs = function(func, startIndex) {
+    startIndex = startIndex == null ? func.length - 1 : +startIndex;
+    return function() {
+      var length = Math.max(arguments.length - startIndex, 0),
+          rest = Array(length),
+          index = 0;
+      for (; index < length; index++) {
+        rest[index] = arguments[index + startIndex];
+      }
+      switch (startIndex) {
+        case 0: return func.call(this, rest);
+        case 1: return func.call(this, arguments[0], rest);
+        case 2: return func.call(this, arguments[0], arguments[1], rest);
+      }
+      var args = Array(startIndex + 1);
+      for (index = 0; index < startIndex; index++) {
+        args[index] = arguments[index];
+      }
+      args[startIndex] = rest;
+      return func.apply(this, args);
+    };
+};
+
+var shallowProperty = function(key) {
+    return function(obj) {
+      return obj == null ? void 0 : obj[key];
+    };
+};
+
+var deepGet = function(obj, path) {
+    var length = path.length;
+    for (var i = 0; i < length; i++) {
+      if (obj == null) return void 0;
+      obj = obj[path[i]];
+    }
+    return length ? obj : void 0;
+};
+
+var MAX_ARRAY_INDEX = Math.pow(2, 53) - 1;
+var getLength = shallowProperty('length');
+var isArrayLike = function(collection) {
+    var length = getLength(collection);
+    return typeof length == 'number' && length >= 0 && length <= MAX_ARRAY_INDEX;
+};
+
+
+// collections
+// -----------
+_.each = _.forEach = function(obj, iteratee, context) {
+    iteratee = optimizeCb(iteratee, context);
+    var i, length;
+    if (isArrayLike(obj)) {
+      for (i = 0, length = obj.length; i < length; i++) {
+        iteratee(obj[i], i, obj);
+      }
+    } else {
+      var keys = _.keys(obj);
+      for (i = 0, length = keys.length; i < length; i++) {
+        iteratee(obj[keys[i]], keys[i], obj);
+      }
+    }
+    return obj;
+};
+
+_.map = _.collect = function(obj, iteratee, context) {
+    iteratee = cb(iteratee, context);
+    var keys = !isArrayLike(obj) && _.keys(obj),
+        length = (keys || obj).length,
+        results = Array(length);
+    for (var index = 0; index < length; index++) {
+      var currentKey = keys ? keys[index] : index;
+      results[index] = iteratee(obj[currentKey], currentKey, obj);
+    }
+    return results;
+};
+
+var createReduce = function(dir) {
+    // Wrap code that reassigns argument variables in a separate function than
+    // the one that accesses `arguments.length` to avoid a perf hit. (#1991)
+    var reducer = function(obj, iteratee, memo, initial) {
+      var keys = !isArrayLike(obj) && _.keys(obj),
+          length = (keys || obj).length,
+          index = dir > 0 ? 0 : length - 1;
+      if (!initial) {
+        memo = obj[keys ? keys[index] : index];
+        index += dir;
+      }
+      for (; index >= 0 && index < length; index += dir) {
+        var currentKey = keys ? keys[index] : index;
+        memo = iteratee(memo, obj[currentKey], currentKey, obj);
+      }
+      return memo;
+    };
+
+    return function(obj, iteratee, memo, context) {
+        var initial = arguments.length >= 3;
+        return reducer(obj, optimizeCb(iteratee, context, 4), memo, initial);
+    };
+};
+
+_.reduce = _.foldl = _.inject = createReduce(1);
+
+_.reduceRight = _.foldr = createReduce(-1);
+
+_.filter = _.select = function(obj, predicate, context) {
+    var results = [];
+    predicate = cb(predicate, context);
+    _.each(obj, function(value, index, list) {
+        if (predicate(value, index, list)) results.push(value);
+    });
+    return results;
+};
+
+_.reject = function(obj, predicate, context) {
+    return _.filter(obj, _.negate(cb(predicate)), context);
+};
+
+_.every = _.all = function(obj, predicate, context) {
+    predicate = cb(predicate, context);
+    var keys = !isArrayLike(obj) && _.keys(obj),
+        length = (keys || obj).length;
+    for (var index = 0; index < length; index++) {
+        var currentKey = keys ? keys[index] : index;
+        if (!predicate(obj[currentKey], currentKey, obj)) return false;
+    }
+    return true;
+};
+
+_.some = _.any = function(obj, predicate, context) {
+    predicate = cb(predicate, context);
+    var keys = !isArrayLike(obj) && _.keys(obj),
+        length = (keys || obj).length;
+    for (var index = 0; index < length; index++) {
+      var currentKey = keys ? keys[index] : index;
+      if (predicate(obj[currentKey], currentKey, obj)) return true;
+    }
+    return false;
+};
+
+_.contains = _.includes = _.include = function(obj, item, fromIndex, guard) {
+    if (!isArrayLike(obj)) obj = _.values(obj);
+    if (typeof fromIndex != 'number' || guard) fromIndex = 0;
+    return _.indexOf(obj, item, fromIndex) >= 0;
+};
+
+_.max = function(obj, iteratee, context) {
+    var result = -Infinity, lastComputed = -Infinity,
+        value, computed;
+    if (iteratee == null || (typeof iteratee == 'number' && typeof obj[0] != 'object') && obj != null) {
+      obj = isArrayLike(obj) ? obj : _.values(obj);
+      for (var i = 0, length = obj.length; i < length; i++) {
+        value = obj[i];
+        if (value != null && value > result) {
+          result = value;
+        }
+      }
+    } else {
+      iteratee = cb(iteratee, context);
+      _.each(obj, function(v, index, list) {
+        computed = iteratee(v, index, list);
+        if (computed > lastComputed || computed === -Infinity && result === -Infinity) {
+          result = v;
+          lastComputed = computed;
+        }
+      });
+    }
+    return result;
+};
+
+_.min = function(obj, iteratee, context) {
+    var result = Infinity, lastComputed = Infinity,
+        value, computed;
+    if (iteratee == null || (typeof iteratee == 'number' && typeof obj[0] != 'object') && obj != null) {
+      obj = isArrayLike(obj) ? obj : _.values(obj);
+      for (var i = 0, length = obj.length; i < length; i++) {
+        value = obj[i];
+        if (value != null && value < result) {
+          result = value;
+        }
+      }
+    } else {
+      iteratee = cb(iteratee, context);
+      _.each(obj, function(v, index, list) {
+        computed = iteratee(v, index, list);
+        if (computed < lastComputed || computed === Infinity && result === Infinity) {
+          result = v;
+          lastComputed = computed;
+        }
+      });
+    }
+    return result;
+};
+
+_.shuffle = function(obj) {
+    return _.sample(obj, Infinity);
+};
+
+_.sample = function(obj, n, guard) {
+    if (n == null || guard) {
+      if (!isArrayLike(obj)) obj = _.values(obj);
+      return obj[_.random(obj.length - 1)];
+    }
+    var sample = isArrayLike(obj) ? _.clone(obj) : _.values(obj);
+    var length = getLength(sample);
+    n = Math.max(Math.min(n, length), 0);
+    var last = length - 1;
+    for (var index = 0; index < n; index++) {
+      var rand = _.random(index, last);
+      var temp = sample[index];
+      sample[index] = sample[rand];
+      sample[rand] = temp;
+    }
+    return sample.slice(0, n);
+};
+
+
+// array
+// -----
+var flatten = function(input, shallow, strict, output) {
+    output = output || [];
+    var idx = output.length;
+    for (var i = 0, length = getLength(input); i < length; i++) {
+        var value = input[i];
+        if (isArrayLike(value) && (_.isArray(value) || _.isArguments(value))) {
+            // Flatten current level of array or arguments object.
+            if (shallow) {
+                var j = 0, len = value.length;
+                while (j < len) output[idx++] = value[j++];
+            } else {
+                flatten(value, shallow, strict, output);
+                idx = output.length;
+            }
+        } else if (!strict) {
+            output[idx++] = value;
+        }
+    }
+    return output;
+};
+
+_.flatten = function(array, shallow) {
+    return flatten(array, shallow, false);
+};
+
+_.without = restArgs(function(array, otherArrays) {
+    return _.difference(array, otherArrays);
+});
+
+_.uniq = _.unique = function(array, isSorted, iteratee, context) {
+    if (!_.isBoolean(isSorted)) {
+        context = iteratee;
+        iteratee = isSorted;
+        isSorted = false;
+    }
+    if (iteratee != null) iteratee = cb(iteratee, context);
+    var result = [];
+    var seen = [];
+    for (var i = 0, length = getLength(array); i < length; i++) {
+        var value = array[i],
+            computed = iteratee ? iteratee(value, i, array) : value;
+        if (isSorted) {
+            if (!i || seen !== computed) result.push(value);
+                seen = computed;
+        } else if (iteratee) {
+            if (!_.contains(seen, computed)) {
+                seen.push(computed);
+                result.push(value);
+            }
+        } else if (!_.contains(result, value)) {
+            result.push(value);
+        }
+    }
+    return result;
+};
+
+_.uniquesort = function(x, func) {
+    if (typeof func === 'undefined') {
+        func = function(x){ return x; };
+    }
+    return _.unique(_.map(x, func)).sort();
+};
+
+
+// set-based
+// ---------
+_.union = restArgs(function(arrays) {
+    return _.uniq(flatten(arrays, true, true));
+});
+
+_.intersection = function(array) {
+    var result = [];
+    var argsLength = arguments.length;
+    for (var i = 0, length = getLength(array); i < length; i++) {
+        var item = array[i];
+        if (_.contains(result, item)) continue;
+        var j;
+        for (j = 1; j < argsLength; j++) {
+            if (!_.contains(arguments[j], item)) break;
+        }
+        if (j === argsLength) result.push(item);
+    }
+    return result;
+};
+
+_.difference = restArgs(function(array, rest) {
+    rest = flatten(rest, true, true);
+    return _.filter(array, function(value){
+        return !_.contains(rest, value);
     });
 });
 
 
-document.onkeydown = function (e) {
-    /**
-    Key down event handlers. Allows for event triggering on
-    key press if methods for each key combination are specified.
-
-    To set a method for a specific key down event, do:
-
-    quorra.events.ShiftA.up = function(){
-        console.log('Shift + A Pressed!');
-    }
-
-    @author <bprinty@gmail.com>
-    */
-
-    e = e || window.event;
-    var k = e.which;
-    if (_.has(allKeys, k)) {
-        var key = allKeys[k];
-
-        // handle single events
-        if (_.has(baseKeys, k)) {
-            if (!quorra.keys[key]) {
-                quorra.events[key].down();
-            }
+// indexing
+// --------
+var createPredicateIndexFinder = function(dir) {
+    return function(array, predicate, context) {
+        predicate = cb(predicate, context);
+        var length = getLength(array);
+        var index = dir > 0 ? 0 : length - 1;
+        for (; index >= 0 && index < length; index += dir) {
+            if (predicate(array[index], index, array)) return index;
         }
-        quorra.keys[key] = true;
+        return -1;
+    };
+};
 
-        // handle combo events
-        _.each(baseKeys, function(b) {
-            _.each(metaKeys, function(m) {
-                if (quorra.keys[b] && quorra.keys[m]) {
-                    if (!quorra.keys[b + m]) {
-                        quorra.events[b + m].down();
-                        quorra.keys[b + m] = true;
-                    }
-                }
-            });
-        });
+_.findIndex = createPredicateIndexFinder(1);
+_.findLastIndex = createPredicateIndexFinder(-1);
+
+_.sortedIndex = function(array, obj, iteratee, context) {
+    iteratee = cb(iteratee, context, 1);
+    var value = iteratee(obj);
+    var low = 0, high = getLength(array);
+    while (low < high) {
+      var mid = Math.floor((low + high) / 2);
+      if (iteratee(array[mid]) < value) low = mid + 1; else high = mid;
     }
+    return low;
+};
+
+var createIndexFinder = function(dir, predicateFind, sortedIndex) {
+    return function(array, item, idx) {
+      var i = 0, length = getLength(array);
+      if (typeof idx == 'number') {
+        if (dir > 0) {
+          i = idx >= 0 ? idx : Math.max(idx + length, i);
+        } else {
+          length = idx >= 0 ? Math.min(idx + 1, length) : idx + length + 1;
+        }
+      } else if (sortedIndex && idx && length) {
+        idx = sortedIndex(array, item);
+        return array[idx] === item ? idx : -1;
+      }
+      if (item !== item) {
+        idx = predicateFind(Array.prototype.slice.call(array, i, length), _.isNaN);
+        return idx >= 0 ? idx + i : -1;
+      }
+      for (idx = dir > 0 ? i : length - 1; idx >= 0 && idx < length; idx += dir) {
+        if (array[idx] === item) return idx;
+      }
+      return -1;
+    };
+};
+
+_.indexOf = createIndexFinder(1, _.findIndex, _.sortedIndex);
+_.lastIndexOf = createIndexFinder(-1, _.findLastIndex);
+
+_.range = function(start, stop, step) {
+    if (stop == null) {
+      stop = start || 0;
+      start = 0;
+    }
+    if (!step) {
+      step = stop < start ? -1 : 1;
+    }
+
+    var length = Math.max(Math.ceil((stop - start) / step), 0);
+    var range = Array(length);
+
+    for (var idx = 0; idx < length; idx++, start += step) {
+      range[idx] = start;
+    }
+
+    return range;
 };
 
 
-document.onkeyup = function (e) {
-     /**
-    Key up event handlers. Allows for event triggering on
-    key release if methods for each key combination are specified.
+// object
+// ------
+_.keys = function(obj) {
+    if (!_.isObject(obj)) return [];
+    return Object.keys(obj);
+};
 
-    To set a method for a specific key down event, do:
+_.allKeys = function(obj) {
+    if (!_.isObject(obj)) return [];
+    var keys = [];
+    for (var key in obj) keys.push(key);
+    return keys;
+};
 
-    quorra.events.ShiftA.down = function(){
-        console.log('Shift + A Released!');
+_.values = function(obj) {
+    var keys = _.keys(obj);
+    var length = keys.length;
+    var values = Array(length);
+    for (var i = 0; i < length; i++) {
+        values[i] = obj[keys[i]];
     }
+    return values;
+};
 
-    @author <bprinty@gmail.com>
-    */
+_.invert = function(obj) {
+    var result = {};
+    var keys = _.keys(obj);
+    for (var i = 0, length = keys.length; i < length; i++) {
+        result[obj[keys[i]]] = keys[i];
+    }
+    return result;
+};
 
-    e = e || window.event;
-    var k = e.which;
-    if (_.has(allKeys, k)){
-        var key = allKeys[k];
-        
-        // handle single events
-        if (_.has(baseKeys, k)) {
-            if (quorra.keys[key]) {
-                quorra.events[key].up();
+_.functions = _.methods = function(obj) {
+    var names = [];
+    for (var key in obj) {
+        if (_.isFunction(obj[key])) names.push(key);
+    }
+    return names.sort();
+};
+
+var createAssigner = function(keysFunc, defaults) {
+    return function(obj) {
+        var length = arguments.length;
+        if (defaults) obj = Object(obj);
+        if (length < 2 || obj == null) return obj;
+        for (var index = 1; index < length; index++) {
+            var source = arguments[index],
+                keys = keysFunc(source),
+                l = keys.length;
+            for (var i = 0; i < l; i++) {
+                var key = keys[i];
+                if (!defaults || obj[key] === void 0) obj[key] = source[key];
             }
         }
-        quorra.keys[key] = false;
+      return obj;
+    };
+};
 
-        // handle combo events
-        _.each(baseKeys, function(b) {
-            _.each(metaKeys, function(m) {
-                if (!quorra.keys[b] || !quorra.keys[m]) {
-                    if (quorra.keys[b + m]) {
-                        quorra.events[b + m].up();
-                        quorra.keys[b + m] = false;
-                    }
-                }
-            });
-        });
+_.extend = createAssigner(_.allKeys);
+
+_.findKey = function(obj, predicate, context) {
+    predicate = cb(predicate, context);
+    var keys = _.keys(obj), key;
+    for (var i = 0, length = keys.length; i < length; i++) {
+      key = keys[i];
+      if (predicate(obj[key], key, obj)) return key;
     }
 };
 
-
-// return processed mouse coordinates from selection
-function mouse(sel){
-    var coordinates = d3.mouse(sel.node());
-    var res = {};
-    res.x = coordinates[0];
-    res.y = coordinates[1];
-    res.scale = (d3.event.type == 'zoom') ? d3.event.scale : 1;
-    return res;
-}
+_.clone = function(obj) {
+    if (!_.isObject(obj)) return obj;
+    return _.isArray(obj) ? obj.slice() : _.extend({}, obj);
+};
 
 
-// return ratio of domain/range for scaling zoom
-function zoomscale(scale){
-    var d = scale.domain();
-    var r = scale.range();
-    var dx = Math.abs(d[1] - d[0]);
-    var dr = Math.abs(r[1] - r[0]);
-    return dx/dr;
-}
+// queries
+// -------
+_.isEmpty = function(obj) {
+    if (obj == null) return true;
+    if (isArrayLike(obj) && (_.isArray(obj) || _.isString(obj) || _.isArguments(obj))) return obj.length === 0;
+    return _.keys(obj).length === 0;
+};
 
+_.isElement = function(obj) {
+    return !!(obj && obj.nodeType === 1);
+};
 
-/*
+_.isArray = Array.isArray;
 
-Statistical functions used throughout quorra, including methods
-for kernel density estimation.
+_.isObject = function(obj) {
+    var type = typeof obj;
+    return type === 'function' || type === 'object' && !!obj;
+};
 
-@author <bprinty@gmail.com>
-
-*/
-
-
-function kdeEstimator(kernel, x) {
-    /**
-    quorra.kdeEstimator()
-
-    Kernel density esimator, using supplied kernel. This code was inspired
-    from http://bl.ocks.org/mbostock/4341954
-    */
-    return function(sample) {
-        return x.map(function(x) {
-            return {
-                x: x,
-                y: d3.mean(sample, function(v) { return kernel(x - v); }),
-            };
-        });
+_.each(['Arguments', 'Function', 'String', 'Number', 'Date', 'RegExp', 'Error', 'Symbol', 'Map', 'WeakMap', 'Set', 'WeakSet'], function(name) {
+    _['is' + name] = function(obj) {
+    return Object.prototype.toString.call(obj) === '[object ' + name + ']';
     };
-}
+});
 
-function epanechnikovKernel(scale) {
-    /**
-    quorra.epanechnikovKernel()
+_.isArguments = function(obj) {
+    return _.has(obj, 'callee');
+};
 
-    Epanechnikov Kernel for kernel density estinmation. This code was inspired
-    from http://bl.ocks.org/mbostock/4341954
-    */
-    return function(u) {
-        return Math.abs(u /= scale) <= 1 ? 0.75 * (1 - u * u) / scale : 0;
+_.isFunction = function(obj) {
+    return typeof obj == 'function' || false;
+};
+
+_.isFinite = function(obj) {
+    return !_.isSymbol(obj) && isFinite(obj) && !isNaN(parseFloat(obj));
+};
+
+_.isNaN = function(obj) {
+    return _.isNumber(obj) && isNaN(obj);
+};
+
+_.isBoolean = function(obj) {
+    return obj === true || obj === false || Object.prototype.toString.call(obj) === '[object Boolean]';
+};
+
+_.isNull = function(obj) {
+    return obj === null;
+};
+
+_.isUndefined = function(obj) {
+    return obj === void 0;
+};
+
+_.has = function(obj, path) {
+    if (!_.isArray(path)) {
+      return obj != null && Object.prototype.hasOwnProperty.call(obj, path);
+    }
+    var length = path.length;
+    for (var i = 0; i < length; i++) {
+      var key = path[i];
+      if (obj == null || !Object.prototype.hasOwnProperty.call(obj, key)) {
+        return false;
+      }
+      obj = obj[key];
+    }
+    return !!length;
+};
+
+_.identity = function(value) {
+    return value;
+};
+
+
+// utility
+// -------
+_.noop = function(){};
+
+_.property = function(path) {
+    if (!_.isArray(path)) {
+        return shallowProperty(path);
+    }
+    return function(obj) {
+        return deepGet(obj, path);
     };
-}
+};
+
+_.propertyOf = function(obj) {
+    if (obj == null) {
+      return _.noop;
+    }
+    return function(path) {
+      return !_.isArray(path) ? obj[path] : deepGet(obj, path);
+    };
+};
+
+_.random = function(min, max) {
+    if (max == null) {
+        max = min;
+        min = 0;
+    }
+    return min + Math.floor(Math.random() * (max - min + 1));
+};
+
+_.center = function(x, bounds){
+    return _.min([_.max([x, bounds[0]]), bounds[1]]);
+};
 /***
  *
  * Common utilities used in plot generation.
@@ -1700,36 +2141,6 @@ quorra.plot2png = function(plot) {
 };
 
 
-// underscore additions
-_.center = function(x, bounds){
-    return _.min([_.max([x, bounds[0]]), bounds[1]]);
-};
-
-_.uniquesort = function(x, func) {
-    if (typeof func === 'undefined') {
-        func = function(x){ return x; };
-    }
-    return _.unique(_.map(x, func)).sort();
-};
-
-
-// d3 additions
-d3.selection.prototype.stageup = function() {
-  return this.each(function(){
-    this.parentNode.appendChild(this);
-  });
-};
-
-d3.selection.prototype.stagedown = function() { 
-    return this.each(function() { 
-        var firstChild = this.parentNode.firstChild; 
-        if (firstChild) { 
-            this.parentNode.insertBefore(this, firstChild); 
-        } 
-    }); 
-};
-
-
 // common generator object utilities
 parameterize = function(attributes, generator) {
     /**
@@ -1807,254 +2218,6 @@ selectmerge = function(selection, entry, type) {
     }
     return selection;
 };
-function Annotation(attributes) {
-    /**
-    Annotation()
-
-    Object for managing plot rendering, and extending
-    common functionality across all plot models.
-
-    @author <bprinty@gmail.com>
-    */
-
-    quorra.log('instantiating annotation object');
-
-    if (typeof attributes === 'undefined') attributes = {};
-    if (typeof plot === 'undefined') plot = 'body';
-    var _this = this;
-
-    // constructor
-    this.go = function() {
-        quorra.log('running annotation generator function');
-
-        // set up tooltip
-        d3.selectAll("div.annotation-tooltip#" + _this.attr.id + "-tooltip").remove();
-        if (_this.attr.tooltip == true) {
-            _this.attr.tooltip = d3.select("body").append("div")
-                .attr("class", "annotation-tooltip")
-                .attr("id", + _this.attr.id + "-tooltip")
-                .style("position", "fixed")
-                .style("visibility", "hidden")
-                .style("zindex", 999);
-        }
-
-        // create wrapper element for annotation groups
-        _this.plot.plotarea.selectAll('.annotation#' + _this.attr.id).remove();
-        var cl = (_this.attr.group === null) ? 'annotation ' + _this.attr.type : 'annotation ' + _this.attr.type + ' g_' + _this.attr.group;
-        var asel = _this.plot.plotarea.append('g')
-            .attr('id', _this.attr.id).attr('class', cl)
-            .style("visibility", function() {
-                return _.contains(_this.plot.attr.toggled, _this.plot.attr.group(_this.attr)) ? 'none' : 'visible';
-            }).style('opacity', _this.attr.style.opacity)
-            .on('mouseover', function() {
-                d3.select(this).style('opacity', _this.attr.hoveropacity);
-                if (_this.attr.tooltip) {
-                    _this.attr.tooltip.html(_this.attr.hovertext)
-                        .style("visibility", "visible")
-                        .style("left", (d3.event.pageX + 5) + "px")
-                        .style("top", (d3.event.pageY - 20) + "px");
-                }
-            }).on('mousemove', function() {
-                if (_this.attr.tooltip) {
-                    _this.attr.tooltip
-                        .style("left", (d3.event.pageX + 5) + "px")
-                        .style("top", (d3.event.pageY - 20) + "px");
-                }
-            }).on('mouseout', function() {
-                d3.select(this).style('opacity', _this.attr.style.opacity);
-                if (_this.attr.tooltip) {
-                    _this.attr.tooltip.style("visibility", "hidden");
-                }
-            }).on('click', function() {
-                _this.attr.events.click(_this.attr);
-            });
-        
-        // enable drag behavior for annotation (if available and specified)
-        var xscale = _this.attr.xfixed ? _this.plot.xstack[0] : _this.plot.xscale;
-        var yscale = _this.attr.yfixed ? _this.plot.ystack[0] : _this.plot.yscale;
-        var x = xscale(_this.attr.x);
-        var y = yscale(_this.attr.y);
-        if (_this.attr.draggable && !_this.plot.attr.zoomable) {
-            var drag = d3.behavior.drag()
-                .on("dragstart", function() {
-                    _this.attr.events.dragstart(_this.attr);
-                }).on("dragend", function() {
-                     _this.attr.events.dragend(_this.attr);
-                }).on("drag", function() {
-                    // get mouse coordinates
-                    var movement = mouse(_this.plot.attr.svg);
-                    var xoffset = Math.abs(xscale(_this.attr.width) - xscale(0));
-                    var yoffset = Math.abs(yscale(_this.attr.height) - yscale(0));
-                    xoffset = (_this.attr.type === 'rect') ? xoffset / 2 : 0;
-                    yoffset = (_this.attr.type === 'rect') ? yoffset / 2: 0;
-                    var xcoord = movement.x - _this.plot.attr.margin.left - xoffset;
-                    var ycoord = movement.y - _this.plot.attr.margin.top - yoffset;
-
-                    // translate annotation object
-                    var xmotion = _.center(xcoord, [0, _this.plot.innerwidth - 2*xoffset]);
-                    var ymotion = _.center(ycoord, [0, _this.plot.innerheight - 2*yoffset]);
-                    d3.select(this).attr('transform', 'translate(' + (xmotion - x) + ',' + (ymotion - y) + ')');
-                    
-                    // update annotation attributes with new data
-                    var xmap = d3.scale.linear().domain(xscale.range()).range(xscale.domain());
-                    var ymap = d3.scale.linear().domain(yscale.range()).range(yscale.domain());
-                    _this.attr.x = xmap(xmotion);
-                    _this.attr.y = ymap(ymotion);
-                    d3.select(this).select('text').text(_this.attr.text);
-
-                    _this.attr.events.drag(_this.attr);
-                });
-
-            asel.call(drag);
-        }
-
-        // extend annotation object with specific shape
-        var aobj;
-        if (_this.attr.type === 'rect') {
-            aobj = asel.selectAll('.rect').data([_this.attr]).enter()
-                .append('rect')
-                .attr('class', 'rect')
-                .attr('transform', 'rotate(' + _this.attr.rotate + ' ' + x + ' ' + y + ')')
-                .attr('width', Math.abs(xscale(_this.attr.width) - xscale(0)))
-                .attr('height', Math.abs(yscale(_this.attr.height) - yscale(0)))
-                .attr('x', x)
-                .attr('y', y);
-        } else if (_this.attr.type === 'circle') {
-            aobj = asel.selectAll('.circle').data([_this.attr]).enter()
-                .append('circle')
-                .attr('class', 'circle')
-                .attr('r', _this.attr.size / 2)
-                .attr('cx', x)
-                .attr('cy', y);
-        } else if (_this.attr.type === 'triangle') {
-            aobj = asel.selectAll('.triangle').data([_this.attr]).enter()
-                .append('path')
-                .attr('class', 'triangle')
-                .attr('transform', 'rotate(' + _this.attr.rotate + ' ' + x + ' ' + y + ')')
-                .attr('d', function(d){
-                    return [
-                    'M' + (x - (d.size / 2)) + ',' + (y - (d.size / 2)),
-                    'L' + (x + (d.size / 2)) + ',' + (y - (d.size / 2)),
-                    'L' + x + ',' + (y + (d.size / 2)),
-                    'Z'].join('');
-                });
-        }
-        if (_this.attr.stack === 'bottom') {
-            asel.stagedown();
-        }
-
-        // apply styling
-        if (_this.attr.type !== 'text'){
-            _.map(
-                _.without(Object.keys(_this.attr.style), 'opacity'),
-                function(i){ aobj.style(i, _this.attr.style[i]); }
-            );
-        }
-        
-        // show text
-        if (_this.attr.text !== '') {
-            asel.selectAll('.text').data([_this.attr]).enter()
-                .append('text')
-                .attr('class', 'text')
-                .attr('x', function(d) {
-                    var txt = (typeof d.text === 'function') ? d.text(d) : d.text;
-                    var xnew = x + d.tmargin.x + txt.toString().length*2;
-                    if (d.type === 'rect') {
-                        return xnew + 2;
-                    } else if (d.type === 'circle') {
-                        return x + d.tmargin.x;
-                    } else if (d.type === 'triangle') {
-                        return x + d.tmargin.x + (d.size / 2) - txt.toString().length*3;
-                    } else {
-                        return x + d.tmargin.x;
-                    }
-                })
-                .attr('y', function(d) {
-                    var ynew = y - (d.size / 2) - 5;
-                    if (d.type === 'rect') {
-                        return y - d.tmargin.y - 5;
-                    } else if (d.type === 'circle') {
-                        return ynew;
-                    } else if (d.type === 'triangle') {
-                        return ynew;
-                    } else {
-                        return y - d.tmargin.y;
-                    }
-                })
-                .style("font-size", _this.attr.tsize)
-                .style("text-anchor", "middle")
-                .text(_this.attr.text);
-        }
-
-        return _this;
-    };
-
-    // setting up attributes
-    this.attr = extend({
-        parent: null,
-        id: quorra.uuid(),
-        type: 'text',
-        text: '',
-        // text: function(d){ return d3.format('.2f')(d.x); },
-        hovertext: '',
-        hoveropacity: 0.75,
-        xfixed: false,
-        yfixed: false,
-        size: 15,
-        group: null,
-        rotate: 0,
-        tsize: 12,
-        tposition: {x: 0, y: 20},
-        tmargin: {x: 0, y: 0},
-        trotation: 0,
-        x: 0,
-        y: 0,
-        width: 0,
-        height: 0,
-        draggable: false,
-        tooltip: true,
-        stack: 'top',
-        events: {
-            add: function() {
-                quorra.log('add event');
-            },
-            drag: function() {
-                quorra.log('drag event');
-            },
-            dragstart: function() {
-                quorra.log('drag start event');
-            },
-            dragend: function() {
-                quorra.log('drag end event');
-            },
-            click: function() {
-                quorra.log('click event');
-            }
-        },
-        style: {opacity: 1},
-        meta: {}
-    }, attributes);
-    
-    // binding attributes to constructor function
-    parameterize(_this.attr, _this.go);
-    _this.go.__parent__ = _this;
-    
-    // managing specialized attributes
-    _this.go.bind = function(value) {
-        if (!arguments.length) return _this.plot;
-        _this.attr.parent = value;
-        _this.plot = value.__parent__;
-        _this.attr.parent = _this.plot.attr.id;
-        return _this.go;
-    };
-
-    return _this.go;
-}
-
-quorra.annotation = function(attributes) {
-    quorra.log('creating plot annotation');
-    return new Annotation(attributes);
-};
 function Bar(attributes) {
     /**
     quorra.bar()
@@ -2089,12 +2252,12 @@ function Bar(attributes) {
             _this.plotdata = _this.plotdata.sort(function(a, b) { return a.x > b.x; });
         }
         for (var grp in ugrps) {
-            var flt = _.filter(_this.plotdata, function(d){ return d.group == ugrps[grp]; });
+            var flt = _.filter(_this.plotdata, function(d){ return _this.attr.group(d) == ugrps[grp]; });
             flt = _.map(flt, function(d) {
                 d.layer = grp;
                 return d;
             });
-            layers.push(_.filter(flt, function(d){ return d.group == ugrps[grp]; }));
+            layers.push(_.filter(flt, function(d){ return _this.attr.group(d) == ugrps[grp]; }));
         }
         var y0 = _.map(layers[0], function(d){ return 0; });
         for (var lay=0; lay<layers.length; lay++){
@@ -2115,7 +2278,7 @@ function Bar(attributes) {
             .remove().data(function(d){ return d; })
             .enter().append("rect")
             .attr("class", function(d, i) {
-                return "bar " + "g_" + d.group;
+                return "bar " + "g_" + _this.attr.group(d);
             })
             .attr("x", function(d, i) {
                 if (layers[0].length > 1){
@@ -2124,7 +2287,7 @@ function Bar(attributes) {
                         return _this.xscale(_this.xmapper(_this.attr.x(d, i)) - offset);
                     }else{
                         var diff = Math.abs(_this.xscale(_this.xmapper(_this.attr.x(layers[0][1]))) - _this.xscale(_this.xmapper(_this.attr.x(layers[0][0]))));
-                        return _this.xscale(_this.xmapper(_this.attr.x(d, i)) - offset) + _this.pallette.range().indexOf(_this.pallette(d.group))*(diff / _this.pallette.domain().length);
+                        return _this.xscale(_this.xmapper(_this.attr.x(d, i)) - offset) + _this.pallette.range().indexOf(_this.pallette(_this.attr.group(d)))*(diff / _this.pallette.domain().length);
                     }
                 }else{
                     var range = _this.xscale.range();
@@ -2149,10 +2312,10 @@ function Bar(attributes) {
                     var range = _this.xscale.range();
                     return range[1] - range[0] - 2;
                 }
-            }).attr("fill", function(d, i){ return _this.pallette(d.group); })
+            }).attr("fill", function(d, i){ return _this.pallette(_this.attr.group(d)); })
             .style("opacity", _this.attr.opacity)
             .style("visibility", function(d){
-                return _.contains(_this.attr.toggled, d.group) ? 'hidden' : 'visible';
+                return _.contains(_this.attr.toggled, _this.attr.group(d)) ? 'hidden' : 'visible';
             })
             .on("mouseover", function(d, i){
                 d3.select(this).style("opacity", 0.25);
@@ -2220,7 +2383,7 @@ function Density(attributes) {
         var grps = _.uniquesort(data, _this.attr.group);
         var newdata = [];
         for (var grp in grps){
-            var subdat = _.filter(data, function(d){ return d.group == grps[grp]; });
+            var subdat = _.filter(data, function(d){ return _this.attr.group(d) == grps[grp]; });
             var newgrp = kde(_.map(subdat, function(d){ return d.x }));
             newgrp = _.map(newgrp, function(d){
                 return {
@@ -2477,7 +2640,7 @@ function Histogram(attributes) {
         var grps = _.uniquesort(data, _this.attr.group);
         var newdata = [];
         for (var grp in grps){
-            var subdat = _.filter(data, function(d){ return d.group == grps[grp]; });
+            var subdat = _.filter(data, function(d){ return _this.attr.group(d) == grps[grp]; });
             var newgrp = histogram(_.map(subdat, function(d){ return d.x }));
             newgrp = _.map(newgrp, function(d){
                 if (_this.attr.display == 'counts') {
@@ -2548,14 +2711,14 @@ function Line(attributes) {
         for (var grp in ugrps) {
 
             // lines
-            var subdat = _.filter(_this.plotdata, function(d){ return d.group == ugrps[grp]; });
+            var subdat = _.filter(_this.plotdata, function(d){ return _this.attr.group(d) == ugrps[grp]; });
             if (subdat.length == 0) {
                 continue;
             }
             _this.plotarea.append("path")
                 .datum(subdat)
                 .attr("class", function(d, i){
-                    return "line " + "g_" + d[0].group;
+                    return "line " + "g_" + _this.attr.group(d[0]);
                 })
                 .attr("d", function(d){
                     var p = path(d);
@@ -2574,7 +2737,7 @@ function Line(attributes) {
                     if (_this.attr.layout === "line") {
                         return "none";
                     } else if (_this.attr.layout === "area") {
-                        return _this.pallette(d[0].group);
+                        return _this.pallette(_this.attr.group(d[0]));
                     }
                 })
                 .style("stroke", function(d, i) {
@@ -2585,7 +2748,7 @@ function Line(attributes) {
                             return 'firebrick';
                         }
                     } else {
-                        return _this.pallette(_this.attr.group(d[0], i));
+                        return _this.pallette(_this.attr.group(d[0]));
                     }
                 })
                 .style("stroke-width", _this.attr.size)
@@ -2598,20 +2761,20 @@ function Line(attributes) {
                         return;
                     }
                     if (_this.attr.hovercolor !== false) {
-                        _this.plotarea.selectAll('.dot.g_' + d[0].group).style("fill", _this.attr.hovercolor);
-                        _this.plotarea.selectAll('.line.g_' + d[0].group).style("stroke", _this.attr.hovercolor);
+                        _this.plotarea.selectAll('.dot.g_' + _this.attr.group(d[0])).style("fill", _this.attr.hovercolor);
+                        _this.plotarea.selectAll('.line.g_' + _this.attr.group(d[0])).style("stroke", _this.attr.hovercolor);
                         if (_this.attr.slider !== null) {
-                            _this.attr.slider.__parent__.plotarea.selectAll('.dot.g_' + d[0].group).style("fill", _this.attr.hovercolor);
-                            _this.attr.slider.__parent__.plotarea.selectAll('.line.g_' + d[0].group).style("stroke", _this.attr.hovercolor);
+                            _this.attr.slider.__parent__.plotarea.selectAll('.dot.g_' + _this.attr.group(d[0])).style("fill", _this.attr.hovercolor);
+                            _this.attr.slider.__parent__.plotarea.selectAll('.line.g_' + _this.attr.group(d[0])).style("stroke", _this.attr.hovercolor);
                         }
                     } else {
-                        _this.plotarea.selectAll('.g_' + d[0].group).style("opacity", 0.25);
+                        _this.plotarea.selectAll('.g_' + _this.attr.group(d[0])).style("opacity", 0.25);
                         if (_this.attr.slider !== null) {
-                            _this.attr.slider.__parent__.selectAll('.g_' + d[0].group).style("opacity", 0.25);
+                            _this.attr.slider.__parent__.selectAll('.g_' + _this.attr.group(d[0])).style("opacity", 0.25);
                         }
                     }
                     if (_this.attr.tooltip){
-                        _this.attr.tooltip.html(d[0].group)
+                        _this.attr.tooltip.html(_this.attr.group(d[0]))
                             .style("visibility", "visible")
                             .style("left", (d3.event.clientX + 5) + "px")
                             .style("top", (d3.event.clientY - 20) + "px");
@@ -2624,16 +2787,16 @@ function Line(attributes) {
                     }
                 }).on("mouseout", function(d) {
                     if (_this.attr.hovercolor !== false) {
-                        _this.plotarea.selectAll('.dot.g_' + d[0].group).style("fill", _this.pallette(d[0].group));
-                        _this.plotarea.selectAll('.line.g_' + d[0].group).style("stroke", _this.pallette(d[0].group));
+                        _this.plotarea.selectAll('.dot.g_' + _this.attr.group(d[0])).style("fill", _this.pallette(_this.attr.group(d[0])));
+                        _this.plotarea.selectAll('.line.g_' + _this.attr.group(d[0])).style("stroke", _this.pallette(_this.attr.group(d[0])));
                         if (_this.attr.slider !== null) {
-                            _this.attr.slider.__parent__.plotarea.selectAll('.dot.g_' + d[0].group).style("fill", _this.pallette(d[0].group));
-                            _this.attr.slider.__parent__.plotarea.selectAll('.line.g_' + d[0].group).style("stroke", _this.pallette(d[0].group));
+                            _this.attr.slider.__parent__.plotarea.selectAll('.dot.g_' + _this.attr.group(d[0])).style("fill", _this.pallette(_this.attr.group(d[0])));
+                            _this.attr.slider.__parent__.plotarea.selectAll('.line.g_' + _this.attr.group(d[0])).style("stroke", _this.pallette(_this.attr.group(d[0])));
                         }
                     } else {
-                        _this.plotarea.selectAll('.g_' + d[0].group).style("opacity", _this.attr.opacity);
+                        _this.plotarea.selectAll('.g_' + _this.attr.group(d[0])).style("opacity", _this.attr.opacity);
                         if (_this.attr.slider !== null) {
-                            _this.attr.slider.__parent__.selectAll('.g_' + d[0].group).style("opacity", _this.attr.opacity);
+                            _this.attr.slider.__parent__.selectAll('.g_' + _this.attr.group(d[0])).style("opacity", _this.attr.opacity);
                         }
                     }
                     if (_this.attr.tooltip) {
@@ -2641,7 +2804,7 @@ function Line(attributes) {
                     }
                 }).on("click", function(d, i) {
                     if (_this.attr.selectable !== false) {
-                        _this.attr.selected = selectmerge(_this.attr.selected, d[0].group, _this.attr.selectable);
+                        _this.attr.selected = selectmerge(_this.attr.selected, _this.attr.group(d[0]), _this.attr.selectable);
                         _this.redraw(_this.xscale.domain(), _this.yscale.domain(), false);
                     }
                     if (_this.attr.slider) {
@@ -2659,7 +2822,7 @@ function Line(attributes) {
                 .remove().data(_this.plotdata)
                 .enter().append("circle")
                 .attr("class", function(d, i){
-                    return "dot " + "g_" + d.group;
+                    return "dot " + "g_" + _this.attr.group(d);
                 })
                 .attr("r", _this.attr.points)
                 .attr("cx", function(d, i) { return _this.xscale(_this.xmapper(_this.attr.x(d, i))); })
@@ -2700,7 +2863,7 @@ function Line(attributes) {
                     }
                 }).on("click", function(d, i){
                     if (_this.attr.selectable !== false) {
-                        _this.attr.selected = selectmerge(_this.attr.selected, d.group, _this.attr.selectable);
+                        _this.attr.selected = selectmerge(_this.attr.selected, _this.attr.group(d), _this.attr.selectable);
                         _this.redraw(_this.xscale.domain(), _this.yscale.domain(), false);
                     }
                     if (_this.attr.slider) {
@@ -2859,7 +3022,7 @@ function Multiline(attributes) {
                 .interpolate(_this.attr.interpolate);
 
             // lines
-            var subdat = _.filter(_this.plotdata, function(d){ return d.group === ugrps[grp]; });
+            var subdat = _.filter(_this.plotdata, function(d){ return _this.attr.group(d) === ugrps[grp]; });
             if (subdat.length == 0) {
                 continue;
             }
@@ -2869,7 +3032,7 @@ function Multiline(attributes) {
             _this.plotarea.append("path")
                 .datum(subdat)
                 .attr("class", function(d, i){
-                    return "line " + "g_" + d[0].group;
+                    return "line " + "g_" + _this.attr.group(d[0]);
                 })
                 .attr("d", function(d){
                     var p = path(d);
@@ -2888,40 +3051,40 @@ function Multiline(attributes) {
                     if (_this.attr.layout === "line") {
                         return "none";
                     } else if (_this.attr.layout === "area") {
-                        return _this.pallette(d[0].group);
+                        return _this.pallette(_this.attr.group(d[0]));
                     }
                 })
                 .style("stroke", function(d, i){
-                    if (_.contains(_this.attr.selected, _this.attr.group(d[0], i))) {
+                    if (_.contains(_this.attr.selected, _this.attr.group(d[0]))) {
                         if (_this.attr.hovercolor !== false) {
                             return _this.attr.hovercolor;
                         } else {
                             return 'firebrick';
                         }
                     } else {
-                        return _this.pallette(_this.attr.group(d[0], i));
+                        return _this.pallette(_this.attr.group(d[0]));
                     }
                 })
                 .style("stroke-width", _this.attr.size)
                 .style("opacity", _this.attr.opacity)
                 .style("visibility", function(d, i) {
-                    return _.contains(_this.attr.toggled, _this.attr.group(d[0], i)) ? 'hidden' : 'visible';
+                    return _.contains(_this.attr.toggled, _this.attr.group(d[0])) ? 'hidden' : 'visible';
                 })
                 .on("mouseover", function(d, i) {
                     if (_this.attr.tooltip){
-                        _this.attr.tooltip.html(d[0].group)
+                        _this.attr.tooltip.html(_this.attr.group(d[0]))
                             .style("visibility", "visible")
                             .style("left", (d3.event.clientX + 5) + "px")
                             .style("top", (d3.event.clientY - 20) + "px");
                     }
-                    if (_.contains(_this.attr.selected, _this.attr.group(d[0], i))) {
+                    if (_.contains(_this.attr.selected, _this.attr.group(d[0]))) {
                         return;
                     }
                     if (_this.attr.hovercolor !== false) {
-                        _this.plotarea.selectAll('.dot.g_' + d[0].group).style("fill", _this.attr.hovercolor);
-                        _this.plotarea.selectAll('.line.g_' + d[0].group).style("stroke", _this.attr.hovercolor);
+                        _this.plotarea.selectAll('.dot.g_' + _this.attr.group(d[0])).style("fill", _this.attr.hovercolor);
+                        _this.plotarea.selectAll('.line.g_' + _this.attr.group(d[0])).style("stroke", _this.attr.hovercolor);
                     } else {
-                        _this.plotarea.selectAll('.g_' + d[0].group).style("opacity", 0.25);
+                        _this.plotarea.selectAll('.g_' + _this.attr.group(d[0])).style("opacity", 0.25);
                     }
                 }).on("mousemove", function(d) {
                     if (_this.attr.tooltip) {
@@ -2937,14 +3100,14 @@ function Multiline(attributes) {
                         return;
                     }
                     if (_this.attr.hovercolor !== false) {
-                        _this.plotarea.selectAll('.dot.g_' + d[0].group).style("fill", _this.pallette(d[0].group));
-                        _this.plotarea.selectAll('.line.g_' + d[0].group).style("stroke", _this.pallette(d[0].group));
+                        _this.plotarea.selectAll('.dot.g_' + _this.attr.group(d[0])).style("fill", _this.pallette(_this.attr.group(d[0])));
+                        _this.plotarea.selectAll('.line.g_' + _this.attr.group(d[0])).style("stroke", _this.pallette(_this.attr.group(d[0])));
                     } else {
-                        _this.plotarea.selectAll('.g_' + d[0].group).style("opacity", _this.attr.opacity);
+                        _this.plotarea.selectAll('.g_' + _this.attr.group(d[0])).style("opacity", _this.attr.opacity);
                     }
                 }).on("click", function(d, i){
                     if (_this.attr.selectable !== false) {
-                        _this.attr.selected = selectmerge(_this.attr.selected, d[0].group, _this.attr.selectable);
+                        _this.attr.selected = selectmerge(_this.attr.selected, _this.attr.group(d[0]), _this.attr.selectable);
                         _this.redraw(_this.xscale.domain(), _this.yscale.domain(), false);
                     }
                     if (_this.attr.slider) {
@@ -2963,7 +3126,7 @@ function Multiline(attributes) {
                 .remove().data(_this.plotdata)
                 .enter().append("circle")
                 .attr("class", function(d, i){
-                    return "dot " + "g_" + d.group;
+                    return "dot " + "g_" + _this.attr.group(d);
                 })
                 .attr("r", _this.attr.points)
                 .attr("cx", function(d, i) { return _this.xscale(_this.xmapper(_this.attr.x(d, i))); })
@@ -2994,10 +3157,10 @@ function Multiline(attributes) {
                         return;
                     }
                     if (_this.attr.hovercolor !== false) {
-                        _this.plotarea.selectAll('.dot.g_' + d.group).style("fill", _this.attr.hovercolor);
-                        _this.plotarea.selectAll('.line.g_' + d.group).style("stroke", _this.attr.hovercolor);
+                        _this.plotarea.selectAll('.dot.g_' + _this.attr.group(d)).style("fill", _this.attr.hovercolor);
+                        _this.plotarea.selectAll('.line.g_' + _this.attr.group(d)).style("stroke", _this.attr.hovercolor);
                     } else {
-                        _this.plotarea.selectAll('.g_' + d.group).style("opacity", 0.25);
+                        _this.plotarea.selectAll('.g_' + _this.attr.group(d)).style("opacity", 0.25);
                     }
                 }).on("mousemove", function(d){
                     if (_this.attr.tooltip){
@@ -3013,14 +3176,14 @@ function Multiline(attributes) {
                         return;
                     }
                     if (_this.attr.hovercolor !== false) {
-                        _this.plotarea.selectAll('.dot.g_' + d.group).style("fill", _this.pallette(_this.attr.group(d, i)));
-                        _this.plotarea.selectAll('.line.g_' + d.group).style("stroke", _this.pallette(_this.attr.group(d, i)));
+                        _this.plotarea.selectAll('.dot.g_' + _this.attr.group(d)).style("fill", _this.pallette(_this.attr.group(d, i)));
+                        _this.plotarea.selectAll('.line.g_' + _this.attr.group(d)).style("stroke", _this.pallette(_this.attr.group(d, i)));
                     } else {
-                        _this.plotarea.selectAll('.g_' + d.group).style("opacity", _this.attr.opacity);
+                        _this.plotarea.selectAll('.g_' + _this.attr.group(d)).style("opacity", _this.attr.opacity);
                     }
                 }).on("click", function(d, i){
                     if (_this.attr.selectable !== false) {
-                        _this.attr.selected = selectmerge(_this.attr.selected, d.group, _this.attr.selectable);
+                        _this.attr.selected = selectmerge(_this.attr.selected, _this.attr.group(d), _this.attr.selectable);
                         _this.redraw(_this.xscale.domain(), _this.yscale.domain(), false);
                     }
                     if (_this.attr.slider) {
@@ -3086,7 +3249,7 @@ function Pie(attributes) {
         var newdata = [];
         var gps = _this.pallette.domain();
         for (var i in gps){
-            var subdat = _.filter(_this.data, function(d){ return d.group == gps[i]; });
+            var subdat = _.filter(_this.data, function(d){ return _this.attr.group(d) == gps[i]; });
             newdata.push({
                 x: _this.attr.aggregate(_.map(subdat, function(d){ return d.x; })),
                 group: gps[i],
@@ -3203,14 +3366,14 @@ function Scatter(attributes) {
     
             var ugrps = _this.pallette.domain();
             for (var grp in ugrps) {
-                var subdat = _.filter(_this.plotdata, function(d){ return d.group == ugrps[grp]; });
+                var subdat = _.filter(_this.plotdata, function(d, i){ return _this.attr.group(d) == ugrps[grp]; });
                 if (subdat.length == 0) {
                     continue;
                 }
                 _this.plotarea.append("path")
                     .datum(subdat)
                     .attr("class", function(d, i){
-                        return "line " + "g_" + d[0].group;
+                        return "line " + "g_" + _this.attr.group(d[0]);
                     })
                     .attr("d", function(d){
                         var p = path(d);
@@ -3229,34 +3392,34 @@ function Scatter(attributes) {
                         if (_this.attr.linelayout === "line") {
                             return "none";
                         } else if (_this.attr.linelayout === "area") {
-                            return _this.pallette(d[0].group);
+                            return _this.pallette(_this.attr.group(d[0]));
                         }
                     })
                     .style("stroke", function(d, i) {
-                        if (_.contains(_this.attr.selected, _this.attr.group(d[0], i))) {
+                        if (_.contains(_this.attr.selected, _this.attr.group(d[0]))) {
                             if (_this.attr.hovercolor !== false) {
                                 return _this.attr.hovercolor;
                             } else {
                                 return 'firebrick';
                             }
                         } else {
-                            return _this.pallette(_this.attr.group(d[0], i));
+                            return _this.pallette(_this.attr.group(d[0]));
                         }
                     })
                     .style("stroke-width", _this.attr.linesize)
                     .style("opacity", _this.attr.opacity)
                     .style("visibility", function(d, i) {
-                        if (_.contains(_this.attr.selected, _this.attr.group(d[0], i))) {
+                        if (_.contains(_this.attr.selected, _this.attr.group(d[0]))) {
                             return 'visible';
                         }
                         if (_this.attr.line === 'hover') {
                             return 'hidden';
                         } else if (_this.attr.line) {
-                            return _.contains(_this.attr.toggled, _this.attr.group(d[0], i)) ? 'hidden' : 'visible';
+                            return _.contains(_this.attr.toggled, _this.attr.group(d[0])) ? 'hidden' : 'visible';
                         }
                     }).on("click", function(d, i){
                         if (_this.attr.selectable !== false) {
-                            _this.attr.selected = selectmerge(_this.attr.selected, d[0].group, _this.attr.selectable);
+                            _this.attr.selected = selectmerge(_this.attr.selected, _this.attr.group(d[0]), _this.attr.selectable);
                             _this.redraw(_this.xscale.domain(), _this.yscale.domain(), false);
                         }
                         if (_this.attr.slider) {
@@ -3273,7 +3436,7 @@ function Scatter(attributes) {
             .remove().data(_this.plotdata)
             .enter().append("circle")
             .attr("class", function(d, i){
-                return "dot " + "g_" + d.group;
+                return "dot " + "g_" + _this.attr.group(d, i);
             })
             .attr("r", _this.attr.size)
             .attr("cx", function(d, i) { return d.x; })
@@ -3290,8 +3453,8 @@ function Scatter(attributes) {
                 }
             })
             .style("opacity", _this.attr.opacity)
-            .style("visibility", function(d){
-                return _.contains(_this.attr.toggled, _this.attr.group(d)) ? 'hidden' : 'visible';
+            .style("visibility", function(d, i){
+                return _.contains(_this.attr.toggled, _this.attr.group(d, i)) ? 'hidden' : 'visible';
             })
             .attr("clip-path", "url(#clip)")
             .on("mouseover", function(d, i){
@@ -3305,22 +3468,22 @@ function Scatter(attributes) {
                     return;
                 }
                 if (_this.attr.line === 'hover') {
-                    _this.plotarea.selectAll('.line.g_' + d.group).style('visibility', 'visible');
+                    _this.plotarea.selectAll('.line.g_' + _this.attr.group(d, i)).style('visibility', 'visible');
                 }
                 if (_this.attr.hovercolor !== false) {
-                    _this.plotarea.selectAll('.dot.g_' + d.group).style("fill", _this.attr.hovercolor);
-                    _this.plotarea.selectAll('.line.g_' + d.group).style("stroke", _this.attr.hovercolor);
+                    _this.plotarea.selectAll('.dot.g_' + _this.attr.group(d, i)).style("fill", _this.attr.hovercolor);
+                    _this.plotarea.selectAll('.line.g_' + _this.attr.group(d, i)).style("stroke", _this.attr.hovercolor);
                     if (_this.attr.slider !== null) {
-                        _this.attr.slider.__parent__.plotarea.selectAll('.dot.g_' + d.group).style("fill", _this.attr.hovercolor);
-                        _this.attr.slider.__parent__.plotarea.selectAll('.line.g_' + d.group).style("stroke", _this.attr.hovercolor);
+                        _this.attr.slider.__parent__.plotarea.selectAll('.dot.g_' + _this.attr.group(d, i)).style("fill", _this.attr.hovercolor);
+                        _this.attr.slider.__parent__.plotarea.selectAll('.line.g_' + _this.attr.group(d, i)).style("stroke", _this.attr.hovercolor);
                     }
                 } else {
                     d3.select(this).style("opacity", 0.25);
                     if (_this.attr.slider !== null) {
-                        _this.attr.slider.__parent__.plotarea.selectAll('.g_' + d.group).style("opacity", 0.25);
+                        _this.attr.slider.__parent__.plotarea.selectAll('.g_' + _this.attr.group(d, i)).style("opacity", 0.25);
                     }
                 }
-            }).on("mousemove", function(d){
+            }).on("mousemove", function(d, i){
                 if (_this.attr.tooltip){
                     _this.attr.tooltip
                         .style("left", (d3.event.clientX + 5) + "px")
@@ -3334,24 +3497,24 @@ function Scatter(attributes) {
                     return;
                 }
                 if (_this.attr.line === 'hover') {
-                    _this.plotarea.selectAll('.line.g_' + d.group).style('visibility', 'hidden');
+                    _this.plotarea.selectAll('.line.g_' + _this.attr.group(d, i)).style('visibility', 'hidden');
                 }
                 if (_this.attr.hovercolor !== false) {
-                    _this.plotarea.selectAll('.dot.g_' + d.group).style("fill", _this.pallette(_this.attr.group(d, i)));
-                    _this.plotarea.selectAll('.line.g_' + d.group).style("stroke", _this.pallette(_this.attr.group(d, i)));
+                    _this.plotarea.selectAll('.dot.g_' + _this.attr.group(d, i)).style("fill", _this.pallette(_this.attr.group(d, i)));
+                    _this.plotarea.selectAll('.line.g_' + _this.attr.group(d, i)).style("stroke", _this.pallette(_this.attr.group(d, i)));
                     if (_this.attr.slider !== null) {
-                        _this.attr.slider.__parent__.plotarea.selectAll('.dot.g_' + d.group).style("fill", _this.pallette(_this.attr.group(d, i)));
-                        _this.attr.slider.__parent__.plotarea.selectAll('.line.g_' + d.group).style("stroke", _this.pallette(_this.attr.group(d, i)));
+                        _this.attr.slider.__parent__.plotarea.selectAll('.dot.g_' + _this.attr.group(d, i)).style("fill", _this.pallette(_this.attr.group(d, i)));
+                        _this.attr.slider.__parent__.plotarea.selectAll('.line.g_' + _this.attr.group(d, i)).style("stroke", _this.pallette(_this.attr.group(d, i)));
                     }
                 } else {
                     d3.select(this).style("opacity", _this.attr.opacity);
                     if (_this.attr.slider !== null) {
-                        _this.attr.slider.__parent__.plotarea.selectAll('.g_' + d.group).style("opacity", _this.attr.opacity);
+                        _this.attr.slider.__parent__.plotarea.selectAll('.g_' + _this.attr.group(d, i)).style("opacity", _this.attr.opacity);
                     }
                 }
             }).on("click", function(d, i){
                 if (_this.attr.selectable !== false) {
-                    _this.attr.selected = selectmerge(_this.attr.selected, d.group, _this.attr.selectable);
+                    _this.attr.selected = selectmerge(_this.attr.selected, _this.attr.group(d, i), _this.attr.selectable);
                     _this.redraw(_this.xscale.domain(), _this.yscale.domain(), false);
                     if (_this.attr.slider) {
                         _this.attr.slider.__parent__.attr.selected = _this.attr.selected;
@@ -3368,7 +3531,7 @@ function Scatter(attributes) {
                 .enter().append("line")
                 .attr("clip-path", "url(#clip)")
                 .attr("class", function(d, i){
-                    return "xtick " + "g_" + d.group;
+                    return "xtick " + "g_" + _this.attr.group(d, i);
                 })
                 .attr("x1", function(d, i) { return _this.xscale(_this.xmapper(_this.attr.x(d, i))); })
                 .attr("x2", function(d, i) { return _this.xscale(_this.xmapper(_this.attr.x(d, i))); })
@@ -3387,7 +3550,7 @@ function Scatter(attributes) {
                 .enter().append("line")
                 .attr("clip-path", "url(#clip)")
                 .attr("class", function(d, i){
-                    return "ytick " + "g_" + d.group;
+                    return "ytick " + "g_" + _this.attr.group(d, i);
                 })
                 .attr("x1", function(d, i) { return 0; })
                 .attr("x2", function(d, i) { return 10; })
@@ -3414,6 +3577,433 @@ Scatter.prototype.constructor = Scatter;
 quorra.scatter = function(attributes) {
     return new Scatter(attributes);
 };
+function Annotation(attributes) {
+    /**
+    Annotation()
+
+    Object for managing plot rendering, and extending
+    common functionality across all plot models.
+
+    @author <bprinty@gmail.com>
+    */
+
+    quorra.log('instantiating annotation object');
+
+    if (typeof attributes === 'undefined') attributes = {};
+    if (typeof plot === 'undefined') plot = 'body';
+    var _this = this;
+
+    // constructor
+    this.go = function() {
+        quorra.log('running annotation generator function');
+
+        // set up tooltip
+        d3.selectAll("div.annotation-tooltip#" + _this.attr.id + "-tooltip").remove();
+        if (_this.attr.tooltip == true) {
+            _this.attr.tooltip = d3.select("body").append("div")
+                .attr("class", "annotation-tooltip")
+                .attr("id", + _this.attr.id + "-tooltip")
+                .style("position", "fixed")
+                .style("visibility", "hidden")
+                .style("zindex", 999);
+        }
+
+        // create wrapper element for annotation groups
+        _this.plot.plotarea.selectAll('.annotation#' + _this.attr.id).remove();
+        var cl = (_this.attr.group === null) ? 'annotation ' + _this.attr.type : 'annotation ' + _this.attr.type + ' g_' + _this.attr.group;
+        var asel = _this.plot.plotarea.append('g')
+            .attr('id', _this.attr.id).attr('class', cl)
+            .style("visibility", function() {
+                return _.contains(_this.plot.attr.toggled, _this.plot.attr.group(_this.attr)) ? 'none' : 'visible';
+            }).style('opacity', _this.attr.style.opacity)
+            .on('mouseover', function() {
+                d3.select(this).style('opacity', _this.attr.hoveropacity);
+                if (_this.attr.tooltip) {
+                    _this.attr.tooltip.html(_this.attr.hovertext)
+                        .style("visibility", "visible")
+                        .style("left", (d3.event.pageX + 5) + "px")
+                        .style("top", (d3.event.pageY - 20) + "px");
+                }
+            }).on('mousemove', function() {
+                if (_this.attr.tooltip) {
+                    _this.attr.tooltip
+                        .style("left", (d3.event.pageX + 5) + "px")
+                        .style("top", (d3.event.pageY - 20) + "px");
+                }
+            }).on('mouseout', function() {
+                d3.select(this).style('opacity', _this.attr.style.opacity);
+                if (_this.attr.tooltip) {
+                    _this.attr.tooltip.style("visibility", "hidden");
+                }
+            }).on('click', function() {
+                _this.attr.events.click(_this.attr);
+            });
+        
+        // enable drag behavior for annotation (if available and specified)
+        var xscale = _this.attr.xfixed ? _this.plot.xstack[0] : _this.plot.xscale;
+        var yscale = _this.attr.yfixed ? _this.plot.ystack[0] : _this.plot.yscale;
+        var x = xscale(_this.attr.x);
+        var y = yscale(_this.attr.y);
+        if (_this.attr.draggable && !_this.plot.attr.zoomable) {
+            var drag = d3.behavior.drag()
+                .on("dragstart", function() {
+                    _this.attr.events.dragstart(_this.attr);
+                }).on("dragend", function() {
+                     _this.attr.events.dragend(_this.attr);
+                }).on("drag", function() {
+                    // get mouse coordinates
+                    var movement = mouse(_this.plot.attr.svg);
+                    var xoffset = Math.abs(xscale(_this.attr.width) - xscale(0));
+                    var yoffset = Math.abs(yscale(_this.attr.height) - yscale(0));
+                    xoffset = (_this.attr.type === 'rect') ? xoffset / 2 : 0;
+                    yoffset = (_this.attr.type === 'rect') ? yoffset / 2: 0;
+                    var xcoord = movement.x - _this.plot.attr.margin.left - xoffset;
+                    var ycoord = movement.y - _this.plot.attr.margin.top - yoffset;
+
+                    // translate annotation object
+                    var xmotion = _.center(xcoord, [0, _this.plot.innerwidth - 2*xoffset]);
+                    var ymotion = _.center(ycoord, [0, _this.plot.innerheight - 2*yoffset]);
+                    d3.select(this).attr('transform', 'translate(' + (xmotion - x) + ',' + (ymotion - y) + ')');
+                    
+                    // update annotation attributes with new data
+                    var xmap = d3.scale.linear().domain(xscale.range()).range(xscale.domain());
+                    var ymap = d3.scale.linear().domain(yscale.range()).range(yscale.domain());
+                    _this.attr.x = xmap(xmotion);
+                    _this.attr.y = ymap(ymotion);
+                    d3.select(this).select('text').text(_this.attr.text);
+
+                    _this.attr.events.drag(_this.attr);
+                });
+
+            asel.call(drag);
+        }
+
+        // extend annotation object with specific shape
+        var aobj;
+        if (_this.attr.type === 'rect') {
+            aobj = asel.selectAll('.rect').data([_this.attr]).enter()
+                .append('rect')
+                .attr('class', 'rect')
+                .attr('transform', 'rotate(' + _this.attr.rotate + ' ' + x + ' ' + y + ')')
+                .attr('width', Math.abs(xscale(_this.attr.width) - xscale(0)))
+                .attr('height', Math.abs(yscale(_this.attr.height) - yscale(0)))
+                .attr('x', x)
+                .attr('y', y);
+        } else if (_this.attr.type === 'circle') {
+            aobj = asel.selectAll('.circle').data([_this.attr]).enter()
+                .append('circle')
+                .attr('class', 'circle')
+                .attr('r', _this.attr.size / 2)
+                .attr('cx', x)
+                .attr('cy', y);
+        } else if (_this.attr.type === 'triangle') {
+            aobj = asel.selectAll('.triangle').data([_this.attr]).enter()
+                .append('path')
+                .attr('class', 'triangle')
+                .attr('transform', 'rotate(' + _this.attr.rotate + ' ' + x + ' ' + y + ')')
+                .attr('d', function(d){
+                    return [
+                    'M' + (x - (d.size / 2)) + ',' + (y - (d.size / 2)),
+                    'L' + (x + (d.size / 2)) + ',' + (y - (d.size / 2)),
+                    'L' + x + ',' + (y + (d.size / 2)),
+                    'Z'].join('');
+                });
+        }
+        if (_this.attr.stack === 'bottom') {
+            asel.stagedown();
+        }
+
+        // apply styling
+        if (_this.attr.type !== 'text'){
+            _.map(
+                _.without(Object.keys(_this.attr.style), 'opacity'),
+                function(i){ aobj.style(i, _this.attr.style[i]); }
+            );
+        }
+        
+        // show text
+        if (_this.attr.text !== '') {
+            asel.selectAll('.text').data([_this.attr]).enter()
+                .append('text')
+                .attr('class', 'text')
+                .attr('x', function(d) {
+                    var txt = (typeof d.text === 'function') ? d.text(d) : d.text;
+                    var xnew = x + d.tmargin.x + txt.toString().length*2;
+                    if (d.type === 'rect') {
+                        return xnew + 2;
+                    } else if (d.type === 'circle') {
+                        return x + d.tmargin.x;
+                    } else if (d.type === 'triangle') {
+                        return x + d.tmargin.x + (d.size / 2) - txt.toString().length*3;
+                    } else {
+                        return x + d.tmargin.x;
+                    }
+                })
+                .attr('y', function(d) {
+                    var ynew = y - (d.size / 2) - 5;
+                    if (d.type === 'rect') {
+                        return y - d.tmargin.y - 5;
+                    } else if (d.type === 'circle') {
+                        return ynew;
+                    } else if (d.type === 'triangle') {
+                        return ynew;
+                    } else {
+                        return y - d.tmargin.y;
+                    }
+                })
+                .style("font-size", _this.attr.tsize)
+                .style("text-anchor", "middle")
+                .text(_this.attr.text);
+        }
+
+        return _this;
+    };
+
+    // setting up attributes
+    this.attr = extend({
+        parent: null,
+        id: quorra.uuid(),
+        type: 'text',
+        text: '',
+        // text: function(d){ return d3.format('.2f')(d.x); },
+        hovertext: '',
+        hoveropacity: 0.75,
+        xfixed: false,
+        yfixed: false,
+        size: 15,
+        group: null,
+        rotate: 0,
+        tsize: 12,
+        tposition: {x: 0, y: 20},
+        tmargin: {x: 0, y: 0},
+        trotation: 0,
+        x: 0,
+        y: 0,
+        width: 0,
+        height: 0,
+        draggable: false,
+        tooltip: true,
+        stack: 'top',
+        events: {
+            add: function() {
+                quorra.log('add event');
+            },
+            drag: function() {
+                quorra.log('drag event');
+            },
+            dragstart: function() {
+                quorra.log('drag start event');
+            },
+            dragend: function() {
+                quorra.log('drag end event');
+            },
+            click: function() {
+                quorra.log('click event');
+            }
+        },
+        style: {opacity: 1},
+        meta: {}
+    }, attributes);
+    
+    // binding attributes to constructor function
+    parameterize(_this.attr, _this.go);
+    _this.go.__parent__ = _this;
+    
+    // managing specialized attributes
+    _this.go.bind = function(value) {
+        if (!arguments.length) return _this.plot;
+        _this.attr.parent = value;
+        _this.plot = value.__parent__;
+        _this.attr.parent = _this.plot.attr.id;
+        return _this.go;
+    };
+
+    return _this.go;
+}
+
+quorra.annotation = function(attributes) {
+    quorra.log('creating plot annotation');
+    return new Annotation(attributes);
+};
+/*
+
+Statistical functions used throughout quorra, including methods
+for kernel density estimation.
+
+@author <bprinty@gmail.com>
+
+*/
+
+
+function kdeEstimator(kernel, x) {
+    /**
+    quorra.kdeEstimator()
+
+    Kernel density esimator, using supplied kernel. This code was inspired
+    from http://bl.ocks.org/mbostock/4341954
+    */
+    return function(sample) {
+        return x.map(function(x) {
+            return {
+                x: x,
+                y: d3.mean(sample, function(v) { return kernel(x - v); }),
+            };
+        });
+    };
+}
+
+function epanechnikovKernel(scale) {
+    /**
+    quorra.epanechnikovKernel()
+
+    Epanechnikov Kernel for kernel density estinmation. This code was inspired
+    from http://bl.ocks.org/mbostock/4341954
+    */
+    return function(u) {
+        return Math.abs(u /= scale) <= 1 ? 0.75 * (1 - u * u) / scale : 0;
+    };
+}
+/*
+
+Event handling within quorra.
+
+@author <bprinty@gmail.com>
+
+*/
+
+
+// key map and default event definitions
+var baseKeys = { 16: 'Shift', 17: 'Ctrl', 18: 'Alt', 27: 'Esc'};
+var metaKeys = { 9: 'Tab', 13: 'Enter', 65: 'A', 66: 'B', 67: 'C', 68: 'D', 69: 'E', 70: 'F', 71: 'G', 72: 'H', 73: 'I', 74: 'J', 75: 'K', 76: 'L', 77: 'M', 78: 'N', 79: 'O', 80: 'P', 81: 'Q', 82: 'R', 83: 'S', 84: 'T', 85: 'U', 86: 'V', 87: 'W', 88: 'X', 89: 'Y', 90: 'Z'};
+var allKeys = _.extend(_.clone(baseKeys), metaKeys);
+
+
+// setting functions for default state and events
+quorra.keys = {};
+quorra.events = {};
+_.each(baseKeys, function(base) {
+
+    quorra.events[base] = {
+        down: function(){},
+        up: function(){}
+    };
+    quorra.keys[base] = false;
+    _.each(metaKeys, function(meta){
+        quorra.events[base + meta] = {
+            down: function(){},
+            up: function(){}
+        };
+        quorra.keys[meta] = false;
+        quorra.keys[base + meta] = false;
+    });
+});
+
+
+document.onkeydown = function (e) {
+    /**
+    Key down event handlers. Allows for event triggering on
+    key press if methods for each key combination are specified.
+
+    To set a method for a specific key down event, do:
+
+    quorra.events.ShiftA.up = function(){
+        console.log('Shift + A Pressed!');
+    }
+
+    @author <bprinty@gmail.com>
+    */
+
+    e = e || window.event;
+    var k = e.which;
+    if (_.has(allKeys, k)) {
+        var key = allKeys[k];
+
+        // handle single events
+        if (_.has(baseKeys, k)) {
+            if (!quorra.keys[key]) {
+                quorra.events[key].down();
+            }
+        }
+        quorra.keys[key] = true;
+
+        // handle combo events
+        _.each(baseKeys, function(b) {
+            _.each(metaKeys, function(m) {
+                if (quorra.keys[b] && quorra.keys[m]) {
+                    if (!quorra.keys[b + m]) {
+                        quorra.events[b + m].down();
+                        quorra.keys[b + m] = true;
+                    }
+                }
+            });
+        });
+    }
+};
+
+
+document.onkeyup = function (e) {
+     /**
+    Key up event handlers. Allows for event triggering on
+    key release if methods for each key combination are specified.
+
+    To set a method for a specific key down event, do:
+
+    quorra.events.ShiftA.down = function(){
+        console.log('Shift + A Released!');
+    }
+
+    @author <bprinty@gmail.com>
+    */
+
+    e = e || window.event;
+    var k = e.which;
+    if (_.has(allKeys, k)){
+        var key = allKeys[k];
+        
+        // handle single events
+        if (_.has(baseKeys, k)) {
+            if (quorra.keys[key]) {
+                quorra.events[key].up();
+            }
+        }
+        quorra.keys[key] = false;
+
+        // handle combo events
+        _.each(baseKeys, function(b) {
+            _.each(metaKeys, function(m) {
+                if (!quorra.keys[b] || !quorra.keys[m]) {
+                    if (quorra.keys[b + m]) {
+                        quorra.events[b + m].up();
+                        quorra.keys[b + m] = false;
+                    }
+                }
+            });
+        });
+    }
+};
+
+
+// return processed mouse coordinates from selection
+function mouse(sel){
+    var coordinates = d3.mouse(sel.node());
+    var res = {};
+    res.x = coordinates[0];
+    res.y = coordinates[1];
+    res.scale = (d3.event.type == 'zoom') ? d3.event.scale : 1;
+    return res;
+}
+
+
+// return ratio of domain/range for scaling zoom
+function zoomscale(scale){
+    var d = scale.domain();
+    var r = scale.range();
+    var dx = Math.abs(d[1] - d[0]);
+    var dr = Math.abs(r[1] - r[0]);
+    return dx/dr;
+}
+
+
 
 
 quorra.version = "0.0.5";

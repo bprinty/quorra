@@ -39,7 +39,7 @@ function Histogram(attributes) {
         var grps = _.uniquesort(data, _this.attr.group);
         var newdata = [];
         for (var grp in grps){
-            var subdat = _.filter(data, function(d){ return d.group == grps[grp]; });
+            var subdat = _.filter(data, function(d){ return _this.attr.group(d) == grps[grp]; });
             var newgrp = histogram(_.map(subdat, function(d){ return d.x }));
             newgrp = _.map(newgrp, function(d){
                 if (_this.attr.display == 'counts') {

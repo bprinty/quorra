@@ -135,36 +135,6 @@ quorra.plot2png = function(plot) {
 };
 
 
-// underscore additions
-_.center = function(x, bounds){
-    return _.min([_.max([x, bounds[0]]), bounds[1]]);
-};
-
-_.uniquesort = function(x, func) {
-    if (typeof func === 'undefined') {
-        func = function(x){ return x; };
-    }
-    return _.unique(_.map(x, func)).sort();
-};
-
-
-// d3 additions
-d3.selection.prototype.stageup = function() {
-  return this.each(function(){
-    this.parentNode.appendChild(this);
-  });
-};
-
-d3.selection.prototype.stagedown = function() { 
-    return this.each(function() { 
-        var firstChild = this.parentNode.firstChild; 
-        if (firstChild) { 
-            this.parentNode.insertBefore(this, firstChild); 
-        } 
-    }); 
-};
-
-
 // common generator object utilities
 parameterize = function(attributes, generator) {
     /**
