@@ -68,7 +68,7 @@ describe("annotation.js", function () {
             },
             {
                 type: 'triangle',
-                text: function(d){ return d3.format('.2f')(d.x); },
+                text: 'triangle',
                 size: 20,
                 rotate: 90,
                 draggable: true,
@@ -78,14 +78,21 @@ describe("annotation.js", function () {
             {
                 type: 'circle',
                 draggable: true,
-                text: function(d){ return d3.format('.2f')(d.x); },
+                text: 'circle',
                 r: 10,
                 x: 15,
                 y: 20
             },
             {
+                type: 'line',
+                draggable: true,
+                text: 'line',
+                x: [30, 35],
+                y: [35, 40]
+            },
+            {
                 type: 'text',
-                text: 'test',
+                text: 'text',
                 draggable: true,
                 size: 20,
                 x: 30,

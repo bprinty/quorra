@@ -63,8 +63,13 @@ function Annotation(attributes) {
         // enable drag behavior for annotation (if available and specified)
         var xscale = _this.attr.xfixed ? _this.plot.xstack[0] : _this.plot.xscale;
         var yscale = _this.attr.yfixed ? _this.plot.ystack[0] : _this.plot.yscale;
-        var x = xscale(_this.attr.x);
-        var y = yscale(_this.attr.y);
+        if (_this.attr.type == 'line') {
+            var x = _.map(_this.attr.x, xscale);
+            var y = _.map(_this.attr.y, yscale);
+        } else {
+            var x = xscale(_this.attr.x);
+            var y = yscale(_this.attr.y);
+        }
         if (_this.attr.draggable && !_this.plot.attr.zoomable) {
             var drag = d3.behavior.drag()
                 .on("dragstart", function() {
@@ -84,7 +89,9 @@ function Annotation(attributes) {
                     // translate annotation object
                     var xmotion = _.center(xcoord, [0, _this.plot.innerwidth - 2*xoffset]);
                     var ymotion = _.center(ycoord, [0, _this.plot.innerheight - 2*yoffset]);
-                    d3.select(this).attr('transform', 'translate(' + (xmotion - x) + ',' + (ymotion - y) + ')');
+                    var tx = (_this.attr.type === 'line') ? x[0] : x;
+                    var ty = (_this.attr.type === 'line') ? y[0] : y;
+                    d3.select(this).attr('transform', 'translate(' + (xmotion - tx) + ',' + (ymotion - ty) + ')');
                     
                     // update annotation attributes with new data
                     var xmap = d3.scale.linear().domain(xscale.range()).range(xscale.domain());
@@ -129,6 +136,14 @@ function Annotation(attributes) {
                     'L' + x + ',' + (y + (d.size / 2)),
                     'Z'].join('');
                 });
+        } else if (_this.attr.type === 'line') {
+            aobj = asel.selectAll('.line').data([_this.attr]).enter()
+                .append('line')
+                .attr('class', 'line')
+                .attr('stroke-width', _this.attr.style['stroke-width'] ? _this.attr.style['stroke-width'] : 2)
+                .attr('stroke', _this.attr.style.stroke ? _this.attr.style.stroke : "black")
+                .attr('x1', x[0]).attr('x2', x[1])
+                .attr('y1', y[0]).attr('y2', y[1]);
         }
         if (_this.attr.stack === 'bottom') {
             asel.stagedown();
@@ -149,25 +164,27 @@ function Annotation(attributes) {
                 .attr('class', 'text')
                 .attr('x', function(d) {
                     var txt = (typeof d.text === 'function') ? d.text(d) : d.text;
-                    var xnew = x + d.tmargin.x + txt.toString().length*2;
                     if (d.type === 'rect') {
-                        return xnew + 2;
+                        return x + d.tmargin.x + txt.toString().length*2 + 2;
                     } else if (d.type === 'circle') {
                         return x + d.tmargin.x;
                     } else if (d.type === 'triangle') {
-                        return x + d.tmargin.x + (d.size / 2) - txt.toString().length*3;
+                        return x + d.tmargin.x + (d.size / 2) - txt.toString().length;
+                    } else if (d.type === 'line') {
+                        return x[0] + d.tmargin.x;
                     } else {
                         return x + d.tmargin.x;
                     }
                 })
                 .attr('y', function(d) {
-                    var ynew = y - (d.size / 2) - 5;
                     if (d.type === 'rect') {
                         return y - d.tmargin.y - 5;
                     } else if (d.type === 'circle') {
-                        return ynew;
+                        return y - (d.size / 2) - 5;
                     } else if (d.type === 'triangle') {
-                        return ynew;
+                        return y - (d.size / 2) - 5;
+                    } else if (d.type === 'line') {
+                        return y[0] - (d.size / 2) - 5;
                     } else {
                         return y - d.tmargin.y;
                     }
