@@ -1,4 +1,4 @@
-/* quorra version 0.0.5 (http://github.com/bprinty/quorra) */
+/* quorra version 0.0.6 (http://github.com/bprinty/quorra) */
 (function(){
 /***
  *
@@ -2141,6 +2141,23 @@ quorra.plot2png = function(plot) {
 };
 
 
+// d3 additions
+d3.selection.prototype.stageup = function() {
+  return this.each(function(){
+    this.parentNode.appendChild(this);
+  });
+};
+
+d3.selection.prototype.stagedown = function() { 
+    return this.each(function() { 
+        var firstChild = this.parentNode.firstChild; 
+        if (firstChild) { 
+            this.parentNode.insertBefore(this, firstChild); 
+        } 
+    }); 
+};
+
+
 // common generator object utilities
 parameterize = function(attributes, generator) {
     /**
@@ -4023,7 +4040,7 @@ function zoomscale(scale){
 
 
 
-quorra.version = "0.0.5";
+quorra.version = "0.0.6";
 
 window.quorra = quorra;
 

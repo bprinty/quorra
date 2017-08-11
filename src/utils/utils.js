@@ -135,6 +135,23 @@ quorra.plot2png = function(plot) {
 };
 
 
+// d3 additions
+d3.selection.prototype.stageup = function() {
+  return this.each(function(){
+    this.parentNode.appendChild(this);
+  });
+};
+
+d3.selection.prototype.stagedown = function() { 
+    return this.each(function() { 
+        var firstChild = this.parentNode.firstChild; 
+        if (firstChild) { 
+            this.parentNode.insertBefore(this, firstChild); 
+        } 
+    }); 
+};
+
+
 // common generator object utilities
 parameterize = function(attributes, generator) {
     /**
