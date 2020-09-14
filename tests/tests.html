@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width">
     <title>Quorra Testing</title>
-    <link rel="stylesheet" href="../lib/mocha/mocha.css" />
+    <link rel="stylesheet" href="../node_modules/mocha/mocha.css" />
     <link rel="stylesheet" href="../dist/quorra.css" />
     <style>
         .plotarea {
@@ -23,10 +23,10 @@
 </head>
 <body>
     <div id="mocha"></div>
-    <script src="../lib/mocha/mocha.js"></script>
-    <script src="../lib/chai/chai.js"></script>
+    <script src="../node_modules/mocha/mocha.js"></script>
+    <script src="../node_modules/chai/chai.js"></script>
     <script>
-        mocha.ui('bdd'); 
+        mocha.ui('bdd');
         mocha.reporter('html');
         var expect = chai.expect;
 
@@ -40,9 +40,9 @@
         }
     </script>
 
-    <script src="../lib/d3/d3.min.js"></script>
+    <script src="../node_modules/d3/d3.min.js"></script>
     <script src="../dist/quorra.js"></script>
-    <script src="../lib/underscore/underscore-min.js"></script>
+    <script src="../node_modules/underscore/underscore-min.js"></script>
 
     <!-- models -->
     <script src="./models/line.test.js"></script>
@@ -86,7 +86,7 @@
             }
             function swap(pre, post) {
                 pre.parentNode.replaceChild(pre, post);
-                pre.parentNode.insertBefore(post, pre);     
+                pre.parentNode.insertBefore(post, pre);
             }
             var nodes = base.node().childNodes;
             for (var i=0; i<nodes.length; i = i + 2) {
@@ -123,10 +123,10 @@
                 // figure out another way to validate for phantom ...
                 expect(42).to.be.equal(42);
             } else {
-                expect(selection[0][0]).to.be.not.null();
+                expect(selection[0][0]).to.be.not.null;
                 expect(selection[0].length).to.be.not.equal(0);
             }
-            return; 
+            return;
         }
 
         quorra.seed(42);
